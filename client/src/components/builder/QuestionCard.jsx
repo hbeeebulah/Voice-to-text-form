@@ -171,7 +171,7 @@ export default function QuestionCard({
                   {question.voiceEnabled && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
                       <Mic className="w-3 h-3 text-indigo-500" />
-                      Gemini Voice Dictation Active
+                      Voice Dictation Active
                     </span>
                   )}
                 </div>
@@ -212,7 +212,7 @@ export default function QuestionCard({
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-1.5 text-xs text-slate-600">
                   <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                  <span className="font-medium">Enable Gemini Multimodal Voice Dictation</span>
+                  <span className="font-medium">Enable AI Voice Dictation</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input

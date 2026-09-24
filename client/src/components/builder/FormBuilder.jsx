@@ -172,7 +172,7 @@ export default function FormBuilder({
             <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 text-xs text-slate-500">
               <div className="flex items-center gap-1.5 text-indigo-600 font-medium">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Gemini Voice-to-Text Dictation Enabled</span>
+                <span>AI Voice-to-Text Dictation Enabled</span>
               </div>
 
               <button

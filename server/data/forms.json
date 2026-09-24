@@ -74,7 +74,7 @@
       {
         "id": "q-1790255764752-3",
         "title": "What did you like most or what could we improve?",
-        "description": "Feel free to speak your thoughts with Gemini voice dictation",
+        "description": "Feel free to speak your thoughts with AI voice dictation",
         "type": "paragraph",
         "required": true,
         "voiceEnabled": true
@@ -160,7 +160,7 @@
       {
         "id": "q-experience-detailed",
         "title": "Describe your favorite experience or any challenges you faced",
-        "description": "Click the microphone button to dictate naturally! Gemini will automatically remove filler words and format your response beautifully.",
+        "description": "Click the microphone button to dictate naturally! The AI speech engine will automatically remove filler words and format your response beautifully.",
         "type": "paragraph",
         "required": true,
         "voiceEnabled": true,

@@ -81,7 +81,7 @@ const defaultSampleForm = {
     {
       id: 'q-experience-detailed',
       title: 'Describe your favorite experience or any challenges you faced',
-      description: 'Click the microphone button to dictate naturally! Gemini will automatically remove filler words and format your response beautifully.',
+      description: 'Click the microphone button to dictate naturally! The AI speech engine will automatically remove filler words and format your response beautifully.',
       type: 'paragraph',
       required: true,
       voiceEnabled: true,
@@ -145,7 +145,7 @@ const sampleResponses = [
         'Voice-to-Text Multimodal Dictation',
         'Instant CSV / JSON Data Exports'
       ],
-      'q-experience-detailed': 'Form creation was intuitive and clean. Drag-and-drop reordering felt snappy and the Gemini transcription was remarkably quick at formatting clean sentences.',
+      'q-experience-detailed': 'Form creation was intuitive and clean. Drag-and-drop reordering felt snappy and the voice transcription was remarkably quick at formatting clean sentences.',
       'q-recommend': 'Very likely'
     },
     voiceFieldStats: {

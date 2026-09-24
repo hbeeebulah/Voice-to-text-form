@@ -63,7 +63,7 @@ export default function FormsDashboard({
         {
           id: `q-${Date.now()}-3`,
           title: 'What did you like most or what could we improve?',
-          description: 'Feel free to speak your thoughts with Gemini voice dictation',
+          description: 'Feel free to speak your thoughts with AI voice dictation',
           type: 'paragraph',
           required: true,
           voiceEnabled: true

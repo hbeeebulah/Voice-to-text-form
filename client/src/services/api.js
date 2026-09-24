@@ -76,7 +76,7 @@ export async function fetchAnalytics(formId) {
 export async function transcribeAudio({ audioBase64, mimeType, questionTitle, questionDescription, fieldType, existingText, apiKey, recognizedText }) {
   const headers = { 'Content-Type': 'application/json' };
   if (apiKey) {
-    headers['x-gemini-api-key'] = apiKey;
+    headers['x-voice-ai-key'] = apiKey;
   }
 
   const res = await fetch(`${API_BASE}/transcribe`, {

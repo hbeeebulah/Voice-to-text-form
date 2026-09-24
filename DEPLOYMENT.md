@@ -6,7 +6,7 @@ This guide walks you through deploying **VoxForm AI** as a live, secure producti
 
 ## 🔒 Crucial Prerequisite: HTTPS & Microphone Access
 
-Modern web browsers (Google Chrome, Apple Safari, Microsoft Edge, Mozilla Firefox) require an **HTTPS (SSL/TLS)** connection to grant access to the user's microphone via the `navigator.mediaDevices.getUserMedia` API (with the only exception being `http://localhost`).
+Modern web browsers (Chrome, Safari, Edge, Firefox) require an **HTTPS (SSL/TLS)** connection to grant access to the user's microphone via the `navigator.mediaDevices.getUserMedia` API (with the only exception being `http://localhost`).
 
 > **Good news:** When deploying to **Render**, **Railway**, **Vercel**, or **Fly.io**, an SSL certificate (`https://`) is automatically provisioned and managed for your domain for free.
 
@@ -35,7 +35,7 @@ Render allows you to deploy the full-stack application (frontend + backend + per
    - **Plan:** Free
 5. In the **Environment Variables** section, add:
    - `NODE_ENV`: `production`
-   - `GEMINI_API_KEY`: Your Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - `VOICE_AI_API_KEY`: Your Voice AI engine API key
    - *(Optional)* `MONGODB_URI` or `DATABASE_URL` if connecting to MongoDB Atlas or Supabase PostgreSQL.
 6. Click **Deploy Web Service**.
 7. Once finished, Render gives you a live URL like `https://voxform-ai.onrender.com`.
@@ -50,7 +50,7 @@ Railway offers seamless zero-configuration deployments with built-in database pl
 1. Go to [Railway.app](https://railway.app/) and create a new project.
 2. Select **Deploy from GitHub repo** and choose your repository.
 3. In **Variables**, add:
-   - `GEMINI_API_KEY`: `your_key_here`
+   - `VOICE_AI_API_KEY`: `your_key_here`
    - `NODE_ENV`: `production`
    - `PORT`: Railway will automatically provide this, but our app defaults to it gracefully.
 4. *(Optional)* Click **New** ➔ **Database** ➔ **Add PostgreSQL** or **Add MongoDB**. Railway will automatically populate `DATABASE_URL` or `MONGODB_URI`, which our backend automatically detects and connects to!
@@ -70,7 +70,7 @@ The project includes a multi-stage `Dockerfile` and `docker-compose.yml`.
    ```
 2. Create an environment file:
    ```bash
-   echo "GEMINI_API_KEY=your_gemini_api_key_here" > server/.env
+   echo "VOICE_AI_API_KEY=your_voice_ai_key_here" > server/.env
    ```
 3. Build and run with Docker Compose:
    ```bash

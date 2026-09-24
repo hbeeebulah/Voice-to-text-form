@@ -1,6 +1,6 @@
 # VoxForm AI — Intelligent Voice-First Form Studio
 
-**VoxForm AI** is a modern, full-stack customizable form builder and responder web application featuring seamless multimodal voice-to-text dictation powered by **Gemini 3.8 Flash**.
+**VoxForm AI** is a modern, full-stack customizable form builder and responder web application featuring seamless multimodal voice-to-text dictation powered by an advanced **Neural Voice AI Engine**.
 
 Built with a high-performance **React** frontend (Tailwind CSS, Lucide icons, HTML5 Canvas soundwave visualizer) and a **Node.js / Express** backend paired with a flexible Data Access Layer supporting persistent local JSON storage, **PostgreSQL**, and **MongoDB**.
 
@@ -13,7 +13,7 @@ Built with a high-performance **React** frontend (Tailwind CSS, Lucide icons, HT
 - **In-Browser Audio Capture**: Uses the native HTML5 `MediaRecorder` API with echo cancellation and noise suppression.
 - **Real-time Soundwave Visualizer**: Canvas-based frequency analyzer that reacts dynamically to respondent speech using the Web Audio API.
 - **Elapsed Recording Timer**: Formatted timer (`00:08 / 02:00`) with visual recording pulsing badge.
-- **Speech Polishing with Gemini 3.8 Flash**:
+- **Speech Polishing with Neural AI Engine**:
   - Automatically strips speech disfluencies (*"um"*, *"uh"*, *"like"*, *"you know"*, stuttering, or repeated words).
   - Formats natural punctuation, sentence casing, numbers, and bullet points.
   - Aligns contextually with question titles and descriptions.
@@ -90,7 +90,7 @@ For full deployment instructions, see the dedicated [DEPLOYMENT.md](./DEPLOYMENT
    - **Start Command:** `npm start`
 4. Set your environment variables:
    - `NODE_ENV=production`
-   - `GEMINI_API_KEY=your_gemini_api_key_here`
+   - `VOICE_AI_API_KEY=your_voice_ai_key_here`
 5. Deploy! Both frontend and backend are hosted on a single secure `https://` domain with automatic SSL (required for microphone access).
 
 ### Docker Deployment
@@ -101,11 +101,10 @@ docker compose up -d --build
 
 ---
 
-## 🔑 Activating Live Gemini Speech-to-Text
-
-1. Obtain a free Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. Add it to `server/.env`:
+## 🔑 Activating Voice AI Speech Engine
+ 
+1. Add your Voice AI key to `server/.env`:
    ```env
-   GEMINI_API_KEY=your_actual_api_key_here
+   VOICE_AI_API_KEY=your_actual_api_key_here
    ```
-3. Or activate it directly from the web application by clicking the **Gemini AI** badge in the top navigation bar.
+2. Or activate it directly from the web application by clicking the **Voice AI** badge in the top navigation bar.

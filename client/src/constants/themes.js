@@ -118,7 +118,7 @@ export const QUESTION_TYPES = [
     label: 'Paragraph',
     icon: 'AlignJustify',
     voiceEnabled: true,
-    description: 'Multi-line detailed text with Gemini multimodal dictation'
+    description: 'Multi-line detailed text with AI voice dictation'
   },
   {
     type: 'multiple_choice',

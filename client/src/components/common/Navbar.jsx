@@ -133,14 +133,14 @@ export default function Navbar({
 
         {/* Right Section: Actions */}
         <div className="flex items-center gap-2">
-          {/* Gemini AI Status / Settings */}
+          {/* Voice AI Status / Settings */}
           <button
             onClick={onOpenApiKey}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-indigo-50/70 hover:border-indigo-200 hover:text-indigo-600 text-xs font-medium transition-all"
-            title="Configure Gemini AI Voice Dictation"
+            title="Configure Voice AI Speech Engine"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-            <span className="hidden sm:inline">Gemini AI</span>
+            <span className="hidden sm:inline">Voice AI</span>
             <span className={`w-2 h-2 rounded-full ${hasApiKey ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'}`} />
           </button>
 

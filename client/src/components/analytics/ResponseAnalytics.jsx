@@ -80,7 +80,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
               </h2>
             </div>
             <p className="text-xs text-slate-500">
-              Real-time insights and Gemini voice dictation engagement
+              Real-time insights and voice dictation engagement
             </p>
           </div>
 
@@ -210,7 +210,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
           </div>
           <h3 className="text-lg font-bold text-slate-800">Waiting for responses</h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            This form has not received any submissions yet. Try opening the responder view to submit a test response with Gemini voice dictation!
+            This form has not received any submissions yet. Try opening the responder view to submit a test response with voice dictation!
           </p>
           {onOpenResponderPreview && (
             <button
@@ -327,7 +327,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
                   <div className="flex items-center justify-between px-3 py-2 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs text-indigo-900">
                     <span className="font-medium flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                      Gemini Voice Dictation Adoption
+                      Voice Dictation Adoption
                     </span>
                     <span className="font-bold px-2 py-0.5 rounded-md bg-white text-indigo-700 shadow-2xs border border-indigo-200">
                       {qAnalytics.voiceRate}% ({qAnalytics.voiceCount} of {qAnalytics.responseCount})

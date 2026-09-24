@@ -324,7 +324,7 @@ export default function App() {
         />
       )}
 
-      {/* Gemini API Key Modal */}
+      {/* Voice AI Engine Modal */}
       <ApiKeyModal
         isOpen={isApiKeyOpen}
         onClose={() => setIsApiKeyOpen(false)}

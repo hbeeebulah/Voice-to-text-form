@@ -332,7 +332,7 @@ export default function FormResponder({
                         className="w-full px-3.5 py-2.5 text-sm border-b-2 border-slate-200 focus:border-indigo-600 bg-transparent focus:outline-none transition-colors"
                       />
 
-                      {/* Gemini Voice Dictation Toolbar */}
+                      {/* Voice Dictation Toolbar */}
                       {q.voiceEnabled !== false && (
                         <AudioRecorder
                           questionTitle={q.title}
@@ -360,7 +360,7 @@ export default function FormResponder({
                         className="w-full px-3.5 py-2.5 text-sm border-2 border-slate-200 focus:border-indigo-600 rounded-xl focus:outline-none transition-colors resize-y min-h-[90px]"
                       />
 
-                      {/* Gemini Voice Dictation Toolbar */}
+                      {/* Voice Dictation Toolbar */}
                       {q.voiceEnabled !== false && (
                         <AudioRecorder
                           questionTitle={q.title}

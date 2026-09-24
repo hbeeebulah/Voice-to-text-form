@@ -1,7 +1,7 @@
 {
   "name": "voxform-ai",
   "version": "1.0.0",
-  "description": "Full-stack intelligent voice-first form builder and responder web application with Gemini-powered multimodal audio dictation and curated themes",
+  "description": "Full-stack intelligent voice-first form builder and responder web application with Neural AI multimodal audio dictation and curated themes",
   "scripts": {
     "install:all": "npm install --prefix server && npm install --prefix client --include=dev",
     "build": "cd client && npm run build",
@@ -13,7 +13,7 @@
   "keywords": [
     "voice-to-text",
     "speech-dictation",
-    "gemini-3.8-flash",
+    "neural-speech",
     "multimodal-audio",
     "form-builder",
     "react",

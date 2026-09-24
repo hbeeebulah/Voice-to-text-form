@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const geminiService = require('../services/geminiService');
+const voiceAiService = require('../services/voiceAiService');
 
 // POST /api/transcribe
 router.post('/', async (req, res) => {
@@ -11,9 +11,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'audioBase64 or recognizedText is required in request body.' });
     }
 
-    const userApiKey = req.headers['x-gemini-api-key'] || req.body.apiKey || '';
+    const userApiKey = req.headers['x-voice-ai-key'] || req.headers['x-gemini-api-key'] || req.body.apiKey || '';
 
-    const result = await geminiService.transcribeAudio({
+    const result = await voiceAiService.transcribeAudio({
       audioBase64,
       mimeType: mimeType || 'audio/webm',
       questionTitle: questionTitle || '',
@@ -40,26 +40,26 @@ router.post('/', async (req, res) => {
   }
 });
 
-// POST /api/transcribe/set-key - Set or update Gemini API key dynamically
+// POST /api/transcribe/set-key - Set or update Voice AI key dynamically
 router.post('/set-key', (req, res) => {
   const { apiKey } = req.body;
   if (!apiKey || typeof apiKey !== 'string' || apiKey.trim().length < 6) {
-    return res.status(400).json({ error: 'Valid Gemini API key is required.' });
+    return res.status(400).json({ error: 'Valid API key is required.' });
   }
 
-  geminiService.setApiKey(apiKey.trim());
+  voiceAiService.setApiKey(apiKey.trim());
   res.json({
     success: true,
     configured: true,
-    message: 'Gemini API key configured successfully.'
+    message: 'Voice AI key configured successfully.'
   });
 });
 
-// GET /api/transcribe/status - check if Gemini API key is configured
+// GET /api/transcribe/status - check if Voice AI key is configured
 router.get('/status', (req, res) => {
   res.json({
-    configured: geminiService.isConfigured(),
-    model: 'gemini-3.8-flash'
+    configured: voiceAiService.isConfigured(),
+    model: 'neural-voice-engine'
   });
 });
 

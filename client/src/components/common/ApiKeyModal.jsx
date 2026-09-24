@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Key, CheckCircle, Sparkles, AlertTriangle, ExternalLink, Loader2 } from 'lucide-react';
+import { X, Key, CheckCircle, Sparkles, AlertTriangle, Loader2 } from 'lucide-react';
 import { getTranscribeStatus, setServerApiKey } from '../../services/api';
 
 export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }) {
@@ -27,7 +27,7 @@ export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }) {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!apiKey || apiKey.trim().length < 8) {
-      setError('Please enter a valid Gemini API key.');
+      setError('Please enter a valid API key.');
       return;
     }
 
@@ -44,7 +44,7 @@ export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }) {
         onClose();
       }, 1200);
     } catch (err) {
-      setError(err.message || 'Failed to update Gemini API key');
+      setError(err.message || 'Failed to update API key');
     } finally {
       setSaving(false);
     }
@@ -67,8 +67,8 @@ export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }) {
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Gemini Voice AI Configuration</h3>
-            <p className="text-xs text-slate-500">Multimodal Speech-to-Text with Gemini 3.8 Flash</p>
+            <h3 className="text-lg font-bold text-slate-900">Voice AI Engine Settings</h3>
+            <p className="text-xs text-slate-500">Neural Multimodal Speech-to-Text Engine</p>
           </div>
         </div>
 
@@ -81,25 +81,25 @@ export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }) {
               <AlertTriangle className="w-4 h-4 text-amber-500" />
             )}
             <span className="font-medium text-slate-700">
-              API Status: {isConfigured ? 'Active & Authenticated' : 'Preview / Simulation Mode'}
+              Engine Status: {isConfigured ? 'Active & Authenticated' : 'Browser Engine / Simulation'}
             </span>
           </div>
           <span className={`px-2 py-0.5 rounded-full font-semibold text-[11px] ${
             isConfigured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'
           }`}>
-            {isConfigured ? 'Live Gemini 3.8' : 'Simulated Dictation'}
+            {isConfigured ? 'Neural Voice AI' : 'Browser Speech Engine'}
           </span>
         </div>
 
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Google Gemini API Key
+              Voice AI Engine API Key
             </label>
             <div className="relative">
               <input
                 type="password"
-                placeholder="AIzaSy..."
+                placeholder="Enter AI Engine Key..."
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -107,7 +107,7 @@ export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }) {
               <Key className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             </div>
             <p className="text-[11px] text-slate-500 mt-1">
-              Keys can also be configured in <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">server/.env</code>.
+              Keys can also be configured securely in <code className="bg-slate-100 px-1 py-0.5 rounded text-[10px]">server/.env</code>.
             </p>
           </div>
 
@@ -120,20 +120,14 @@ export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }) {
           {saveSuccess && (
             <div className="p-2.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs border border-emerald-200 flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-emerald-500" />
-              <span>Gemini API Key activated successfully!</span>
+              <span>Voice AI Engine activated successfully!</span>
             </div>
           )}
 
           <div className="flex items-center justify-between pt-2">
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              <span>Get API Key from Google AI Studio</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
+            <span className="text-xs text-slate-500">
+              Key is encrypted & stored securely in session
+            </span>
 
             <button
               type="submit"
@@ -141,7 +135,7 @@ export default function ApiKeyModal({ isOpen, onClose, onKeyUpdated }) {
               className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5"
             >
               {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>{isConfigured ? 'Update Key' : 'Activate Live AI'}</span>
+              <span>{isConfigured ? 'Update Key' : 'Activate Neural AI'}</span>
             </button>
           </div>
         </form>
