@@ -25,9 +25,24 @@ class GeminiService {
     return false;
   }
 
-  async transcribeAudio({ audioBase64, mimeType = 'audio/webm', questionTitle, questionDescription, fieldType, existingText, apiKey }) {
-    if (!audioBase64) {
-      throw new Error('Audio payload is required.');
+  formatRawSpeech(text) {
+    if (!text || !text.trim()) return '';
+    let cleaned = text.trim();
+    // Strip common speech disfluencies
+    cleaned = cleaned.replace(/\b(um|uh|er|ah|like you know|you know|sort of)\b/gi, '');
+    cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
+    if (cleaned.length > 0) {
+      cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      if (!/[.?!]$/.test(cleaned)) {
+        cleaned += '.';
+      }
+    }
+    return cleaned;
+  }
+
+  async transcribeAudio({ audioBase64, mimeType = 'audio/webm', questionTitle, questionDescription, fieldType, existingText, apiKey, recognizedText }) {
+    if (!audioBase64 && !recognizedText) {
+      throw new Error('Audio payload or speech transcript is required.');
     }
 
     const effectiveKey = apiKey || this.apiKey;
@@ -36,10 +51,18 @@ class GeminiService {
     }
 
     // Clean base64 string if it contains data URI header
-    const cleanBase64 = audioBase64.replace(/^data:audio\/[a-zA-Z0-9.+_-]+;base64,/, '');
+    const cleanBase64 = audioBase64 ? audioBase64.replace(/^data:audio\/[a-zA-Z0-9.+_-]+;base64,/, '') : '';
 
-    // If no API key configured, provide a rich, intelligent simulation so the UI can be fully explored
+    // If no API key configured, use the user's real spoken words if captured via speech recognition
     if (!effectiveKey) {
+      if (recognizedText && recognizedText.trim().length > 0) {
+        return {
+          text: this.formatRawSpeech(recognizedText),
+          isDemoFallback: true,
+          model: 'browser-speech-engine',
+          warning: 'Transcribed directly via browser speech recognition. Configure GEMINI_API_KEY in server/.env for Gemini 3.8 Flash neural polishing.'
+        };
+      }
       return this.simulateTranscription({ questionTitle, fieldType });
     }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   GripVertical,
   Trash2,
@@ -18,6 +18,7 @@ import {
   Mic
 } from 'lucide-react';
 import { QUESTION_TYPES } from '../../constants/themes';
+import AudioRecorder from '../common/AudioRecorder';
 
 export default function QuestionCard({
   question,
@@ -32,6 +33,7 @@ export default function QuestionCard({
   onMoveDown,
   accentColor = '#6366f1'
 }) {
+  const [builderTestText, setBuilderTestText] = useState('');
   const currentType = QUESTION_TYPES.find(t => t.type === question.type) || QUESTION_TYPES[0];
 
   const handleTypeChange = (newType) => {
@@ -174,15 +176,34 @@ export default function QuestionCard({
                   )}
                 </div>
 
-                <div className="relative">
+                <div className="space-y-2">
                   {question.type === 'short_answer' ? (
-                    <div className="w-full px-3 py-2 bg-white border border-dashed border-slate-300 rounded-lg text-xs text-slate-400">
-                      Respondent will type or speak here...
-                    </div>
+                    <input
+                      type="text"
+                      value={builderTestText}
+                      onChange={(e) => setBuilderTestText(e.target.value)}
+                      placeholder="Type or click the microphone below to test voice dictation..."
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs"
+                    />
                   ) : (
-                    <div className="w-full h-16 px-3 py-2 bg-white border border-dashed border-slate-300 rounded-lg text-xs text-slate-400">
-                      Respondent will type or speak detailed thoughts here...
-                    </div>
+                    <textarea
+                      rows={2}
+                      value={builderTestText}
+                      onChange={(e) => setBuilderTestText(e.target.value)}
+                      placeholder="Type or click the microphone below to test voice dictation..."
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs resize-y"
+                    />
+                  )}
+
+                  {question.voiceEnabled !== false && (
+                    <AudioRecorder
+                      questionTitle={question.title || 'Sample Question'}
+                      questionDescription={question.description}
+                      fieldType={question.type}
+                      currentValue={builderTestText}
+                      onTranscriptionComplete={(text) => setBuilderTestText(text)}
+                      accentColor={accentColor}
+                    />
                   )}
                 </div>
               </div>

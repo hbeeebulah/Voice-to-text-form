@@ -73,7 +73,7 @@ export async function fetchAnalytics(formId) {
   return res.json();
 }
 
-export async function transcribeAudio({ audioBase64, mimeType, questionTitle, questionDescription, fieldType, existingText, apiKey }) {
+export async function transcribeAudio({ audioBase64, mimeType, questionTitle, questionDescription, fieldType, existingText, apiKey, recognizedText }) {
   const headers = { 'Content-Type': 'application/json' };
   if (apiKey) {
     headers['x-gemini-api-key'] = apiKey;
@@ -89,7 +89,8 @@ export async function transcribeAudio({ audioBase64, mimeType, questionTitle, qu
       questionDescription,
       fieldType,
       existingText,
-      apiKey
+      apiKey,
+      recognizedText
     })
   });
 

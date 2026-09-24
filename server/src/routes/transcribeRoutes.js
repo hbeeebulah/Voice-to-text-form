@@ -5,10 +5,10 @@ const geminiService = require('../services/geminiService');
 // POST /api/transcribe
 router.post('/', async (req, res) => {
   try {
-    const { audioBase64, mimeType, questionTitle, questionDescription, fieldType, existingText } = req.body;
+    const { audioBase64, mimeType, questionTitle, questionDescription, fieldType, existingText, recognizedText } = req.body;
 
-    if (!audioBase64) {
-      return res.status(400).json({ error: 'audioBase64 is required in request body.' });
+    if (!audioBase64 && !recognizedText) {
+      return res.status(400).json({ error: 'audioBase64 or recognizedText is required in request body.' });
     }
 
     const userApiKey = req.headers['x-gemini-api-key'] || req.body.apiKey || '';
@@ -20,7 +20,8 @@ router.post('/', async (req, res) => {
       questionDescription: questionDescription || '',
       fieldType: fieldType || 'paragraph',
       existingText: existingText || '',
-      apiKey: userApiKey
+      apiKey: userApiKey,
+      recognizedText: recognizedText || ''
     });
 
     return res.json({
