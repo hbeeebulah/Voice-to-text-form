@@ -49,7 +49,22 @@ Built with a high-performance **React** frontend (Tailwind CSS, Lucide icons, HT
 - Thank-you confirmation screen with submission receipt review and "Submit another response" option.
 - Graceful handling of microphone permissions with helpful step-by-step guidance.
 
-### 5. Creator Response Analytics Dashboard
+### 5. Creator Authentication & Sign in with Google
+- **Sign in with Google**:
+  - Integrated with official **Google Identity Services (GSI)** for instant, secure sign-in with Google accounts.
+  - Form creators can link their Google Account, import their profile photo, and authenticate with 1 click.
+  - Flexible setup: works with real Google Cloud OAuth 2.0 Web Client IDs (`GOOGLE_CLIENT_ID`) and includes a convenient 1-click test mode for development.
+  - Dedicated **Google OAuth Settings** modal with step-by-step guidance on setting up credentials in Google Cloud Console.
+- **Email & Password Authentication**:
+  - Full registration and login system with bcrypt password hashing and secure JWT session tokens.
+  - Form validation with error alerts, show/hide password toggles, and "Remember me" options.
+  - 1-Click Demo Creator Login for instant reviewer testing without filling in credentials.
+- **Creator Profile & Ownership**:
+  - Dynamic user avatar in top Navbar with Google badge indicator and interactive profile menu.
+  - Forms are automatically attributed to their creator's account.
+  - Responders can still access and submit public forms (`#form/:id`) seamlessly without requiring login.
+
+### 6. Creator Response Analytics Dashboard
 - Metric highlight cards: Total submissions count, Voice dictation adoption percentage, and latest activity timestamp.
 - **Summary Charts**:
   - Multiple Choice / Dropdown: Interactive bar distributions with percentage breakdowns.
@@ -108,3 +123,16 @@ docker compose up -d --build
    VOICE_AI_API_KEY=your_actual_api_key_here
    ```
 2. Or activate it directly from the web application by clicking the **Voice AI** badge in the top navigation bar.
+
+---
+
+## 🔐 Configuring Sign In with Google (OAuth 2.0)
+
+1. Obtain a **Web Client ID** from [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+2. Add your application's domain (e.g., `http://localhost:5173` or your production domain) under **Authorized JavaScript origins**.
+3. Set your Client ID either:
+   - In `server/.env`:
+     ```env
+     GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+     ```
+   - Or directly in the web UI by clicking the **Settings (gear)** icon on the Google Sign-In button or inside the Creator profile menu!

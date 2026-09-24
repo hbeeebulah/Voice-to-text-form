@@ -13,6 +13,7 @@ import {
   ExternalLink,
   X
 } from 'lucide-react';
+import UserProfileMenu from '../auth/UserProfileMenu';
 
 export default function FormsDashboard({
   forms = [],
@@ -20,7 +21,12 @@ export default function FormsDashboard({
   onCreateForm,
   onDuplicateForm,
   onDeleteForm,
-  onOpenResponder
+  onOpenResponder,
+  user = null,
+  onOpenAuth,
+  onUserLoggedOut,
+  onOpenApiKey,
+  hasApiKey = false
 }) {
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
 
@@ -145,8 +151,42 @@ export default function FormsDashboard({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
+        {/* Dashboard Top Navigation / Header Bar */}
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900 leading-tight">VoxForm AI Studio</h2>
+              <p className="text-[11px] text-slate-500">Voice-to-Text Intelligent Form Studio</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {onOpenApiKey && (
+              <button
+                type="button"
+                onClick={onOpenApiKey}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-indigo-50/70 hover:border-indigo-200 hover:text-indigo-600 text-xs font-medium transition-all cursor-pointer"
+                title="Configure Voice AI Speech Engine"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Voice AI</span>
+                <span className={`w-2 h-2 rounded-full ${hasApiKey ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'}`} />
+              </button>
+            )}
+
+            <UserProfileMenu
+              user={user}
+              onOpenAuth={onOpenAuth}
+              onUserLoggedOut={onUserLoggedOut}
+            />
+          </div>
+        </div>
+
         {/* Top Hero / Header Section */}
         <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl relative overflow-hidden">
           <div className="relative z-10 max-w-2xl space-y-3">
@@ -156,7 +196,7 @@ export default function FormsDashboard({
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              VoxForm AI Studio
+              {user ? `Welcome, ${user.name || 'Atabivajikpola'}` : 'Welcome, Atabivajikpola'}
             </h1>
 
             <p className="text-sm sm:text-base text-indigo-100/90 leading-relaxed">
@@ -170,7 +210,7 @@ export default function FormsDashboard({
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white text-indigo-700 font-bold text-xs shadow-md hover:bg-indigo-50 transition-all hover:scale-102 cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Create New Form</span>
+                <span>Create your form now</span>
               </button>
 
               <button
@@ -181,6 +221,16 @@ export default function FormsDashboard({
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                 <span>Choose Template</span>
               </button>
+
+              {!user && (
+                <button
+                  type="button"
+                  onClick={() => onOpenAuth('login')}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-semibold text-xs border border-white/30 backdrop-blur-xs transition-all cursor-pointer shadow-xs"
+                >
+                  <span>Sign In</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

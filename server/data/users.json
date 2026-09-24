@@ -1,0 +1,46 @@
+[
+  {
+    "id": "18ba5cc7-8f1b-4a1a-97e2-69cbf9da4819",
+    "name": "Habeeb Ajibola",
+    "email": "hbeebulah@gmail.com",
+    "passwordHash": "$2b$10$mrUgYlmj3eDg9GppykQar.0OTSxWuTA4i4.WFgF94i4w7AaA4vXKS",
+    "avatarUrl": "https://api.dicebear.com/7.x/initials/svg?seed=Habeeb%20Ajibola&backgroundColor=6366f1,4f46e5,7c3aed",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-09-24T21:55:29.150Z",
+    "updatedAt": "2026-09-24T21:55:29.150Z"
+  },
+  {
+    "id": "9bc03e20-3e51-465a-83e2-f100f42f53c8",
+    "googleId": "google-sub-998877",
+    "name": "Google Test Creator",
+    "email": "google.tester@gmail.com",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    "provider": "google",
+    "role": "creator",
+    "createdAt": "2026-09-24T21:50:34.718Z",
+    "lastLoginAt": "2026-09-24T21:50:34.718Z",
+    "updatedAt": "2026-09-24T21:50:34.718Z"
+  },
+  {
+    "id": "2c4772e6-9ae7-4cca-9973-60f9fcc916dc",
+    "name": "Sam Formsmith",
+    "email": "testcreator_1790286634607@example.com",
+    "passwordHash": "$2b$10$AEWLeI25agYbz5nhrelD/.E60nAnlJWUIz3BAbGeznz5eeO8Wxe3C",
+    "avatarUrl": "https://api.dicebear.com/7.x/initials/svg?seed=Sam%20Formsmith&backgroundColor=6366f1,4f46e5,7c3aed",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-09-24T21:50:34.699Z",
+    "updatedAt": "2026-09-24T21:50:34.699Z"
+  },
+  {
+    "id": "user-demo-creator",
+    "name": "Atabivajikpola",
+    "email": "creator@voxform.ai",
+    "passwordHash": "$2b$10$8ZBiAw4PQYdkN9pdwmFjkOBcpX4AcmkKfnolNBe1uBFzzQLpiLoqi",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-09-24T21:44:34.936Z"
+  }
+]

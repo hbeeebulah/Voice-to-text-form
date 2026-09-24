@@ -11,6 +11,7 @@ import {
   ChevronRight,
   FolderOpen
 } from 'lucide-react';
+import UserProfileMenu from '../auth/UserProfileMenu';
 
 export default function Navbar({
   formTitle,
@@ -25,7 +26,10 @@ export default function Navbar({
   onOpenApiKey,
   onGoToDashboard,
   hasApiKey = false,
-  mode = 'builder' // 'builder' | 'responder'
+  mode = 'builder', // 'builder' | 'responder'
+  user = null,
+  onOpenAuth,
+  onUserLoggedOut
 }) {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
@@ -183,6 +187,16 @@ export default function Navbar({
               <span>Edit Form</span>
             </button>
           )}
+
+          {/* User Profile / Login dropdown menu */}
+          <div className="ml-1 pl-1 border-l border-slate-200">
+            <UserProfileMenu
+              user={user}
+              onOpenAuth={onOpenAuth}
+              onUserLoggedOut={onUserLoggedOut}
+              onGoToDashboard={onGoToDashboard}
+            />
+          </div>
         </div>
       </div>
 

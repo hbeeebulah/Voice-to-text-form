@@ -5,6 +5,22 @@ const { v4: uuidv4 } = require('uuid');
 const DATA_DIR = path.join(__dirname, '../../data');
 const FORMS_FILE = path.join(DATA_DIR, 'forms.json');
 const RESPONSES_FILE = path.join(DATA_DIR, 'responses.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+
+// Default sample user so creators can test immediately (password: password123)
+const defaultSampleUsers = [
+  {
+    id: 'user-demo-creator',
+    name: 'Atabivajikpola',
+    email: 'creator@voxform.ai',
+    passwordHash: '$2b$10$8ZBiAw4PQYdkN9pdwmFjkOBcpX4AcmkKfnolNBe1uBFzzQLpiLoqi',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    provider: 'email',
+    role: 'creator',
+    createdAt: new Date().toISOString()
+  }
+];
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -225,6 +241,12 @@ class Database {
     if (!fs.existsSync(RESPONSES_FILE)) {
       fs.writeFileSync(RESPONSES_FILE, JSON.stringify(sampleResponses, null, 2), 'utf8');
     }
+    if (!fs.existsSync(USERS_FILE)) {
+      fs.writeFileSync(USERS_FILE, JSON.stringify(defaultSampleUsers, null, 2), 'utf8');
+    }
+    if (!fs.existsSync(SETTINGS_FILE)) {
+      fs.writeFileSync(SETTINGS_FILE, JSON.stringify({}, null, 2), 'utf8');
+    }
   }
 
   readForms() {
@@ -255,17 +277,51 @@ class Database {
     fs.writeFileSync(RESPONSES_FILE, JSON.stringify(responses, null, 2), 'utf8');
   }
 
+  readUsers() {
+    this.ensureJsonFiles();
+    try {
+      const data = fs.readFileSync(USERS_FILE, 'utf8');
+      return JSON.parse(data || '[]');
+    } catch {
+      return defaultSampleUsers;
+    }
+  }
+
+  writeUsers(users) {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+  }
+
+  readSettings() {
+    this.ensureJsonFiles();
+    try {
+      const data = fs.readFileSync(SETTINGS_FILE, 'utf8');
+      return JSON.parse(data || '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  writeSettings(settings) {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), 'utf8');
+  }
+
   // --- CRUD API METHODS ---
 
-  async getAllForms() {
+  async getAllForms(filter = {}) {
+    let forms = [];
     if (this.mode === 'mongo' && this.FormModel) {
-      return await this.FormModel.find().sort({ updatedAt: -1 }).lean();
-    }
-    if (this.mode === 'postgres' && this.pgPool) {
+      forms = await this.FormModel.find().sort({ updatedAt: -1 }).lean();
+    } else if (this.mode === 'postgres' && this.pgPool) {
       const res = await this.pgPool.query('SELECT data FROM forms ORDER BY (data->>\'updatedAt\') DESC');
-      return res.rows.map(r => r.data);
+      forms = res.rows.map(r => r.data);
+    } else {
+      forms = this.readForms().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
     }
-    return this.readForms().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+    if (filter && filter.creatorId) {
+      return forms.filter(f => !f.creatorId || f.creatorId === filter.creatorId);
+    }
+    return forms;
   }
 
   async getFormById(id) {
@@ -286,6 +342,9 @@ class Database {
     const formRecord = {
       ...formData,
       id,
+      creatorId: formData.creatorId !== undefined ? formData.creatorId : (formData.creatorId || null),
+      creatorName: formData.creatorName || null,
+      creatorEmail: formData.creatorEmail || null,
       updatedAt: now,
       createdAt: formData.createdAt || now
     };
@@ -393,6 +452,90 @@ class Database {
     responses = responses.filter(r => r.id !== id);
     this.writeResponses(responses);
     return true;
+  }
+
+  // --- USER AUTH CRUD METHODS ---
+
+  async getAllUsers() {
+    if (this.mode === 'mongo' && this.UserModel) {
+      return await this.UserModel.find().lean();
+    }
+    return this.readUsers();
+  }
+
+  async getUserById(id) {
+    if (this.mode === 'mongo' && this.UserModel) {
+      return await this.UserModel.findOne({ id }).lean();
+    }
+    const users = this.readUsers();
+    return users.find(u => u.id === id) || null;
+  }
+
+  async getUserByEmail(email) {
+    if (!email) return null;
+    const cleanEmail = email.trim().toLowerCase();
+    if (this.mode === 'mongo' && this.UserModel) {
+      return await this.UserModel.findOne({ email: cleanEmail }).lean();
+    }
+    const users = this.readUsers();
+    return users.find(u => u.email && u.email.toLowerCase() === cleanEmail) || null;
+  }
+
+  async getUserByGoogleId(googleId) {
+    if (!googleId) return null;
+    if (this.mode === 'mongo' && this.UserModel) {
+      return await this.UserModel.findOne({ googleId }).lean();
+    }
+    const users = this.readUsers();
+    return users.find(u => u.googleId === googleId) || null;
+  }
+
+  async saveUser(userData) {
+    const id = userData.id || uuidv4();
+    const record = {
+      ...userData,
+      id,
+      email: (userData.email || '').trim().toLowerCase(),
+      createdAt: userData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (this.mode === 'mongo' && this.UserModel) {
+      await this.UserModel.findOneAndUpdate({ id }, record, { upsert: true, new: true });
+      return record;
+    }
+
+    const users = this.readUsers();
+    const existingIndex = users.findIndex(u => u.id === id || (u.email && u.email.toLowerCase() === record.email));
+    if (existingIndex >= 0) {
+      users[existingIndex] = { ...users[existingIndex], ...record };
+    } else {
+      users.unshift(record);
+    }
+    this.writeUsers(users);
+    return record;
+  }
+
+  async updateUser(id, updates) {
+    const user = await this.getUserById(id);
+    if (!user) return null;
+    const updated = {
+      ...user,
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    return await this.saveUser(updated);
+  }
+
+  async getSettings() {
+    return this.readSettings();
+  }
+
+  async updateSettings(updates) {
+    const current = this.readSettings();
+    const merged = { ...current, ...updates };
+    this.writeSettings(merged);
+    return merged;
   }
 
   // Postgres helper

@@ -5,6 +5,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const formRoutes = require('./routes/formRoutes');
 const transcribeRoutes = require('./routes/transcribeRoutes');
+const authRoutes = require('./routes/authRoutes');
 const voiceAiService = require('./services/voiceAiService');
 
 const app = express();
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/forms', formRoutes);
 app.use('/api/transcribe', transcribeRoutes);
 

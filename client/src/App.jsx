@@ -7,6 +7,8 @@ import ThemeCustomizer from './components/theme/ThemeCustomizer';
 import FormsDashboard from './components/dashboard/FormsDashboard';
 import ApiKeyModal from './components/common/ApiKeyModal';
 import ShareModal from './components/common/ShareModal';
+import AuthModal from './components/auth/AuthModal';
+import LandingPage from './components/landing/LandingPage';
 import {
   fetchForms,
   fetchForm,
@@ -14,11 +16,12 @@ import {
   updateForm,
   deleteForm,
   duplicateForm,
-  getTranscribeStatus
+  getTranscribeStatus,
+  getCurrentUser
 } from './services/api';
 
 export default function App() {
-  const [view, setView] = useState('dashboard'); // 'dashboard' | 'builder' | 'responder'
+  const [view, setView] = useState('landing'); // 'landing' | 'dashboard' | 'builder' | 'responder'
   const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'responses' | 'theme'
   const [forms, setForms] = useState([]);
   const [currentForm, setCurrentForm] = useState(null);
@@ -28,6 +31,11 @@ export default function App() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isApiKeyOpen, setIsApiKeyOpen] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
+
+  // Authentication State
+  const [user, setUser] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState('login');
 
   const autosaveTimerRef = useRef(null);
   const activeFormIdRef = useRef(null);
@@ -49,8 +57,17 @@ export default function App() {
       } else if (hash.startsWith('#edit/')) {
         const id = hash.replace('#edit/', '');
         openFormById(id, 'builder');
-      } else {
+      } else if (hash === '#dashboard') {
         setView('dashboard');
+      } else if (hash === '#landing') {
+        setView('landing');
+      } else {
+        const token = localStorage.getItem('voxform_token');
+        if (token) {
+          setView('dashboard');
+        } else {
+          setView('landing');
+        }
       }
     };
 
@@ -61,12 +78,14 @@ export default function App() {
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const [formsData, transcribeStatus] = await Promise.all([
+      const [formsData, transcribeStatus, currentUser] = await Promise.all([
         fetchForms(),
-        getTranscribeStatus()
+        getTranscribeStatus(),
+        getCurrentUser()
       ]);
       setForms(formsData);
       setHasApiKey(Boolean(transcribeStatus.configured));
+      setUser(currentUser);
 
       // Check initial hash
       const hash = window.location.hash;
@@ -76,11 +95,10 @@ export default function App() {
       } else if (hash.startsWith('#edit/')) {
         const id = hash.replace('#edit/', '');
         await openFormById(id, 'builder');
-      } else if (formsData.length > 0) {
-        // Default to first form in builder for quick preview
-        const first = await fetchForm(formsData[0].id);
-        setCurrentForm(first);
-        setView('builder');
+      } else if (hash === '#dashboard' || (currentUser && hash !== '#landing')) {
+        setView('dashboard');
+      } else {
+        setView('landing');
       }
     } catch (err) {
       console.error('Initialization error:', err);
@@ -151,7 +169,12 @@ export default function App() {
   const handleCreateNewForm = async (templateData = {}) => {
     try {
       setLoading(true);
-      const created = await createForm(templateData);
+      const created = await createForm({
+        ...templateData,
+        creatorId: user?.id,
+        creatorName: user?.name,
+        creatorEmail: user?.email
+      });
       activeFormIdRef.current = created.id;
       setForms(prev => [created, ...prev]);
       setCurrentForm(created);
@@ -210,7 +233,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col antialiased">
       {/* Top Navbar (visible in builder and responder) */}
-      {view !== 'dashboard' && currentForm && (
+      {view !== 'dashboard' && view !== 'landing' && currentForm && (
         <Navbar
           formTitle={currentForm.title}
           onTitleChange={(title) => handleUpdateForm({ title })}
@@ -235,16 +258,49 @@ export default function App() {
           onOpenApiKey={() => setIsApiKeyOpen(true)}
           onGoToDashboard={() => {
             setView('dashboard');
-            window.location.hash = '';
+            window.location.hash = '#dashboard';
             fetchForms().then(setForms).catch(() => {});
           }}
           hasApiKey={hasApiKey}
           mode={view}
+          user={user}
+          onOpenAuth={(tab = 'login') => {
+            setAuthModalTab(tab);
+            setIsAuthModalOpen(true);
+          }}
+          onUserLoggedOut={() => {
+            setUser(null);
+            setView('landing');
+            window.location.hash = '#landing';
+          }}
         />
       )}
 
       {/* Main Content Area */}
       <main className="flex-1 relative flex">
+        {/* VIEW 0: LANDING PAGE */}
+        {view === 'landing' && (
+          <div className="flex-1">
+            <LandingPage
+              onOpenAuth={(tab = 'login') => {
+                setAuthModalTab(tab);
+                setIsAuthModalOpen(true);
+              }}
+              onOpenResponderDemo={() => {
+                if (forms.length > 0) {
+                  openFormById(forms[0].id, 'responder');
+                } else {
+                  openFormById('customer-feedback-demo', 'responder');
+                }
+              }}
+              onExploreDashboard={() => {
+                setView('dashboard');
+                window.location.hash = '#dashboard';
+              }}
+            />
+          </div>
+        )}
+
         {/* VIEW 1: FORMS DASHBOARD */}
         {view === 'dashboard' && (
           <div className="flex-1">
@@ -261,6 +317,18 @@ export default function App() {
               onDuplicateForm={handleDuplicate}
               onDeleteForm={handleDelete}
               onOpenResponder={(id) => openFormById(id, 'responder')}
+              user={user}
+              onOpenAuth={(tab = 'login') => {
+                setAuthModalTab(tab);
+                setIsAuthModalOpen(true);
+              }}
+              onUserLoggedOut={() => {
+                setUser(null);
+                setView('landing');
+                window.location.hash = '#landing';
+              }}
+              onOpenApiKey={() => setIsApiKeyOpen(true)}
+              hasApiKey={hasApiKey}
             />
           </div>
         )}
@@ -348,6 +416,22 @@ export default function App() {
         isOpen={isApiKeyOpen}
         onClose={() => setIsApiKeyOpen(false)}
         onKeyUpdated={() => setHasApiKey(true)}
+      />
+
+      {/* Auth Modal: Sign In / Create Account with Email for Form Creators */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        isModal={true}
+        initialTab={authModalTab}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={(authUser) => {
+          setUser(authUser);
+          setIsAuthModalOpen(false);
+          setView('dashboard');
+          window.location.hash = '#dashboard';
+          fetchForms().then(setForms).catch(() => {});
+        }}
+        onContinueAsGuest={() => setIsAuthModalOpen(false)}
       />
     </div>
   );

@@ -2,11 +2,13 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { v4: uuidv4 } = require('uuid');
+const { optionalAuth } = require('../middleware/auth');
 
-// GET /api/forms - List all forms
-router.get('/', async (req, res) => {
+// GET /api/forms - List forms (optionally filtered by creatorId)
+router.get('/', optionalAuth, async (req, res) => {
   try {
-    const forms = await db.getAllForms();
+    const creatorFilter = req.query.creatorId ? { creatorId: req.query.creatorId } : {};
+    const forms = await db.getAllForms(creatorFilter);
     // Return summary data for forms list
     const formSummaries = await Promise.all(
       forms.map(async (form) => {
@@ -16,6 +18,9 @@ router.get('/', async (req, res) => {
           title: form.title,
           description: form.description,
           theme: form.theme,
+          creatorId: form.creatorId || null,
+          creatorName: form.creatorName || null,
+          creatorEmail: form.creatorEmail || null,
           questionCount: form.questions ? form.questions.length : 0,
           responseCount: responses.length,
           updatedAt: form.updatedAt,
@@ -31,12 +36,15 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/forms - Create a new form
-router.post('/', async (req, res) => {
+router.post('/', optionalAuth, async (req, res) => {
   try {
     const newForm = {
       id: uuidv4(),
       title: req.body.title || 'Untitled Form',
       description: req.body.description || '',
+      creatorId: req.user ? req.user.id : (req.body.creatorId || null),
+      creatorName: req.user ? req.user.name : (req.body.creatorName || null),
+      creatorEmail: req.user ? req.user.email : (req.body.creatorEmail || null),
       theme: req.body.theme || {
         themeId: 'modern-minimalist',
         accentColor: '#3b82f6',
@@ -125,7 +133,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/forms/:id/duplicate - Duplicate form
-router.post('/:id/duplicate', async (req, res) => {
+router.post('/:id/duplicate', optionalAuth, async (req, res) => {
   try {
     const original = await db.getFormById(req.params.id);
     if (!original) {
@@ -136,6 +144,9 @@ router.post('/:id/duplicate', async (req, res) => {
       ...original,
       id: uuidv4(),
       title: `${original.title} (Copy)`,
+      creatorId: req.user ? req.user.id : original.creatorId,
+      creatorName: req.user ? req.user.name : original.creatorName,
+      creatorEmail: req.user ? req.user.email : original.creatorEmail,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
