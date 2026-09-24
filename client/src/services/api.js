@@ -12,13 +12,16 @@ export async function fetchForm(id) {
   return res.json();
 }
 
-export async function createForm(formData) {
+export async function createForm(formData = {}) {
   const res = await fetch(`${API_BASE}/forms`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(formData)
+    body: JSON.stringify(formData || {})
   });
-  if (!res.ok) throw new Error('Failed to create form');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to create form');
+  }
   return res.json();
 }
 

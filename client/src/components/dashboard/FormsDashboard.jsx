@@ -10,7 +10,8 @@ import {
   Calendar,
   MessageSquare,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  X
 } from 'lucide-react';
 
 export default function FormsDashboard({
@@ -132,7 +133,7 @@ export default function FormsDashboard({
 
   const handleCreateWithTemplate = (template) => {
     onCreateForm({
-      title: template.title,
+      title: template.title === 'Blank Form' ? 'Untitled Form' : template.title,
       description: template.description,
       theme: {
         themeId: template.themeId,
@@ -164,11 +165,21 @@ export default function FormsDashboard({
 
             <div className="pt-3 flex flex-wrap items-center gap-3">
               <button
-                onClick={() => setTemplateModalOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white text-indigo-700 font-bold text-xs shadow-md hover:bg-indigo-50 transition-all hover:scale-102"
+                type="button"
+                onClick={() => onCreateForm({})}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white text-indigo-700 font-bold text-xs shadow-md hover:bg-indigo-50 transition-all hover:scale-102 cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Create New Form</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTemplateModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 backdrop-blur-xs transition-all cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Choose Template</span>
               </button>
             </div>
           </div>
@@ -219,13 +230,31 @@ export default function FormsDashboard({
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
               Your Forms ({forms.length})
             </h2>
+            <button
+              type="button"
+              onClick={() => onCreateForm({})}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>New Form</span>
+            </button>
           </div>
 
           {forms.length === 0 ? (
-            <div className="p-12 bg-white rounded-3xl border border-slate-200 text-center space-y-3">
-              <FileText className="w-10 h-10 text-slate-300 mx-auto" />
-              <h3 className="font-bold text-slate-700">No forms created yet</h3>
-              <p className="text-xs text-slate-500">Pick a template above or create your first voice form!</p>
+            <div className="p-12 bg-white rounded-3xl border border-slate-200 text-center space-y-4">
+              <FileText className="w-12 h-12 text-slate-300 mx-auto" />
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">No forms created yet</h3>
+                <p className="text-xs text-slate-500 mt-1">Pick a template above or create your first voice form from scratch!</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onCreateForm({})}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Create New Form</span>
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -323,6 +352,57 @@ export default function FormsDashboard({
           )}
         </div>
       </div>
+
+      {/* Template Selection Modal */}
+      {templateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Choose a Template</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Start with a pre-configured template or build from scratch</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTemplateModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {templates.map((tpl, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleCreateWithTemplate(tpl)}
+                  className="p-4 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 hover:shadow-md text-left transition-all group flex flex-col justify-between cursor-pointer"
+                >
+                  <div>
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white mb-3 shadow-xs"
+                      style={{ backgroundColor: tpl.accentColor }}
+                    >
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+                      {tpl.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                      {tpl.description}
+                    </p>
+                  </div>
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-semibold">
+                    <span>Use this template</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

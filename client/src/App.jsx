@@ -30,6 +30,11 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState(false);
 
   const autosaveTimerRef = useRef(null);
+  const activeFormIdRef = useRef(null);
+
+  useEffect(() => {
+    activeFormIdRef.current = currentForm?.id;
+  }, [currentForm]);
 
   // Initialize and check hash routing
   useEffect(() => {
@@ -44,6 +49,8 @@ export default function App() {
       } else if (hash.startsWith('#edit/')) {
         const id = hash.replace('#edit/', '');
         openFormById(id, 'builder');
+      } else {
+        setView('dashboard');
       }
     };
 
@@ -83,14 +90,25 @@ export default function App() {
   };
 
   const openFormById = async (id, targetView = 'builder') => {
+    if (activeFormIdRef.current === id && currentForm) {
+      setView(targetView);
+      if (targetView === 'builder' && window.location.hash !== `#edit/${id}`) {
+        window.location.hash = `#edit/${id}`;
+      } else if (targetView === 'responder' && window.location.hash !== `#form/${id}`) {
+        window.location.hash = `#form/${id}`;
+      }
+      return;
+    }
+
     try {
       setLoading(true);
       const form = await fetchForm(id);
       setCurrentForm(form);
+      activeFormIdRef.current = form.id;
       setView(targetView);
-      if (targetView === 'builder') {
+      if (targetView === 'builder' && window.location.hash !== `#edit/${id}`) {
         window.location.hash = `#edit/${id}`;
-      } else if (targetView === 'responder') {
+      } else if (targetView === 'responder' && window.location.hash !== `#form/${id}`) {
         window.location.hash = `#form/${id}`;
       }
     } catch (err) {
@@ -134,6 +152,7 @@ export default function App() {
     try {
       setLoading(true);
       const created = await createForm(templateData);
+      activeFormIdRef.current = created.id;
       setForms(prev => [created, ...prev]);
       setCurrentForm(created);
       setView('builder');
