@@ -1,0 +1,191 @@
+[
+  {
+    "id": "70af0e20-41e6-4e1e-bf40-c4a2047a8d21",
+    "title": "Daily Voice Journal & Standup",
+    "description": "Frictionless daily reflection powered by speech-to-text dictation",
+    "theme": {
+      "themeId": "warm-pastel",
+      "accentColor": "#f43f5e"
+    },
+    "questions": [
+      {
+        "id": "q-1790255802461-1",
+        "title": "What are your primary goals for today?",
+        "type": "paragraph",
+        "required": true,
+        "voiceEnabled": true
+      },
+      {
+        "id": "q-1790255802461-2",
+        "title": "Any blockers or challenges in your way?",
+        "type": "paragraph",
+        "required": false,
+        "voiceEnabled": true
+      },
+      {
+        "id": "q-1790255802461-3",
+        "title": "Current energy & focus level",
+        "type": "linear_scale",
+        "required": false,
+        "scaleConfig": {
+          "min": 1,
+          "max": 10,
+          "minLabel": "Low Energy",
+          "maxLabel": "Peak Focus"
+        }
+      }
+    ],
+    "settings": {
+      "allowMultipleSubmissions": true,
+      "showProgressBar": true,
+      "confirmationMessage": "Your response has been recorded."
+    },
+    "createdAt": "2026-09-24T13:17:00.049Z",
+    "updatedAt": "2026-09-24T13:17:00.049Z"
+  },
+  {
+    "id": "c738fe0b-87c9-4eca-95c1-6986ec0a2dea",
+    "title": "Customer Audio Feedback Survey",
+    "description": "Collect detailed spoken opinions, feature ratings, and satisfaction scores",
+    "theme": {
+      "themeId": "vibrant-gradient",
+      "accentColor": "#6366f1"
+    },
+    "questions": [
+      {
+        "id": "q-1790255764752-1",
+        "title": "What is your full name?",
+        "type": "short_answer",
+        "required": true,
+        "voiceEnabled": true
+      },
+      {
+        "id": "q-1790255764752-2",
+        "title": "Overall satisfaction with our service",
+        "type": "linear_scale",
+        "required": true,
+        "scaleConfig": {
+          "min": 1,
+          "max": 5,
+          "minLabel": "Needs Improvement",
+          "maxLabel": "Delighted"
+        }
+      },
+      {
+        "id": "q-1790255764752-3",
+        "title": "What did you like most or what could we improve?",
+        "description": "Feel free to speak your thoughts with Gemini voice dictation",
+        "type": "paragraph",
+        "required": true,
+        "voiceEnabled": true
+      }
+    ],
+    "settings": {
+      "allowMultipleSubmissions": true,
+      "showProgressBar": true,
+      "confirmationMessage": "Your response has been recorded."
+    },
+    "createdAt": "2026-09-24T13:16:30.575Z",
+    "updatedAt": "2026-09-24T13:16:30.575Z"
+  },
+  {
+    "id": "customer-feedback-demo",
+    "title": "Product Experience & Audio Feedback Survey",
+    "description": "Thank you for taking a few moments to share your thoughts with us. Feel free to use the microphone button to dictate your thoughts effortlessly!",
+    "theme": {
+      "themeId": "dark-executive",
+      "accentColor": "#10b981",
+      "headerColor": "#059669",
+      "backgroundColor": "#0f172a",
+      "fontHeader": "Space-Grotesk",
+      "fontBody": "Inter",
+      "headerBannerUrl": "",
+      "cardRoundness": "rounded-2xl",
+      "buttonStyle": "rounded-xl",
+      "cardBackground": "#1e293b",
+      "textColor": "#f8fafc",
+      "bannerGradient": "linear-gradient(135deg, #0f172a 0%, #134e4a 50%, #064e3b 100%)"
+    },
+    "questions": [
+      {
+        "id": "q-name",
+        "title": "What is your full name?",
+        "description": "Your name or organization",
+        "type": "short_answer",
+        "required": true,
+        "voiceEnabled": true,
+        "placeholder": "e.g. Alex Morgan (speak or type)"
+      },
+      {
+        "id": "q-role",
+        "title": "What best describes your current role?",
+        "description": "Select the category that matches closest",
+        "type": "multiple_choice",
+        "required": true,
+        "options": [
+          "Software Engineer / Developer",
+          "Product Manager / Designer",
+          "Business Executive / Founder",
+          "Researcher / Academic",
+          "Other"
+        ]
+      },
+      {
+        "id": "q-satisfaction",
+        "title": "Overall, how satisfied are you with our platform?",
+        "description": "Rate on a scale from 1 (Needs Improvement) to 5 (Delighted)",
+        "type": "linear_scale",
+        "required": true,
+        "scaleConfig": {
+          "min": 1,
+          "max": 5,
+          "minLabel": "Needs Improvement",
+          "maxLabel": "Delighted"
+        }
+      },
+      {
+        "id": "q-features",
+        "title": "Which features do you find most valuable?",
+        "description": "Select all that apply",
+        "type": "checkboxes",
+        "required": false,
+        "options": [
+          "Voice-to-Text Multimodal Dictation",
+          "Real-time Audio Waveform Visualizer",
+          "Customizable Themes & Typography",
+          "Interactive Analytics Dashboard",
+          "Instant CSV / JSON Data Exports"
+        ]
+      },
+      {
+        "id": "q-experience-detailed",
+        "title": "Describe your favorite experience or any challenges you faced",
+        "description": "Click the microphone button to dictate naturally! Gemini will automatically remove filler words and format your response beautifully.",
+        "type": "paragraph",
+        "required": true,
+        "voiceEnabled": true,
+        "placeholder": "Share your detailed thoughts by speaking or typing..."
+      },
+      {
+        "id": "q-recommend",
+        "title": "How likely are you to recommend us to a colleague?",
+        "description": "Choose a frequency tier",
+        "type": "dropdown",
+        "required": false,
+        "options": [
+          "Extremely likely (Definitely)",
+          "Very likely",
+          "Somewhat likely",
+          "Not likely at this time"
+        ]
+      }
+    ],
+    "settings": {
+      "allowMultipleSubmissions": true,
+      "showProgressBar": true,
+      "confirmationMessage": "Thank you! Your response has been recorded successfully. Our team has received your feedback."
+    },
+    "createdAt": "2026-09-24T12:58:44.255Z",
+    "updatedAt": "2026-09-24T13:11:27.446Z"
+  }
+]

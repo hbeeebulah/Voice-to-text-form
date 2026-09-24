@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Uncomment below to connect to PostgreSQL container
+      # - DATABASE_URL=postgresql://postgres:postgres@db:5432/voxform
+      # Uncomment below to connect to MongoDB container
+      # - MONGODB_URI=mongodb://mongo:27017/voxform
+    volumes:
+      - ./server/data:/app/server/data
+    restart: unless-stopped
+
+  # Optional Postgres service
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: voxform
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+
+# volumes:
+#   pgdata:

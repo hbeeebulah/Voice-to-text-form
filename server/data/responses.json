@@ -1,0 +1,84 @@
+[
+  {
+    "id": "1386853f-ba1e-464c-99b8-76eb921f3ade",
+    "formId": "customer-feedback-demo",
+    "answers": {
+      "q-name": "Taylor Swift",
+      "q-role": "Software Engineer / Developer",
+      "q-satisfaction": 5,
+      "q-features": [
+        "Voice-to-Text Multimodal Dictation",
+        "Customizable Themes & Typography"
+      ],
+      "q-experience-detailed": "The Gemini multimodal dictation converted my speech into clean sentences with zero filler words.",
+      "q-recommend": "Extremely likely (Definitely)"
+    },
+    "voiceFieldStats": {
+      "q-name": false,
+      "q-experience-detailed": true
+    },
+    "submittedAt": "2026-09-24T13:15:23.428Z"
+  },
+  {
+    "id": "resp-1",
+    "formId": "customer-feedback-demo",
+    "submittedAt": "2026-09-22T12:58:44.256Z",
+    "answers": {
+      "q-name": "Dr. Sarah Jenkins",
+      "q-role": "Researcher / Academic",
+      "q-satisfaction": 5,
+      "q-features": [
+        "Voice-to-Text Multimodal Dictation",
+        "Real-time Audio Waveform Visualizer",
+        "Interactive Analytics Dashboard"
+      ],
+      "q-experience-detailed": "The voice dictation is an absolute game-changer for field studies. Usually, taking notes while examining data is tedious, but being able to speak naturally without worrying about filler words made documentation effortless.",
+      "q-recommend": "Extremely likely (Definitely)"
+    },
+    "voiceFieldStats": {
+      "q-name": false,
+      "q-experience-detailed": true
+    }
+  },
+  {
+    "id": "resp-2",
+    "formId": "customer-feedback-demo",
+    "submittedAt": "2026-09-23T18:58:44.256Z",
+    "answers": {
+      "q-name": "Marcus Vance",
+      "q-role": "Software Engineer / Developer",
+      "q-satisfaction": 4,
+      "q-features": [
+        "Voice-to-Text Multimodal Dictation",
+        "Instant CSV / JSON Data Exports"
+      ],
+      "q-experience-detailed": "Form creation was intuitive and clean. Drag-and-drop reordering felt snappy and the Gemini transcription was remarkably quick at formatting clean sentences.",
+      "q-recommend": "Very likely"
+    },
+    "voiceFieldStats": {
+      "q-name": false,
+      "q-experience-detailed": true
+    }
+  },
+  {
+    "id": "resp-3",
+    "formId": "customer-feedback-demo",
+    "submittedAt": "2026-09-24T07:58:44.256Z",
+    "answers": {
+      "q-name": "Elena Rostova",
+      "q-role": "Product Manager / Designer",
+      "q-satisfaction": 5,
+      "q-features": [
+        "Voice-to-Text Multimodal Dictation",
+        "Customizable Themes & Typography",
+        "Interactive Analytics Dashboard"
+      ],
+      "q-experience-detailed": "I tested the voice dictation with several rapid paragraphs and it handled pauses, capitalization, and punctuation seamlessly. The custom themes like Warm Pastel and Dark Executive look stunning.",
+      "q-recommend": "Extremely likely (Definitely)"
+    },
+    "voiceFieldStats": {
+      "q-name": true,
+      "q-experience-detailed": true
+    }
+  }
+]
