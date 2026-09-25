@@ -12,7 +12,7 @@ const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const defaultSampleUsers = [
   {
     id: 'user-demo-creator',
-    name: 'Atabivajikpola',
+    name: 'John Doe',
     email: 'creator@voxform.ai',
     passwordHash: '$2b$10$8ZBiAw4PQYdkN9pdwmFjkOBcpX4AcmkKfnolNBe1uBFzzQLpiLoqi',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',

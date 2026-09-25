@@ -213,7 +213,7 @@ router.post('/demo-login', async (req, res) => {
     if (!demoUser) {
       demoUser = {
         id: 'user-demo-creator',
-        name: 'Atabivajikpola',
+        name: 'John Doe',
         email: 'creator@voxform.ai',
         avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
         provider: 'email',
