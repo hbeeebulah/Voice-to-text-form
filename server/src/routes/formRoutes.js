@@ -1,8 +1,55 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const db = require('../db');
 const { v4: uuidv4 } = require('uuid');
 const { optionalAuth } = require('../middleware/auth');
+
+// Multer storage for document attachments
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const safeBase = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `${uniqueSuffix}-${safeBase}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 } // 25 MB max limit
+});
+
+// POST /api/forms/upload - Upload an attached document/file
+router.post('/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided for upload.' });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({
+      success: true,
+      fileName: req.file.originalname,
+      fileSize: req.file.size,
+      fileType: req.file.mimetype,
+      fileUrl,
+      storedName: req.file.filename
+    });
+  } catch (err) {
+    console.error('[Upload] Error:', err);
+    res.status(500).json({ error: 'File upload failed.' });
+  }
+});
 
 // GET /api/forms - List forms (optionally filtered by creatorId)
 router.get('/', optionalAuth, async (req, res) => {
@@ -349,6 +396,26 @@ router.get('/:id/analytics', async (req, res) => {
         };
       }
 
+      // File / Document Attachment type
+      if (q.type === 'file_upload') {
+        const fileResponses = responses
+          .map(r => ({
+            id: r.id,
+            file: r.answers?.[q.id],
+            submittedAt: r.submittedAt
+          }))
+          .filter(item => item.file !== undefined && item.file !== null && item.file !== '');
+
+        return {
+          questionId: q.id,
+          title: q.title,
+          type: q.type,
+          fileConfig: q.fileConfig || {},
+          responseCount: fileResponses.length,
+          files: fileResponses.slice(0, 50)
+        };
+      }
+
       // Short Answer & Paragraph types
       const textResponses = responses.map(r => ({
         id: r.id,
@@ -410,6 +477,8 @@ router.get('/:id/export/csv', async (req, res) => {
         let val = r.answers?.[q.id];
         if (Array.isArray(val)) {
           val = val.join('; ');
+        } else if (val && typeof val === 'object') {
+          val = val.fileName || val.name || val.fileUrl || JSON.stringify(val);
         } else if (val === undefined || val === null) {
           val = '';
         } else {

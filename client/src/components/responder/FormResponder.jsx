@@ -8,10 +8,54 @@ import {
   ChevronDown,
   ArrowRight,
   Eye,
-  Edit3
+  Edit3,
+  Paperclip,
+  UploadCloud,
+  FileText,
+  Download,
+  X,
+  File
 } from 'lucide-react';
 import AudioRecorder from '../common/AudioRecorder';
-import { submitResponse } from '../../services/api';
+import { submitResponse, uploadFile } from '../../services/api';
+
+// Format bytes into human-readable string
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// Get icon corresponding to file type/extension
+function getFileIcon(type = '', name = '') {
+  const ext = (name || '').split('.').pop()?.toLowerCase();
+  if (type.includes('pdf') || ext === 'pdf') {
+    return <FileText className="w-5 h-5 text-red-500" />;
+  }
+  if (type.includes('image') || ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext)) {
+    return <FileText className="w-5 h-5 text-emerald-500" />;
+  }
+  if (type.includes('sheet') || type.includes('csv') || ['xlsx', 'xls', 'csv'].includes(ext)) {
+    return <FileText className="w-5 h-5 text-teal-500" />;
+  }
+  return <Paperclip className="w-5 h-5 text-indigo-500" />;
+}
+
+// Compute accept attribute for file input
+function getAcceptedMimeTypes(allowedTypes) {
+  if (allowedTypes === 'documents') {
+    return '.pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain';
+  }
+  if (allowedTypes === 'images') {
+    return 'image/*,.png,.jpg,.jpeg,.webp';
+  }
+  if (allowedTypes === 'spreadsheets') {
+    return '.xlsx,.xls,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv';
+  }
+  return '*/*';
+}
 
 export default function FormResponder({
   form,
@@ -25,6 +69,8 @@ export default function FormResponder({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
+  const [uploadingFiles, setUploadingFiles] = useState({});
+  const [dragOverQuestionId, setDragOverQuestionId] = useState(null);
 
   const theme = form.theme || {};
   const questions = form.questions || [];
@@ -72,6 +118,66 @@ export default function FormResponder({
     ? Math.round((answeredCount / questions.length) * 100)
     : 0;
 
+  // Handle file attachment selection and upload
+  const handleFileSelect = async (qId, file, fileConfig = {}) => {
+    if (!file) return;
+
+    const maxSizeMB = fileConfig.maxSizeMB || 10;
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+    if (file.size > maxSizeBytes) {
+      setErrors(prev => ({
+        ...prev,
+        [qId]: `File size (${formatFileSize(file.size)}) exceeds the maximum allowed limit of ${maxSizeMB} MB.`
+      }));
+      return;
+    }
+
+    setUploadingFiles(prev => ({ ...prev, [qId]: true }));
+    if (errors[qId]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[qId];
+        return next;
+      });
+    }
+
+    try {
+      // 1. Read base64 dataUrl for instant client-side preview & fallback
+      const reader = new FileReader();
+      const dataUrlPromise = new Promise((resolve) => {
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+      });
+
+      // 2. Upload to backend if available
+      let serverResult = null;
+      try {
+        serverResult = await uploadFile(file);
+      } catch (uploadErr) {
+        console.warn('[File Upload] Using dataUrl fallback:', uploadErr.message);
+      }
+
+      const dataUrl = await dataUrlPromise;
+
+      const fileRecord = {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type || 'application/octet-stream',
+        fileUrl: serverResult?.fileUrl || '',
+        dataUrl: dataUrl || ''
+      };
+
+      handleAnswerChange(qId, fileRecord);
+    } catch (err) {
+      console.error('[File Select] Error:', err);
+      setErrors(prev => ({ ...prev, [qId]: 'Failed to process attached file.' }));
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [qId]: false }));
+    }
+  };
+
   // Validate and submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,7 +187,7 @@ export default function FormResponder({
       if (q.required) {
         const val = answers[q.id];
         if (val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0)) {
-          newErrors[q.id] = 'This question is required.';
+          newErrors[q.id] = q.type === 'file_upload' ? 'Please attach a document or file.' : 'This question is required.';
         }
       }
     });
@@ -189,7 +295,16 @@ export default function FormResponder({
                     <div key={q.id} className="space-y-1">
                       <p className="font-semibold text-slate-700">{q.title}</p>
                       <p className="text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
-                        {Array.isArray(val) ? val.join(', ') : (val || <span className="italic text-slate-400">No answer provided</span>)}
+                        {Array.isArray(val) ? (
+                          val.join(', ')
+                        ) : val && typeof val === 'object' && val.fileName ? (
+                          <span className="inline-flex items-center gap-1.5 font-medium text-slate-800">
+                            <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
+                            {val.fileName} ({formatFileSize(val.fileSize)})
+                          </span>
+                        ) : (
+                          val || <span className="italic text-slate-400">No answer provided</span>
+                        )}
                       </p>
                     </div>
                   );
@@ -483,6 +598,125 @@ export default function FormResponder({
                           );
                         })}
                       </div>
+                    </div>
+                  )}
+
+                  {/* File / Document Attachment */}
+                  {q.type === 'file_upload' && (
+                    <div className="space-y-3">
+                      {val && typeof val === 'object' && val.fileName ? (
+                        /* Attached File Card */
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                              {getFileIcon(val.fileType, val.fileName)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-800 truncate" title={val.fileName}>
+                                {val.fileName}
+                              </p>
+                              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                                <span>{formatFileSize(val.fileSize)}</span>
+                                <span>•</span>
+                                <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                                  <Check className="w-3 h-3 stroke-[3]" />
+                                  Attached
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {(val.dataUrl || val.fileUrl) && (
+                              <a
+                                href={val.dataUrl || val.fileUrl}
+                                download={val.fileName}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-colors"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Download</span>
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleAnswerChange(q.id, null)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer"
+                              title="Remove attached document"
+                            >
+                              <X className="w-4 h-4" />
+                              <span className="sm:hidden">Remove</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Upload Dropzone */
+                        <div
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            setDragOverQuestionId(q.id);
+                          }}
+                          onDragLeave={() => setDragOverQuestionId(null)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            setDragOverQuestionId(null);
+                            const file = e.dataTransfer?.files?.[0];
+                            if (file) handleFileSelect(q.id, file, q.fileConfig);
+                          }}
+                          className={`relative border-2 border-dashed rounded-2xl p-6 sm:p-7 text-center transition-all ${
+                            dragOverQuestionId === q.id
+                              ? 'border-indigo-500 bg-indigo-50/60 scale-[1.01]'
+                              : 'border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50'
+                          }`}
+                        >
+                          <input
+                            type="file"
+                            id={`file-input-${q.id}`}
+                            accept={getAcceptedMimeTypes(q.fileConfig?.allowedTypes)}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleFileSelect(q.id, file, q.fileConfig);
+                            }}
+                            className="hidden"
+                          />
+
+                          {uploadingFiles[q.id] ? (
+                            <div className="flex flex-col items-center justify-center py-4 space-y-2">
+                              <div className="w-7 h-7 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                              <p className="text-xs font-semibold text-slate-700">Attaching document...</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto text-indigo-600 shadow-2xs">
+                                <UploadCloud className="w-6 h-6 stroke-[2]" />
+                              </div>
+
+                              <div>
+                                <p className="text-xs font-bold text-slate-800">
+                                  Drag & drop document here, or browse
+                                </p>
+                                <p className="text-[11px] text-slate-500 mt-0.5">
+                                  {q.fileConfig?.allowedTypes === 'documents' && 'PDF, DOC, DOCX, TXT'}
+                                  {q.fileConfig?.allowedTypes === 'images' && 'PNG, JPG, JPEG, WEBP'}
+                                  {q.fileConfig?.allowedTypes === 'spreadsheets' && 'XLSX, XLS, CSV'}
+                                  {(!q.fileConfig?.allowedTypes || q.fileConfig?.allowedTypes === 'all') && 'PDF, Word, Excel, Images, or Text'}
+                                  {' '}up to {q.fileConfig?.maxSizeMB || 10} MB
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => document.getElementById(`file-input-${q.id}`)?.click()}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs border border-slate-300 shadow-2xs transition-all hover:scale-102 cursor-pointer"
+                              >
+                                <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
+                                <span>{q.fileConfig?.buttonLabel || 'Attach File'}</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

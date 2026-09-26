@@ -13,11 +13,16 @@
     "questions": [
       {
         "id": "q-1790286941409-1",
-        "title": "What would you like to share today?",
+        "title": "Attach your CV",
         "description": "Type or click the microphone to speak",
-        "type": "paragraph",
-        "required": false,
-        "voiceEnabled": true
+        "type": "file_upload",
+        "required": true,
+        "voiceEnabled": false,
+        "fileConfig": {
+          "maxSizeMB": 10,
+          "allowedTypes": "all",
+          "buttonLabel": "Attach File"
+        }
       }
     ],
     "settings": {
@@ -26,7 +31,7 @@
       "confirmationMessage": "Your response has been recorded."
     },
     "createdAt": "2026-09-24T21:57:19.730Z",
-    "updatedAt": "2026-09-24T21:57:19.730Z"
+    "updatedAt": "2026-09-26T09:10:53.202Z"
   },
   {
     "id": "eae0d771-fab0-4218-8d5e-651922296eee",
@@ -244,6 +249,18 @@
           "Somewhat likely",
           "Not likely at this time"
         ]
+      },
+      {
+        "id": "q-attachment",
+        "title": "Attach Document or Supporting Files",
+        "description": "Upload a PDF, document, spreadsheet, or screenshot (optional)",
+        "type": "file_upload",
+        "required": false,
+        "fileConfig": {
+          "buttonLabel": "Attach File",
+          "allowedTypes": "all",
+          "maxSizeMB": 10
+        }
       }
     ],
     "settings": {

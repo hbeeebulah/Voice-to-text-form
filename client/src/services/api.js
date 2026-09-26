@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '') + '/api';
 
 // --- AUTH TOKEN & USER STATE HELPERS ---
 
@@ -286,3 +286,22 @@ export function getExportCsvUrl(formId) {
 export function getExportJsonUrl(formId) {
   return `${API_BASE}/forms/${formId}/export/json`;
 }
+
+// Upload document attachment
+export async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE}/forms/upload`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: formData
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to upload document');
+  }
+  return data;
+}
+

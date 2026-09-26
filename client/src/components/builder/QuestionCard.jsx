@@ -15,7 +15,11 @@ import {
   Plus,
   X,
   HelpCircle,
-  Mic
+  Mic,
+  Paperclip,
+  UploadCloud,
+  FileText,
+  FileUp
 } from 'lucide-react';
 import { QUESTION_TYPES } from '../../constants/themes';
 import AudioRecorder from '../common/AudioRecorder';
@@ -53,6 +57,14 @@ export default function QuestionCard({
         max: 5,
         minLabel: 'Low',
         maxLabel: 'High'
+      };
+    }
+
+    if (newType === 'file_upload' && !question.fileConfig) {
+      updates.fileConfig = {
+        maxSizeMB: 10,
+        allowedTypes: 'all',
+        buttonLabel: 'Attach File'
       };
     }
 
@@ -329,6 +341,101 @@ export default function QuestionCard({
                     placeholder="Max Label"
                     className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
                   />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* File / Document Upload Configuration & Preview */}
+          {question.type === 'file_upload' && (
+            <div className="space-y-4 pt-1">
+              {/* Creator Settings Bar */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                  <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Document Attachment Settings</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      Button Label
+                    </label>
+                    <input
+                      type="text"
+                      value={question.fileConfig?.buttonLabel || 'Attach File'}
+                      onChange={(e) => onUpdate({
+                        fileConfig: {
+                          ...(question.fileConfig || {}),
+                          buttonLabel: e.target.value
+                        }
+                      })}
+                      placeholder="e.g. Attach File, Upload Document"
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      Allowed Formats
+                    </label>
+                    <select
+                      value={question.fileConfig?.allowedTypes || 'all'}
+                      onChange={(e) => onUpdate({
+                        fileConfig: {
+                          ...(question.fileConfig || {}),
+                          allowedTypes: e.target.value
+                        }
+                      })}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value="all">All Formats (PDF, Docs, Images, Sheets)</option>
+                      <option value="documents">Documents (.pdf, .doc, .docx, .txt)</option>
+                      <option value="images">Images (.png, .jpg, .jpeg, .webp)</option>
+                      <option value="spreadsheets">Spreadsheets (.xlsx, .xls, .csv)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
+                      Max File Size
+                    </label>
+                    <select
+                      value={question.fileConfig?.maxSizeMB || 10}
+                      onChange={(e) => onUpdate({
+                        fileConfig: {
+                          ...(question.fileConfig || {}),
+                          maxSizeMB: Number(e.target.value)
+                        }
+                      })}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                    >
+                      <option value={5}>5 MB</option>
+                      <option value={10}>10 MB</option>
+                      <option value={25}>25 MB</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Preview Dropzone */}
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto mb-2.5 text-indigo-600">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
+                <p className="text-xs font-semibold text-slate-700 mb-1">
+                  Drag and drop document here, or browse
+                </p>
+                <p className="text-[11px] text-slate-400 mb-3">
+                  {question.fileConfig?.allowedTypes === 'documents' && 'PDF, DOC, DOCX, TXT'}
+                  {question.fileConfig?.allowedTypes === 'images' && 'PNG, JPG, JPEG, WEBP'}
+                  {question.fileConfig?.allowedTypes === 'spreadsheets' && 'XLSX, XLS, CSV'}
+                  {(!question.fileConfig?.allowedTypes || question.fileConfig?.allowedTypes === 'all') && 'PDF, Word, Excel, Images, or Text'}
+                  {' '}up to {question.fileConfig?.maxSizeMB || 10} MB
+                </p>
+                <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-slate-200 shadow-2xs text-xs font-bold text-slate-700 pointer-events-none">
+                  <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>{question.fileConfig?.buttonLabel || 'Attach File'}</span>
                 </div>
               </div>
             </div>

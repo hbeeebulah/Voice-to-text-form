@@ -13,7 +13,9 @@ import {
   UserCheck,
   RefreshCw,
   Trash2,
-  CheckCircle2
+  CheckCircle2,
+  Paperclip,
+  FileText
 } from 'lucide-react';
 import {
   fetchAnalytics,
@@ -21,6 +23,14 @@ import {
   getExportCsvUrl,
   getExportJsonUrl
 } from '../../services/api';
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
 
 export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
   const [analytics, setAnalytics] = useState(null);
@@ -357,6 +367,66 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
                   </div>
                 </div>
               )}
+
+              {/* File / Document Attachment Analytics */}
+              {qAnalytics.type === 'file_upload' && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between px-3 py-2 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs text-indigo-900">
+                    <span className="font-medium flex items-center gap-1.5">
+                      <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
+                      Attached Documents
+                    </span>
+                    <span className="font-bold px-2 py-0.5 rounded-md bg-white text-indigo-700 shadow-2xs border border-indigo-200">
+                      {qAnalytics.responseCount} {qAnalytics.responseCount === 1 ? 'file' : 'files'} uploaded
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {(qAnalytics.files || []).length > 0 ? (
+                      (qAnalytics.files || []).map((item, fIdx) => {
+                        const fileObj = item.file || {};
+                        const fileName = fileObj.fileName || fileObj.name || 'document';
+                        const fileUrl = fileObj.dataUrl || fileObj.fileUrl;
+                        return (
+                          <div
+                            key={item.id || fIdx}
+                            className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between gap-3 hover:bg-white transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                                <FileText className="w-4 h-4 text-indigo-600" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-slate-800 truncate" title={fileName}>
+                                  {fileName}
+                                </p>
+                                <p className="text-[10px] text-slate-400">
+                                  {formatFileSize(fileObj.fileSize)} • {new Date(item.submittedAt).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+
+                            {fileUrl && (
+                              <a
+                                href={fileUrl}
+                                download={fileName}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-colors shrink-0"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Download</span>
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="text-xs italic text-slate-400 py-2">No documents attached yet.</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -424,6 +494,35 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
                           <li key={i}>{item}</li>
                         ))}
                       </ul>
+                    ) : answer && typeof answer === 'object' && (answer.fileName || answer.name) ? (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-1">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                            <FileText className="w-4 h-4 text-indigo-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-800 truncate" title={answer.fileName || answer.name}>
+                              {answer.fileName || answer.name}
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              {formatFileSize(answer.fileSize)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {(answer.dataUrl || answer.fileUrl) && (
+                          <a
+                            href={answer.dataUrl || answer.fileUrl}
+                            download={answer.fileName || answer.name}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-colors shrink-0"
+                          >
+                            <Download className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Download File</span>
+                          </a>
+                        )}
+                      </div>
                     ) : answer !== undefined && answer !== null && answer !== '' ? (
                       <p className="whitespace-pre-line leading-relaxed">{String(answer)}</p>
                     ) : (

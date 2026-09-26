@@ -134,6 +134,41 @@ export default function FormsDashboard({
           voiceEnabled: true
         }
       ]
+    },
+    {
+      title: 'Project Proposal & Document Submission',
+      description: 'Collect project briefs, executive summaries, and attached documents or resumes',
+      themeId: 'modern-minimalist',
+      accentColor: '#2563eb',
+      questions: [
+        {
+          id: `q-${Date.now()}-1`,
+          title: 'Project Title & Lead Contact',
+          type: 'short_answer',
+          required: true,
+          voiceEnabled: true
+        },
+        {
+          id: `q-${Date.now()}-2`,
+          title: 'Executive Summary',
+          description: 'Type or click dictate to summarize your proposal',
+          type: 'paragraph',
+          required: true,
+          voiceEnabled: true
+        },
+        {
+          id: `q-${Date.now()}-3`,
+          title: 'Attach Proposal Document or Brief',
+          description: 'Upload your PDF, Word doc, or project file (up to 10 MB)',
+          type: 'file_upload',
+          required: true,
+          fileConfig: {
+            buttonLabel: 'Attach File',
+            allowedTypes: 'documents',
+            maxSizeMB: 10
+          }
+        }
+      ]
     }
   ];
 

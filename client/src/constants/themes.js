@@ -147,5 +147,12 @@ export const QUESTION_TYPES = [
     icon: 'SlidersHorizontal',
     voiceEnabled: false,
     description: 'Numerical rating scale with custom minimum and maximum labels'
+  },
+  {
+    type: 'file_upload',
+    label: 'Attach File / Document',
+    icon: 'Paperclip',
+    voiceEnabled: false,
+    description: 'Allow respondents to attach documents, PDFs, images, or spreadsheets'
   }
 ];
