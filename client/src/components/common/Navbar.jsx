@@ -34,38 +34,38 @@ export default function Navbar({
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
       {/* Top Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-15 sm:h-16 flex items-center justify-between gap-1.5 sm:gap-4">
         {/* Left Section: Back button & Form Title */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
           <button
             onClick={onGoToDashboard}
-            className="p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-slate-100 transition-colors shrink-0"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-slate-100 transition-colors shrink-0"
             title="Forms Dashboard"
           >
-            <FolderOpen className="w-5 h-5" />
+            <FolderOpen className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-sm shadow-indigo-200">
+          <div className="hidden sm:flex w-8 h-8 rounded-lg bg-indigo-600 items-center justify-center text-white shrink-0 shadow-sm shadow-indigo-200">
             <FileText className="w-4 h-4" />
           </div>
 
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
             {mode === 'builder' ? (
               <input
                 type="text"
                 value={formTitle || ''}
                 onChange={(e) => onTitleChange(e.target.value)}
                 placeholder="Untitled Form"
-                className="text-base font-semibold text-slate-800 bg-transparent hover:bg-slate-100/70 focus:bg-white px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-indigo-400 focus:outline-none transition-all truncate max-w-sm sm:max-w-md"
+                className="text-sm sm:text-base font-semibold text-slate-800 bg-transparent hover:bg-slate-100/70 focus:bg-white px-1.5 sm:px-2 py-1 rounded-lg border border-transparent hover:border-slate-300 focus:border-indigo-400 focus:outline-none transition-all truncate w-full max-w-[130px] xs:max-w-[180px] sm:max-w-md"
               />
             ) : (
-              <span className="text-base font-semibold text-slate-800 truncate">
+              <span className="text-sm sm:text-base font-semibold text-slate-800 truncate">
                 {formTitle || 'Voice Form'}
               </span>
             )}
 
             {mode === 'builder' && (
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 ml-1">
+              <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-400 ml-1">
                 {isSaving ? (
                   <span className="inline-flex items-center gap-1 text-slate-400">
                     <CloudUpload className="w-3.5 h-3.5 animate-bounce text-indigo-500" />
@@ -136,11 +136,11 @@ export default function Navbar({
         )}
 
         {/* Right Section: Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Voice AI Status / Settings */}
           <button
             onClick={onOpenApiKey}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-indigo-50/70 hover:border-indigo-200 hover:text-indigo-600 text-xs font-medium transition-all"
+            className="inline-flex items-center gap-1 sm:gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-indigo-50/70 hover:border-indigo-200 hover:text-indigo-600 text-xs font-medium transition-all"
             title="Configure Voice AI Speech Engine"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
@@ -153,28 +153,29 @@ export default function Navbar({
               {/* Theme panel trigger */}
               <button
                 onClick={onOpenTheme}
-                className="p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 sm:p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-colors"
                 title="Theme Customizer"
               >
-                <Palette className="w-5 h-5" />
+                <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {/* Preview button */}
               <button
                 onClick={onOpenPreview}
-                className="p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 sm:p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-colors"
                 title="Preview Responder Form"
               >
-                <Eye className="w-5 h-5" />
+                <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {/* Send / Share button */}
               <button
                 onClick={onOpenShare}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all"
+                className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all"
+                title="Share Form Link & QR"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>Share</span>
+                <span className="hidden xs:inline">Share</span>
               </button>
             </>
           )}

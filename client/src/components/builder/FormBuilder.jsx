@@ -135,10 +135,10 @@ export default function FormBuilder({
 
   return (
     <div
-      className="min-h-screen py-8 px-4 sm:px-6 relative transition-colors duration-200"
+      className="min-h-screen py-6 px-3 sm:py-8 sm:px-6 relative transition-colors duration-200"
       style={{ backgroundColor: theme.backgroundColor || '#f8fafc' }}
     >
-      <div className="max-w-3xl mx-auto space-y-5 pb-32">
+      <div className="max-w-3xl mx-auto space-y-4 sm:space-y-5 pb-32">
         {/* Form Title & Header Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative">
           {/* Top Decorative Accent Banner */}
@@ -149,13 +149,13 @@ export default function FormBuilder({
             }}
           />
 
-          <div className="p-6 md:p-8 space-y-3">
+          <div className="p-4 sm:p-6 md:p-8 space-y-3">
             <input
               type="text"
               value={form.title || ''}
               onChange={(e) => onUpdateForm({ title: e.target.value })}
               placeholder="Form Title"
-              className="w-full text-2xl md:text-3xl font-bold text-slate-900 placeholder:text-slate-300 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-indigo-600 focus:outline-none transition-colors"
+              className="w-full text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 placeholder:text-slate-300 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-indigo-600 focus:outline-none transition-colors"
               style={{ fontFamily: theme.fontHeader || 'Inter' }}
             />
 
@@ -265,41 +265,41 @@ export default function FormBuilder({
       </div>
 
       {/* Floating Action Toolbar */}
-      <div className="fixed right-4 md:right-8 bottom-8 md:bottom-auto md:top-36 z-30 flex md:flex-col items-center bg-white/95 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200 shadow-xl gap-2">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-8 md:bottom-auto md:top-36 z-30 flex md:flex-col items-center bg-white/95 backdrop-blur-md p-1 sm:p-1.5 rounded-full md:rounded-2xl border border-slate-200 shadow-xl gap-1 sm:gap-2">
         <button
           type="button"
           onClick={handleAddQuestion}
-          className="p-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition-all hover:scale-105"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition-all hover:scale-105"
           title="Add Question"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         <button
           type="button"
           onClick={onOpenTheme}
-          className="p-3 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
           title="Customize Theme"
         >
-          <Palette className="w-5 h-5" />
+          <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         <button
           type="button"
           onClick={onOpenPreview}
-          className="p-3 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
           title="Preview Responder Form"
         >
-          <Eye className="w-5 h-5" />
+          <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         <button
           type="button"
           onClick={onOpenShare}
-          className="p-3 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
           title="Share Form"
         >
-          <Share2 className="w-5 h-5" />
+          <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
     </div>

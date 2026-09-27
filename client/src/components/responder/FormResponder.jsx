@@ -332,16 +332,16 @@ export default function FormResponder({
 
   return (
     <div
-      className="min-h-screen py-10 px-4 sm:px-6 relative transition-colors"
+      className="min-h-screen py-6 px-3 sm:py-10 sm:px-6 relative transition-colors"
       style={{
         backgroundColor: theme.backgroundColor || '#f8fafc',
         fontFamily: theme.fontBody || 'Inter'
       }}
     >
-      <div className="max-w-2xl mx-auto space-y-5 pb-24">
+      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-5 pb-24">
         {/* Switch to Builder button banner (top) */}
         {onBackToBuilder && (
-          <div className="flex items-center justify-between px-2 text-xs">
+          <div className="flex items-center justify-between px-1 sm:px-2 text-xs">
             <button
               onClick={onBackToBuilder}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/90 hover:bg-white text-slate-700 hover:text-indigo-600 rounded-xl border border-slate-200 shadow-2xs transition-colors font-medium"
@@ -357,26 +357,26 @@ export default function FormResponder({
         )}
 
         {/* Form Title & Header Card */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div
             className="h-3.5 w-full"
             style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
           />
-          <div className="p-6 sm:p-8 space-y-3">
+          <div className="p-4 sm:p-6 md:p-8 space-y-3">
             <h1
-              className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight"
+              className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 leading-tight"
               style={{ fontFamily: theme.fontHeader || 'Inter' }}
             >
               {form.title || 'Untitled Form'}
             </h1>
 
             {form.description && (
-              <p className="text-sm text-slate-600 whitespace-pre-line leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 whitespace-pre-line leading-relaxed">
                 {form.description}
               </p>
             )}
 
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <div className="pt-3 border-t border-slate-100 flex flex-col xs:flex-row xs:items-center justify-between gap-1 text-xs text-slate-500">
               <span className="text-red-500 font-medium">* Indicates required question</span>
 
               {form.settings?.showProgressBar !== false && (
@@ -411,7 +411,7 @@ export default function FormResponder({
               <div
                 key={q.id}
                 id={`field-${q.id}`}
-                className={`bg-white rounded-2xl border p-6 transition-all duration-200 ${
+                className={`bg-white rounded-2xl border p-4 sm:p-6 transition-all duration-200 ${
                   hasError
                     ? 'border-red-400 ring-2 ring-red-100'
                     : 'border-slate-200 shadow-2xs hover:shadow-xs'
@@ -576,7 +576,7 @@ export default function FormResponder({
                         <span>{q.scaleConfig?.maxLabel || 'Max'}</span>
                       </div>
 
-                      <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1">
+                      <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
                         {Array.from(
                           { length: (q.scaleConfig?.max ?? 5) - (q.scaleConfig?.min ?? 1) + 1 },
                           (_, i) => (q.scaleConfig?.min ?? 1) + i
@@ -587,7 +587,7 @@ export default function FormResponder({
                               key={num}
                               type="button"
                               onClick={() => handleAnswerChange(q.id, num)}
-                              className={`flex-1 min-w-[36px] h-10 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
+                              className={`flex-1 min-w-[32px] sm:min-w-[36px] h-9 sm:h-10 rounded-xl flex items-center justify-center text-xs font-bold transition-all shrink-0 sm:shrink ${
                                 isSelected
                                   ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-105'
                                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
@@ -733,11 +733,11 @@ export default function FormResponder({
           })}
 
           {/* Form Submit & Clear Action Bar */}
-          <div className="flex items-center justify-between pt-4">
+          <div className="flex flex-col-reverse xs:flex-row items-stretch xs:items-center justify-between gap-3 pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-200 transition-all hover:scale-102 disabled:opacity-50 flex items-center gap-2"
+              className="w-full xs:w-auto px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-200 transition-all hover:scale-102 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               style={{ backgroundColor: accentColor }}
             >
               <span>{isSubmitting ? 'Submitting...' : 'Submit Form'}</span>
@@ -747,7 +747,7 @@ export default function FormResponder({
             <button
               type="button"
               onClick={resetForm}
-              className="text-xs text-slate-500 hover:text-slate-800 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors"
+              className="text-xs text-slate-500 hover:text-slate-800 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors text-center"
             >
               Clear form
             </button>

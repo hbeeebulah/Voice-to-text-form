@@ -87,14 +87,14 @@ export default function AuthModal({
   if (isModal && !isOpen) return null;
 
   const content = (
-    <div className={`w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden relative ${
+    <div className={`w-full max-w-md bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-y-auto max-h-[90vh] relative ${
       !isModal ? 'mx-auto' : ''
     }`}>
       {/* Decorative top header bar */}
       <div className="h-2 w-full bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-700" />
 
       {/* Top Bar with Close button (if modal) */}
-      <div className="p-6 sm:p-7 pb-4">
+      <div className="p-4 sm:p-7 pb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs">

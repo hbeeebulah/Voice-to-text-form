@@ -99,12 +99,12 @@ export default function SoundwaveVisualizer({ stream, isRecording, color = '#636
   }, [isRecording, stream, color]);
 
   return (
-    <div className="w-full flex items-center justify-center">
+    <div className="w-full flex items-center justify-center overflow-hidden">
       <canvas
         ref={canvasRef}
         width={320}
         height={height}
-        className="w-full max-w-[320px] rounded-lg"
+        className="w-full max-w-[260px] xs:max-w-[320px] rounded-lg"
       />
     </div>
   );

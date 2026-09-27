@@ -105,7 +105,7 @@ export default function LandingPage({
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12]">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
               Build Smarter Forms With{' '}
               <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 bg-clip-text text-transparent">
                 Instant Voice Dictation
@@ -113,16 +113,16 @@ export default function LandingPage({
             </h1>
 
             {/* Subheading */}
-            <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-600 leading-relaxed">
+            <p className="max-w-2xl mx-auto text-sm sm:text-lg text-slate-600 leading-relaxed px-2">
               Empower respondents to speak their thoughts naturally. Eliminate typing fatigue with AI-powered punctuation, real-time waveform visualizers, and rich audio analytics.
             </p>
 
             {/* Action Buttons */}
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md mx-auto sm:max-w-none">
               <button
                 type="button"
                 onClick={() => onOpenAuth('signup')}
-                className="inline-flex items-center gap-2 px-7 sm:px-9 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm shadow-xl shadow-indigo-300 hover:shadow-indigo-400 transition-all hover:scale-102 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-9 py-3 sm:py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm shadow-xl shadow-indigo-300 hover:shadow-indigo-400 transition-all hover:scale-102 cursor-pointer"
               >
                 <span>Create your form now</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -131,14 +131,14 @@ export default function LandingPage({
               <button
                 type="button"
                 onClick={() => onOpenAuth('login')}
-                className="inline-flex items-center gap-2 px-6 sm:px-7 py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm border border-slate-200 shadow-md hover:shadow-lg transition-all hover:scale-102 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm border border-slate-200 shadow-md hover:shadow-lg transition-all hover:scale-102 cursor-pointer"
               >
                 <span>Sign In</span>
               </button>
             </div>
 
             {/* Quick Demo Preview Link */}
-            <div className="pt-2 text-xs text-slate-500 flex items-center justify-center gap-4">
+            <div className="pt-2 text-xs text-slate-500 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
               {onOpenResponderDemo && (
                 <button
                   type="button"
@@ -162,25 +162,27 @@ export default function LandingPage({
             </div>
 
             {/* Interactive Mockup / Product Showcase */}
-            <div className="pt-10 max-w-3xl mx-auto">
-              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200/80 text-left relative overflow-hidden group">
+            <div className="pt-8 sm:pt-10 max-w-3xl mx-auto px-1 sm:px-0">
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl sm:shadow-2xl border border-slate-200/80 text-left relative overflow-hidden group">
                 <div className="h-2 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 absolute top-0 left-0" />
 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-red-400 inline-block" />
-                    <span className="w-3 h-3 rounded-full bg-amber-400 inline-block" />
-                    <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" />
-                    <span className="text-xs font-bold text-slate-400 ml-2">Product Feedback Survey (Live Preview)</span>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                    <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400 inline-block shrink-0" />
+                    <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-amber-400 inline-block shrink-0" />
+                    <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 inline-block shrink-0" />
+                    <span className="text-xs font-bold text-slate-400 ml-1 sm:ml-2 truncate">
+                      Product Feedback Survey
+                    </span>
                   </div>
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
-                    Voice Dictation Active
+                  <span className="text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 shrink-0">
+                    Voice Active
                   </span>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
                       Describe your favorite experience or any challenges you faced
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -189,31 +191,31 @@ export default function LandingPage({
                   </div>
 
                   {/* Mock Dictation Box */}
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-red-500 text-white flex items-center justify-center animate-pulse shadow-sm shadow-red-200">
-                          <Mic className="w-4 h-4" />
+                  <div className="p-3 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-red-500 text-white flex items-center justify-center animate-pulse shadow-sm shadow-red-200 shrink-0">
+                          <Mic className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </div>
-                        <div>
-                          <span className="text-xs font-bold text-slate-800">Listening &amp; Transcribing...</span>
-                          <p className="text-[10px] text-slate-400">Neural speech engine active</p>
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-800 block truncate">Listening &amp; Transcribing...</span>
+                          <p className="text-[10px] text-slate-400 hidden xs:block">Neural speech engine active</p>
                         </div>
                       </div>
 
                       {/* Mock waveform bars */}
-                      <div className="flex items-center gap-1 h-6">
+                      <div className="flex items-center gap-1 h-5 sm:h-6 shrink-0">
                         {[40, 75, 100, 60, 90, 45, 80, 50, 95, 30].map((h, i) => (
                           <span
                             key={i}
-                            className="w-1 bg-indigo-500 rounded-full animate-pulse"
+                            className={`w-1 bg-indigo-500 rounded-full animate-pulse ${i > 4 ? 'hidden xs:block' : ''}`}
                             style={{ height: `${h}%`, animationDelay: `${i * 100}ms` }}
                           />
                         ))}
                       </div>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-slate-700 bg-white p-3 rounded-xl border border-slate-200 font-medium leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-700 bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 font-medium leading-relaxed">
                       &ldquo;The voice dictation is an absolute game-changer for field studies. Usually taking notes while examining data is tedious, but being able to speak naturally without filler words made documentation effortless.&rdquo;
                     </p>
                   </div>
@@ -394,20 +396,20 @@ export default function LandingPage({
         </section>
 
         {/* BOTTOM CALL TO ACTION BANNER */}
-        <section className="py-16 sm:py-20 bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900 text-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+        <section className="py-12 sm:py-20 bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900 text-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-5 sm:space-y-6">
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               Ready to build your form?
             </h2>
             <p className="text-sm sm:text-base text-indigo-100 max-w-xl mx-auto leading-relaxed">
               Start building voice-first forms with curated themes and multimodal AI dictation. Sign up or log in to get started in seconds.
             </p>
 
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-xs sm:max-w-none mx-auto">
               <button
                 type="button"
                 onClick={() => onOpenAuth('signup')}
-                className="inline-flex items-center gap-2 px-7 py-3 rounded-2xl bg-white text-indigo-700 font-extrabold text-sm shadow-xl hover:bg-indigo-50 transition-all hover:scale-102 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-2xl bg-white text-indigo-700 font-extrabold text-sm shadow-xl hover:bg-indigo-50 transition-all hover:scale-102 cursor-pointer"
               >
                 <span>Create your form now</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -416,7 +418,7 @@ export default function LandingPage({
               <button
                 type="button"
                 onClick={() => onOpenAuth('login')}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 backdrop-blur-xs transition-all cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 backdrop-blur-xs transition-all cursor-pointer"
               >
                 <span>Sign In</span>
               </button>

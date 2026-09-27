@@ -133,16 +133,16 @@ export default function QuestionCard({
         </div>
       </div>
 
-      <div className="p-5 space-y-4">
+      <div className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4">
         {/* Question Header: Title & Type Selector */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 items-start">
           <div className="md:col-span-2">
             <input
               type="text"
               value={question.title || ''}
               onChange={(e) => onUpdate({ title: e.target.value })}
               placeholder="Question Title (e.g., What are your thoughts?)"
-              className="w-full text-base font-semibold text-slate-900 placeholder:text-slate-400 bg-transparent px-3 py-2 border-b-2 border-slate-200 hover:border-slate-300 focus:border-indigo-600 focus:outline-none transition-colors"
+              className="w-full text-sm sm:text-base font-semibold text-slate-900 placeholder:text-slate-400 bg-transparent px-2 sm:px-3 py-1.5 sm:py-2 border-b-2 border-slate-200 hover:border-slate-300 focus:border-indigo-600 focus:outline-none transition-colors"
             />
             {/* Optional Description / Help Text */}
             <input
@@ -150,7 +150,7 @@ export default function QuestionCard({
               value={question.description || ''}
               onChange={(e) => onUpdate({ description: e.target.value })}
               placeholder="Description or help text (optional)"
-              className="w-full text-xs text-slate-600 placeholder:text-slate-400 bg-transparent px-3 py-1.5 focus:outline-none focus:text-slate-800 transition-colors mt-1"
+              className="w-full text-xs text-slate-600 placeholder:text-slate-400 bg-transparent px-2 sm:px-3 py-1 focus:outline-none focus:text-slate-800 transition-colors mt-1"
             />
           </div>
 
@@ -159,7 +159,7 @@ export default function QuestionCard({
             <select
               value={question.type}
               onChange={(e) => handleTypeChange(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer shadow-2xs"
+              className="w-full px-2.5 sm:px-3 py-2 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer shadow-2xs"
             >
               {QUESTION_TYPES.map((t) => (
                 <option key={t.type} value={t.type}>
@@ -287,7 +287,7 @@ export default function QuestionCard({
           {/* Linear Scale Configuration */}
           {question.type === 'linear_scale' && (
             <div className="space-y-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <span className="text-slate-600 font-medium">Scale Range:</span>
                 <select
                   value={question.scaleConfig?.min ?? 1}
@@ -313,7 +313,7 @@ export default function QuestionCard({
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-1">
                 <div>
                   <label className="block text-[11px] text-slate-500 mb-1">
                     Label for {question.scaleConfig?.min ?? 1} (e.g., Needs Work)
@@ -419,7 +419,7 @@ export default function QuestionCard({
               </div>
 
               {/* Live Preview Dropzone */}
-              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 sm:p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto mb-2.5 text-indigo-600">
                   <UploadCloud className="w-5 h-5" />
                 </div>
@@ -444,7 +444,7 @@ export default function QuestionCard({
       </div>
 
       {/* Bottom Action Footer */}
-      <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-b-2xl">
+      <div className="px-3.5 sm:px-5 py-2.5 sm:py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-b-2xl">
         <div className="flex items-center gap-1">
           <button
             type="button"

@@ -186,21 +186,21 @@ export default function FormsDashboard({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 py-5 sm:py-8 px-3 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
         {/* Dashboard Top Navigation / Header Bar */}
         <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
-              <FileText className="w-5 h-5" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0">
+              <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900 leading-tight">VoxForm AI Studio</h2>
-              <p className="text-[11px] text-slate-500">Voice-to-Text Intelligent Form Studio</p>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">VoxForm AI Studio</h2>
+              <p className="text-[10px] sm:text-[11px] text-slate-500">Voice-to-Text Intelligent Form Studio</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {onOpenApiKey && (
               <button
                 type="button"
@@ -223,26 +223,26 @@ export default function FormsDashboard({
         </div>
 
         {/* Top Hero / Header Section */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl relative overflow-hidden">
-          <div className="relative z-10 max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-xs font-semibold border border-white/20">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
+          <div className="relative z-10 max-w-2xl space-y-2.5 sm:space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-[11px] sm:text-xs font-semibold border border-white/20">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
               <span>Voice-First AI Forms + Multimodal Dictation</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               {user ? `Welcome, ${user.name || 'John Doe'}` : 'Welcome, John Doe'}
             </h1>
 
-            <p className="text-sm sm:text-base text-indigo-100/90 leading-relaxed">
+            <p className="text-xs sm:text-base text-indigo-100/90 leading-relaxed">
               Design bespoke, intelligent forms with curated visual themes and empower respondents with seamless voice dictation. Frictionless conversational input meets powerful analytics.
             </p>
 
-            <div className="pt-3 flex flex-wrap items-center gap-3">
+            <div className="pt-2 sm:pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => onCreateForm({})}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white text-indigo-700 font-bold text-xs shadow-md hover:bg-indigo-50 transition-all hover:scale-102 cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-white text-indigo-700 font-bold text-xs shadow-md hover:bg-indigo-50 transition-all hover:scale-102 cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Create your form now</span>
@@ -251,7 +251,7 @@ export default function FormsDashboard({
               <button
                 type="button"
                 onClick={() => setTemplateModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 backdrop-blur-xs transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 backdrop-blur-xs transition-all cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                 <span>Choose Template</span>
@@ -261,7 +261,7 @@ export default function FormsDashboard({
                 <button
                   type="button"
                   onClick={() => onOpenAuth('login')}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-semibold text-xs border border-white/30 backdrop-blur-xs transition-all cursor-pointer shadow-xs"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-semibold text-xs border border-white/30 backdrop-blur-xs transition-all cursor-pointer shadow-xs"
                 >
                   <span>Sign In</span>
                 </button>

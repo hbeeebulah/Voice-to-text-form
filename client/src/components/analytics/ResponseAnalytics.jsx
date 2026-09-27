@@ -76,10 +76,10 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
   const currentResponse = responses[currentResponseIndex];
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-6 animate-fadeIn pb-32">
+    <div className="max-w-4xl mx-auto py-6 px-3 sm:py-8 sm:px-6 space-y-4 sm:space-y-6 animate-fadeIn pb-32">
       {/* Top Header Card: Metric Highlights & Export Controls */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 sm:pb-6 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
@@ -95,11 +95,11 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
           </div>
 
           {/* Export Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <a
               href={getExportCsvUrl(form.id)}
               download
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200"
               title="Download CSV Spreadsheet"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
@@ -109,7 +109,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
             <a
               href={getExportJsonUrl(form.id)}
               download
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200"
               title="Download JSON Payload"
             >
               <FileCode className="w-4 h-4 text-indigo-600" />
@@ -118,7 +118,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
 
             <button
               onClick={loadData}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
               title="Refresh Analytics"
             >
               <RefreshCw className="w-4 h-4" />
@@ -179,10 +179,10 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
         </div>
 
         {/* View Switcher: Summary vs Individual */}
-        <div className="flex items-center border-b border-slate-200 pt-2 gap-6 text-sm">
+        <div className="flex items-center border-b border-slate-200 pt-2 gap-4 sm:gap-6 text-xs sm:text-sm overflow-x-auto">
           <button
             onClick={() => setActiveTab('summary')}
-            className={`pb-3 font-semibold transition-all relative flex items-center gap-2 ${
+            className={`pb-3 font-semibold transition-all relative flex items-center gap-1.5 sm:gap-2 shrink-0 ${
               activeTab === 'summary'
                 ? 'text-indigo-600'
                 : 'text-slate-500 hover:text-slate-800'
@@ -197,7 +197,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
 
           <button
             onClick={() => setActiveTab('individual')}
-            className={`pb-3 font-semibold transition-all relative flex items-center gap-2 ${
+            className={`pb-3 font-semibold transition-all relative flex items-center gap-1.5 sm:gap-2 shrink-0 ${
               activeTab === 'individual'
                 ? 'text-indigo-600'
                 : 'text-slate-500 hover:text-slate-800'
@@ -436,8 +436,8 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
       {totalSubmissions > 0 && activeTab === 'individual' && currentResponse && (
         <div className="space-y-4">
           {/* Navigation Bar between respondents */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between shadow-2xs">
-            <div className="flex items-center gap-2">
+          <div className="bg-white rounded-2xl border border-slate-200 p-3.5 sm:p-4 flex flex-col xs:flex-row xs:items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center justify-between xs:justify-start gap-2 w-full xs:w-auto">
               <button
                 disabled={currentResponseIndex === 0}
                 onClick={() => setCurrentResponseIndex(prev => prev - 1)}
@@ -459,7 +459,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
               </button>
             </div>
 
-            <div className="text-xs text-slate-500">
+            <div className="text-[11px] sm:text-xs text-slate-500">
               Submitted: {new Date(currentResponse.submittedAt).toLocaleString()}
             </div>
           </div>

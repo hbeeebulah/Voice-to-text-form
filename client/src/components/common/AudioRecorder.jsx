@@ -323,7 +323,7 @@ export default function AudioRecorder({
       {/* 2. Active Recording State */}
       {status === 'recording' && (
         <div className="p-3.5 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/80 via-purple-50/70 to-pink-50/70 shadow-sm transition-all animate-fadeIn">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
             <div className="flex items-center gap-2">
               <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -374,44 +374,44 @@ export default function AudioRecorder({
           )}
 
           <div className="text-center text-[11px] text-slate-500 mt-2 flex items-center justify-center gap-1">
-            <Sparkles className="w-3 h-3 text-indigo-500" />
-            <span>Speak naturally. Your words will automatically be formatted and inserted into this field.</span>
+            <Sparkles className="w-3 h-3 text-indigo-500 shrink-0" />
+            <span>Speak naturally. Words will be formatted and inserted.</span>
           </div>
         </div>
       )}
 
       {/* 3. Transcribing / Polishing State */}
       {status === 'transcribing' && (
-        <div className="p-3.5 rounded-2xl border border-indigo-200 bg-indigo-50/70 shadow-sm flex items-center justify-between animate-pulse">
-          <div className="flex items-center gap-3">
-            <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
-            <div>
+        <div className="p-3.5 rounded-2xl border border-indigo-200 bg-indigo-50/70 shadow-sm flex items-center justify-between gap-2 animate-pulse">
+          <div className="flex items-center gap-3 min-w-0">
+            <Loader2 className="w-5 h-5 text-indigo-600 animate-spin shrink-0" />
+            <div className="min-w-0">
               <p className="text-xs font-bold text-indigo-950">
                 Transcribing & Polishing Speech...
               </p>
-              <p className="text-[11px] text-indigo-700">
-                Removing filler words ('um', 'uh') and inserting text directly into field
+              <p className="text-[11px] text-indigo-700 truncate">
+                Polishing audio and inserting directly into field
               </p>
             </div>
           </div>
-          <Sparkles className="w-4 h-4 text-indigo-500 animate-spin" />
+          <Sparkles className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
         </div>
       )}
 
       {/* 4. Success State (Text inserted directly with Undo option) */}
       {status === 'success' && (
-        <div className="p-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 shadow-2xs flex items-center justify-between gap-2 animate-fadeIn text-xs text-emerald-800">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="p-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 shadow-2xs flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 animate-fadeIn text-xs text-emerald-800">
+          <div className="flex items-center gap-2 min-w-0 w-full xs:w-auto">
             <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <span className="font-bold">Speech transcribed and inserted!</span>
-              <span className="text-[11px] text-emerald-700 block truncate max-w-xs sm:max-w-md">
+              <span className="text-[11px] text-emerald-700 block truncate max-w-[200px] xs:max-w-xs sm:max-w-md">
                 "{lastInsertedText}"
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 self-end xs:self-auto shrink-0">
             <button
               type="button"
               onClick={handleUndo}
@@ -434,10 +434,10 @@ export default function AudioRecorder({
 
       {/* 5. Error State */}
       {status === 'error' && (
-        <div className="p-3 rounded-2xl border border-red-200 bg-red-50 text-red-700 text-xs shadow-2xs flex items-start justify-between gap-2 animate-fadeIn">
-          <div className="flex items-start gap-2">
+        <div className="p-3 rounded-2xl border border-red-200 bg-red-50 text-red-700 text-xs shadow-2xs flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2 animate-fadeIn">
+          <div className="flex items-start gap-2 min-w-0">
             <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-            <div>
+            <div className="min-w-0">
               <p className="font-bold text-red-800">
                 {permissionDenied ? 'Microphone Access Required' : 'Voice Input Notice'}
               </p>
@@ -449,7 +449,7 @@ export default function AudioRecorder({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 self-end xs:self-auto shrink-0">
             <button
               type="button"
               onClick={startRecording}

@@ -387,17 +387,26 @@ export default function App() {
 
         {/* Floating Side Drawer: Theme & Design Customizer */}
         {isThemeOpen && currentForm && (
-          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm sm:max-w-md shadow-2xl">
-            <ThemeCustomizer
-              theme={currentForm.theme}
-              onUpdateTheme={(themeUpdates) => handleUpdateForm({ theme: themeUpdates })}
-              onClose={() => {
+          <>
+            <div
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 transition-opacity"
+              onClick={() => {
                 setIsThemeOpen(false);
                 if (activeTab === 'theme') setActiveTab('questions');
               }}
-              isOpen={isThemeOpen}
             />
-          </div>
+            <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm sm:max-w-md shadow-2xl">
+              <ThemeCustomizer
+                theme={currentForm.theme}
+                onUpdateTheme={(themeUpdates) => handleUpdateForm({ theme: themeUpdates })}
+                onClose={() => {
+                  setIsThemeOpen(false);
+                  if (activeTab === 'theme') setActiveTab('questions');
+                }}
+                isOpen={isThemeOpen}
+              />
+            </div>
+          </>
         )}
       </main>
 
