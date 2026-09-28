@@ -12,6 +12,7 @@ import LandingPage from './components/landing/LandingPage';
 import {
   fetchForms,
   fetchForm,
+  fetchFormBySlug,
   createForm,
   updateForm,
   deleteForm,
@@ -48,12 +49,15 @@ export default function App() {
   useEffect(() => {
     loadInitialData();
 
-    // Check hash changes (e.g. #form/customer-feedback-demo)
+    // Check hash changes (e.g. #form/customer-feedback-demo or #s/my-slug)
     const handleHash = () => {
       const hash = window.location.hash;
       if (hash.startsWith('#form/')) {
         const id = hash.replace('#form/', '');
         openFormById(id, 'responder');
+      } else if (hash.startsWith('#s/') || hash.startsWith('#f/')) {
+        const slug = hash.replace(/^#(s|f)\//, '');
+        openFormBySlug(slug, 'responder');
       } else if (hash.startsWith('#edit/')) {
         const id = hash.replace('#edit/', '');
         openFormById(id, 'builder');
@@ -99,11 +103,19 @@ export default function App() {
       setHasApiKey(Boolean(transcribeStatus.configured));
       setUser(currentUser);
 
-      // Check initial hash
+      // Check initial pathname or hash
+      const pathname = window.location.pathname;
       const hash = window.location.hash;
-      if (hash.startsWith('#form/')) {
+
+      if (pathname.startsWith('/s/') || pathname.startsWith('/f/')) {
+        const slug = pathname.replace(/^\/(s|f)\//, '');
+        await openFormBySlug(slug, 'responder');
+      } else if (hash.startsWith('#form/')) {
         const id = hash.replace('#form/', '');
         await openFormById(id, 'responder');
+      } else if (hash.startsWith('#s/') || hash.startsWith('#f/')) {
+        const slug = hash.replace(/^#(s|f)\//, '');
+        await openFormBySlug(slug, 'responder');
       } else if (hash.startsWith('#edit/')) {
         const id = hash.replace('#edit/', '');
         await openFormById(id, 'builder');
@@ -114,6 +126,24 @@ export default function App() {
       }
     } catch (err) {
       console.error('Initialization error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openFormBySlug = async (slug, targetView = 'responder') => {
+    try {
+      setLoading(true);
+      const form = await fetchFormBySlug(slug);
+      setCurrentForm(form);
+      activeFormIdRef.current = form.id;
+      setView(targetView);
+      if (targetView === 'responder' && window.location.hash !== `#form/${form.id}`) {
+        window.location.hash = `#form/${form.id}`;
+      }
+    } catch (err) {
+      alert(`Could not open form with short link "${slug}": ${err.message}`);
+      setView('landing');
     } finally {
       setLoading(false);
     }
@@ -429,6 +459,10 @@ export default function App() {
           onClose={() => setIsShareOpen(false)}
           formId={currentForm.id}
           formTitle={currentForm.title}
+          customSlug={currentForm.customSlug}
+          onSlugUpdated={(newSlug) => {
+            handleUpdateForm({ customSlug: newSlug });
+          }}
         />
       )}
 

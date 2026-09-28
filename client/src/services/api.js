@@ -201,6 +201,45 @@ export async function duplicateForm(id) {
   return res.json();
 }
 
+export async function fetchFormBySlug(slug) {
+  const res = await fetch(`${API_BASE}/forms/by-slug/${encodeURIComponent(slug)}`, {
+    headers: { ...getAuthHeaders() }
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Form not found for this short link');
+  }
+  return res.json();
+}
+
+export async function checkSlugAvailability(slug, formId) {
+  const query = formId ? `?formId=${encodeURIComponent(formId)}` : '';
+  const res = await fetch(`${API_BASE}/forms/check-slug/${encodeURIComponent(slug)}${query}`, {
+    headers: { ...getAuthHeaders() }
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to check short link');
+  }
+  return data;
+}
+
+export async function saveFormSlug(formId, slug) {
+  const res = await fetch(`${API_BASE}/forms/${formId}/slug`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify({ slug })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update short link');
+  }
+  return data;
+}
+
 // --- RESPONSES & ANALYTICS API ---
 
 export async function submitResponse(formId, responseData) {

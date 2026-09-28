@@ -8,6 +8,7 @@ const formRoutes = require('./routes/formRoutes');
 const transcribeRoutes = require('./routes/transcribeRoutes');
 const authRoutes = require('./routes/authRoutes');
 const voiceAiService = require('./services/voiceAiService');
+const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,6 +30,20 @@ app.use((req, res, next) => {
     console.log(`[API] ${req.method} ${req.path}`);
   }
   next();
+});
+
+// Short Link Direct Redirect Handler: /s/:slug or /f/:slug
+app.get(['/s/:slug', '/f/:slug'], async (req, res, next) => {
+  try {
+    const slug = req.params.slug;
+    const form = await db.getFormBySlug(slug);
+    if (form) {
+      return res.redirect(`/#form/${form.id}`);
+    }
+    return res.redirect('/#landing');
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Health & System Status check

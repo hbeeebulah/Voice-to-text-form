@@ -65,6 +65,7 @@ router.get('/', optionalAuth, async (req, res) => {
           title: form.title,
           description: form.description,
           theme: form.theme,
+          customSlug: form.customSlug || null,
           creatorId: form.creatorId || null,
           creatorName: form.creatorName || null,
           creatorEmail: form.creatorEmail || null,
@@ -128,6 +129,107 @@ router.post('/', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('[Forms POST] Error:', err);
     res.status(500).json({ error: 'Failed to create form.' });
+  }
+});
+
+// GET /api/forms/by-slug/:slug - Get form by custom short link slug
+router.get('/by-slug/:slug', async (req, res) => {
+  try {
+    const form = await db.getFormBySlug(req.params.slug);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found for this short link.' });
+    }
+    res.json(form);
+  } catch (err) {
+    console.error('[Form GET by-slug] Error:', err);
+    res.status(500).json({ error: 'Failed to retrieve form.' });
+  }
+});
+
+// GET /api/forms/check-slug/:slug - Check if short link name is available
+router.get('/check-slug/:slug', async (req, res) => {
+  try {
+    const rawSlug = req.params.slug;
+    const cleanSlug = rawSlug.toLowerCase().trim().replace(/[^a-z0-9_-]/g, '');
+
+    if (cleanSlug.length < 2 || cleanSlug.length > 60) {
+      return res.status(400).json({
+        available: false,
+        error: 'Short link must be between 2 and 60 characters.'
+      });
+    }
+
+    const reserved = ['api', 'admin', 'auth', 'uploads', 'dashboard', 'settings', 'form', 'edit', 'landing', 'null', 'undefined'];
+    if (reserved.includes(cleanSlug)) {
+      return res.status(400).json({
+        available: false,
+        error: `"${cleanSlug}" is reserved. Please pick another unique name.`
+      });
+    }
+
+    const formId = req.query.formId;
+    const existing = await db.getFormBySlug(cleanSlug);
+    if (existing && existing.id !== formId) {
+      return res.json({
+        available: false,
+        error: 'This short link is already taken by another form.'
+      });
+    }
+
+    return res.json({ available: true, slug: cleanSlug });
+  } catch (err) {
+    console.error('[Check Slug] Error:', err);
+    res.status(500).json({ error: 'Failed to check short link availability.' });
+  }
+});
+
+// POST /api/forms/:id/slug - Set, update, or remove custom short link slug
+router.post('/:id/slug', optionalAuth, async (req, res) => {
+  try {
+    const form = await db.getFormById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+
+    const { slug } = req.body;
+
+    // If slug is empty/null, remove short link
+    if (!slug || !String(slug).trim()) {
+      form.customSlug = null;
+      form.updatedAt = new Date().toISOString();
+      await db.saveForm(form);
+      return res.json({ success: true, customSlug: null });
+    }
+
+    const cleanSlug = String(slug).toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '');
+
+    if (cleanSlug.length < 2 || cleanSlug.length > 60) {
+      return res.status(400).json({ error: 'Short link must be between 2 and 60 characters.' });
+    }
+
+    const reserved = ['api', 'admin', 'auth', 'uploads', 'dashboard', 'settings', 'form', 'edit', 'landing', 'null', 'undefined'];
+    if (reserved.includes(cleanSlug)) {
+      return res.status(400).json({ error: `"${cleanSlug}" is a reserved name. Please pick another unique name.` });
+    }
+
+    // Check if another form is using this slug
+    const existing = await db.getFormBySlug(cleanSlug);
+    if (existing && existing.id !== req.params.id) {
+      return res.status(409).json({ error: 'This short link name is already in use by another form. Please choose another unique name.' });
+    }
+
+    form.customSlug = cleanSlug;
+    form.updatedAt = new Date().toISOString();
+    await db.saveForm(form);
+
+    return res.json({
+      success: true,
+      customSlug: cleanSlug,
+      shortUrl: `/s/${cleanSlug}`
+    });
+  } catch (err) {
+    console.error('[Set Slug] Error:', err);
+    res.status(500).json({ error: 'Failed to save short link.' });
   }
 });
 

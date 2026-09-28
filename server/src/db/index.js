@@ -336,6 +336,25 @@ class Database {
     return forms.find(f => f.id === id) || null;
   }
 
+  async getFormBySlug(slug) {
+    if (!slug) return null;
+    const cleanSlug = String(slug).toLowerCase().trim();
+    if (this.mode === 'mongo' && this.FormModel) {
+      return await this.FormModel.findOne({
+        $or: [{ customSlug: cleanSlug }, { id: cleanSlug }]
+      }).lean();
+    }
+    if (this.mode === 'postgres' && this.pgPool) {
+      const res = await this.pgPool.query(
+        "SELECT data FROM forms WHERE LOWER(data->>'customSlug') = $1 OR id = $1",
+        [cleanSlug]
+      );
+      return res.rows[0] ? res.rows[0].data : null;
+    }
+    const forms = this.readForms();
+    return forms.find(f => (f.customSlug && f.customSlug.toLowerCase() === cleanSlug) || f.id === cleanSlug) || null;
+  }
+
   async saveForm(formData) {
     const now = new Date().toISOString();
     const id = formData.id || uuidv4();
