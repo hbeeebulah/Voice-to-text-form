@@ -75,6 +75,18 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
+  // Track Single Page Application (SPA) route changes in Google Analytics
+  useEffect(() => {
+    if (typeof window.gtag === 'function') {
+      const pagePath = window.location.pathname + (window.location.hash || '');
+      window.gtag('event', 'page_view', {
+        page_path: pagePath,
+        page_location: window.location.href,
+        page_title: currentForm?.title ? `${currentForm.title} | VoxForm AI` : document.title
+      });
+    }
+  }, [view, currentForm?.id, activeTab]);
+
   const loadInitialData = async () => {
     setLoading(true);
     try {
