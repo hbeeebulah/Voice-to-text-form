@@ -316,6 +316,13 @@ router.post('/:id/responses', async (req, res) => {
       return res.status(404).json({ error: 'Form not found.' });
     }
 
+    // Check if form has closed responses
+    if (form.settings && form.settings.acceptingResponses === false) {
+      return res.status(403).json({
+        error: form.settings.closedMessage || 'This form is no longer accepting responses.'
+      });
+    }
+
     const { answers, voiceFieldStats } = req.body;
 
     // Validate required fields

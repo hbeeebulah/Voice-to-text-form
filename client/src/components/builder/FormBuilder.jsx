@@ -192,6 +192,47 @@ export default function FormBuilder({
                   Submission & Confirmation Settings
                 </h4>
 
+                {/* Accepting Responses Toggle */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div>
+                    <span className="font-semibold text-slate-700 block">Accept Responses</span>
+                    <span className="text-[11px] text-slate-500">
+                      {form.settings?.acceptingResponses !== false
+                        ? 'Form is open and accepting new responses'
+                        : 'Form is closed to new responses'}
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.settings?.acceptingResponses !== false}
+                      onChange={(e) => onUpdateForm({
+                        settings: { ...form.settings, acceptingResponses: e.target.checked }
+                      })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+
+                {/* Message shown when closed */}
+                {form.settings?.acceptingResponses === false && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1.5 animate-fadeIn">
+                    <label className="block text-amber-900 font-semibold text-[11px]">
+                      Message shown to responders when form is closed:
+                    </label>
+                    <input
+                      type="text"
+                      value={form.settings?.closedMessage || ''}
+                      onChange={(e) => onUpdateForm({
+                        settings: { ...form.settings, closedMessage: e.target.value }
+                      })}
+                      placeholder="This form is no longer accepting responses."
+                      className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-slate-600 font-medium mb-1">
                     Custom Thank-You Confirmation Message:

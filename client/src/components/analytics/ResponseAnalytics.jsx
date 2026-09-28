@@ -32,7 +32,7 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
+export default function ResponseAnalytics({ form, onOpenResponderPreview, onUpdateForm }) {
   const [analytics, setAnalytics] = useState(null);
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +74,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
 
   const totalSubmissions = analytics?.totalSubmissions || 0;
   const currentResponse = responses[currentResponseIndex];
+  const isAccepting = form.settings?.acceptingResponses !== false;
 
   return (
     <div className="max-w-4xl mx-auto py-6 px-3 sm:py-8 sm:px-6 space-y-4 sm:space-y-6 animate-fadeIn pb-32">
@@ -123,6 +124,53 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview }) {
             >
               <RefreshCw className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+
+        {/* Accepting Responses Status & Toggle Banner */}
+        <div className={`p-4 rounded-2xl border transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+          isAccepting
+            ? 'bg-emerald-50/60 border-emerald-200'
+            : 'bg-rose-50/80 border-rose-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${
+              isAccepting ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-rose-500 ring-4 ring-rose-100'
+            }`} />
+            <div>
+              <span className={`text-xs font-bold ${isAccepting ? 'text-emerald-950' : 'text-rose-950'}`}>
+                {isAccepting ? 'Accepting Responses' : 'Not Accepting Responses (Form Closed)'}
+              </span>
+              <p className={`text-[11px] ${isAccepting ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {isAccepting
+                  ? 'Your form is currently open and accepting submissions from responders.'
+                  : 'Form is closed. Responders visiting the form will see the closed message.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 self-end sm:self-auto shrink-0">
+            <span className="text-xs font-bold text-slate-700">
+              {isAccepting ? 'Open' : 'Closed'}
+            </span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAccepting}
+                onChange={(e) => {
+                  if (onUpdateForm) {
+                    onUpdateForm({
+                      settings: {
+                        ...(form.settings || {}),
+                        acceptingResponses: e.target.checked
+                      }
+                    });
+                  }
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+            </label>
           </div>
         </div>
 

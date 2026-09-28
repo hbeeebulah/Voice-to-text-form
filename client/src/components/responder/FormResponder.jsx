@@ -14,7 +14,8 @@ import {
   FileText,
   Download,
   X,
-  File
+  File,
+  Lock
 } from 'lucide-react';
 import AudioRecorder from '../common/AudioRecorder';
 import { submitResponse, uploadFile } from '../../services/api';
@@ -321,6 +322,66 @@ export default function FormResponder({
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>Return to Form Builder</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If the form has been closed by the creator (not accepting responses)
+  const isAcceptingResponses = form.settings?.acceptingResponses !== false;
+  if (!isAcceptingResponses) {
+    return (
+      <div
+        className="min-h-screen py-12 px-4 flex items-center justify-center transition-colors"
+        style={{
+          backgroundColor: theme.backgroundColor || '#f8fafc',
+          fontFamily: theme.fontBody || 'Inter'
+        }}
+      >
+        <div className="max-w-xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-fadeIn">
+          {/* Accent Header Banner */}
+          <div
+            className="h-3.5 w-full"
+            style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
+          />
+
+          <div className="p-8 text-center space-y-5">
+            <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <h1
+                className="text-2xl font-bold text-slate-900"
+                style={{ fontFamily: theme.fontHeader || 'Inter' }}
+              >
+                {form.title || 'Untitled Form'}
+              </h1>
+              <h3 className="text-sm font-bold text-rose-600 uppercase tracking-wider">
+                This form is no longer accepting responses
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto whitespace-pre-line pt-1">
+                {form.settings?.closedMessage ||
+                  'The creator has closed this form to new responses. If you think this is a mistake, please reach out to the form administrator.'}
+              </p>
+            </div>
+
+            {onBackToBuilder && (
+              <div className="pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
+                <span className="text-[11px] text-slate-400">
+                  (You are previewing this form as the creator)
+                </span>
+                <button
+                  type="button"
+                  onClick={onBackToBuilder}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Return to Form Editor to Re-open</span>
                 </button>
               </div>
             )}

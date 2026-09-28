@@ -394,6 +394,7 @@ export default function App() {
             {activeTab === 'responses' && (
               <ResponseAnalytics
                 form={currentForm}
+                onUpdateForm={handleUpdateForm}
                 onOpenResponderPreview={() => {
                   setView('responder');
                   window.location.hash = `#form/${currentForm.id}`;
