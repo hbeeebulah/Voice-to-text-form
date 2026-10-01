@@ -14,6 +14,7 @@ import {
   X
 } from 'lucide-react';
 import UserProfileMenu from '../auth/UserProfileMenu';
+import { getAssetUrl } from '../../services/api';
 
 export default function FormsDashboard({
   forms = [],
@@ -348,10 +349,23 @@ export default function FormsDashboard({
                   key={form.id}
                   className="bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
                 >
-                  <div
-                    className="h-2 w-full"
-                    style={{ backgroundColor: form.theme?.accentColor || '#6366f1' }}
-                  />
+                  {(form.theme?.headerBannerUrl || form.headerBannerUrl) ? (
+                    <div className="h-14 w-full overflow-hidden bg-slate-100 relative">
+                      <img
+                        src={getAssetUrl(form.theme?.headerBannerUrl || form.headerBannerUrl)}
+                        alt=""
+                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="h-2 w-full"
+                      style={{ backgroundColor: form.theme?.accentColor || '#6366f1' }}
+                    />
+                  )}
 
                   <div className="p-5 flex-1 flex flex-col justify-between">
                     <div>

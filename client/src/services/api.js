@@ -344,3 +344,13 @@ export async function uploadFile(file) {
   return data;
 }
 
+// Convert relative upload URLs (/uploads/...) to absolute paths if VITE_API_URL is configured
+export function getAssetUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
+  const apiBase = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '');
+  return `${apiBase}${url.startsWith('/') ? url : '/' + url}`;
+}
+

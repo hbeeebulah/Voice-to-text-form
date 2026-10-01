@@ -105,6 +105,57 @@ export const BODY_FONTS = [
   { id: 'Plus-Jakarta-Sans', name: 'Plus Jakarta Sans' },
 ];
 
+export const HEADER_BANNER_PRESETS = [
+  {
+    id: 'modern-corporate',
+    title: 'Modern Corporate Office',
+    category: 'Company',
+    url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    id: 'tech-architecture',
+    title: 'Modern Headquarters & Architecture',
+    category: 'Company',
+    url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    id: 'fluid-gradient',
+    title: 'Vibrant Digital Flow',
+    category: 'Abstract',
+    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    id: 'creative-workspace',
+    title: 'Clean Minimal Workspace',
+    category: 'Work',
+    url: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    id: 'geometry-design',
+    title: 'Geometric Modern Art',
+    category: 'Design',
+    url: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    id: 'botanical-nature',
+    title: 'Calm Botanical Leaves',
+    category: 'Nature',
+    url: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    id: 'warm-horizon',
+    title: 'Warm Sunset Glow',
+    category: 'Atmosphere',
+    url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80'
+  },
+  {
+    id: 'education-library',
+    title: 'Academic & Research',
+    category: 'Education',
+    url: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80'
+  }
+];
+
 export const QUESTION_TYPES = [
   {
     type: 'short_answer',

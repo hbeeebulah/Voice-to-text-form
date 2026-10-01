@@ -7,9 +7,13 @@ import {
   Sparkles,
   CheckCircle,
   HelpCircle,
-  Share2
+  Share2,
+  Image as ImageIcon,
+  Trash2
 } from 'lucide-react';
 import QuestionCard from './QuestionCard';
+import HeaderImageModal from '../common/HeaderImageModal';
+import { getAssetUrl } from '../../services/api';
 
 export default function FormBuilder({
   form,
@@ -23,9 +27,27 @@ export default function FormBuilder({
   );
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
 
   const theme = form.theme || {};
   const accentColor = theme.accentColor || '#6366f1';
+  const headerBannerUrl = theme.headerBannerUrl || form.headerBannerUrl || form.headerImage || '';
+
+  const handleSaveHeader = (newUrl) => {
+    onUpdateForm({
+      theme: { ...theme, headerBannerUrl: newUrl },
+      headerBannerUrl: newUrl,
+      headerImage: newUrl
+    });
+  };
+
+  const handleRemoveHeader = () => {
+    onUpdateForm({
+      theme: { ...theme, headerBannerUrl: '' },
+      headerBannerUrl: '',
+      headerImage: ''
+    });
+  };
 
   // Add Question
   const handleAddQuestion = () => {
@@ -141,15 +163,63 @@ export default function FormBuilder({
       <div className="max-w-3xl mx-auto space-y-4 sm:space-y-5 pb-32">
         {/* Form Title & Header Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative">
-          {/* Top Decorative Accent Banner */}
-          <div
-            className="h-3 w-full"
-            style={{
-              background: theme.bannerGradient || theme.accentColor || '#6366f1'
-            }}
-          />
+          {/* Top Decorative Accent Banner / Header Image */}
+          {headerBannerUrl ? (
+            <div className="relative w-full h-36 sm:h-48 md:h-56 group overflow-hidden bg-slate-100">
+              <img
+                src={getAssetUrl(headerBannerUrl)}
+                alt="Form Header Banner"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+              {/* Action Buttons on top of image */}
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsHeaderModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-800 text-xs font-semibold shadow-md backdrop-blur-xs flex items-center gap-1.5 transition-all hover:scale-102 cursor-pointer"
+                  title="Change header image"
+                >
+                  <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Change Header</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveHeader}
+                  className="p-1.5 rounded-xl bg-white/95 hover:bg-white text-rose-600 hover:text-rose-700 text-xs shadow-md backdrop-blur-xs transition-all hover:scale-102 cursor-pointer"
+                  title="Remove header image"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="h-3 w-full"
+              style={{
+                background: theme.bannerGradient || theme.accentColor || '#6366f1'
+              }}
+            />
+          )}
 
           <div className="p-4 sm:p-6 md:p-8 space-y-3">
+            {/* If no header image is set, offer a clean button to add one */}
+            {!headerBannerUrl && (
+              <div className="flex items-center justify-between pb-1">
+                <button
+                  type="button"
+                  onClick={() => setIsHeaderModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 font-semibold px-2.5 py-1 rounded-lg hover:bg-indigo-50 border border-indigo-200/60 shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>+ Add Header Image</span>
+                </button>
+              </div>
+            )}
             <input
               type="text"
               value={form.title || ''}
@@ -318,6 +388,15 @@ export default function FormBuilder({
 
         <button
           type="button"
+          onClick={() => setIsHeaderModalOpen(true)}
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all cursor-pointer"
+          title="Form Header Image"
+        >
+          <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
+
+        <button
+          type="button"
           onClick={onOpenTheme}
           className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
           title="Customize Theme"
@@ -343,6 +422,16 @@ export default function FormBuilder({
           <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
       </div>
+
+      {/* Header Image Modal */}
+      <HeaderImageModal
+        isOpen={isHeaderModalOpen}
+        onClose={() => setIsHeaderModalOpen(false)}
+        currentHeaderUrl={headerBannerUrl}
+        onSaveHeader={handleSaveHeader}
+        onRemoveHeader={handleRemoveHeader}
+        formTitle={form.title}
+      />
     </div>
   );
 }

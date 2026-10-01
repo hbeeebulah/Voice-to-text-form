@@ -18,7 +18,7 @@ import {
   Lock
 } from 'lucide-react';
 import AudioRecorder from '../common/AudioRecorder';
-import { submitResponse, uploadFile } from '../../services/api';
+import { submitResponse, uploadFile, getAssetUrl } from '../../services/api';
 
 // Format bytes into human-readable string
 function formatFileSize(bytes) {
@@ -76,6 +76,7 @@ export default function FormResponder({
   const theme = form.theme || {};
   const questions = form.questions || [];
   const accentColor = theme.accentColor || '#6366f1';
+  const headerBannerUrl = theme.headerBannerUrl || form.headerBannerUrl || form.headerImage || '';
 
   // Handle value change for any question
   const handleAnswerChange = (qId, value, wasVoice = false) => {
@@ -241,11 +242,25 @@ export default function FormResponder({
         style={{ backgroundColor: theme.backgroundColor || '#f8fafc' }}
       >
         <div className="max-w-xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-fadeIn">
-          {/* Accent Header */}
-          <div
-            className="h-3 w-full"
-            style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
-          />
+          {/* Accent Header / Header Banner */}
+          {headerBannerUrl ? (
+            <div className="relative w-full h-32 sm:h-44 overflow-hidden bg-slate-100">
+              <img
+                src={getAssetUrl(headerBannerUrl)}
+                alt={form.title || 'Form Header'}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
+            </div>
+          ) : (
+            <div
+              className="h-3.5 w-full"
+              style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
+            />
+          )}
 
           <div className="p-8 text-center space-y-5">
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
@@ -343,11 +358,25 @@ export default function FormResponder({
         }}
       >
         <div className="max-w-xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-fadeIn">
-          {/* Accent Header Banner */}
-          <div
-            className="h-3.5 w-full"
-            style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
-          />
+          {/* Accent Header Banner / Header Image */}
+          {headerBannerUrl ? (
+            <div className="relative w-full h-32 sm:h-44 overflow-hidden bg-slate-100">
+              <img
+                src={getAssetUrl(headerBannerUrl)}
+                alt={form.title || 'Form Header'}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
+            </div>
+          ) : (
+            <div
+              className="h-3.5 w-full"
+              style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
+            />
+          )}
 
           <div className="p-8 text-center space-y-5">
             <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
@@ -419,10 +448,24 @@ export default function FormResponder({
 
         {/* Form Title & Header Card */}
         <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div
-            className="h-3.5 w-full"
-            style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
-          />
+          {headerBannerUrl ? (
+            <div className="relative w-full h-36 sm:h-52 md:h-64 overflow-hidden bg-slate-100">
+              <img
+                src={getAssetUrl(headerBannerUrl)}
+                alt={form.title || 'Form Header Banner'}
+                className="w-full h-full object-cover transition-transform duration-700 hover:scale-101"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
+            </div>
+          ) : (
+            <div
+              className="h-3.5 w-full"
+              style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
+            />
+          )}
           <div className="p-4 sm:p-6 md:p-8 space-y-3">
             <h1
               className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 leading-tight"
