@@ -418,7 +418,7 @@ export default function LandingPage({
             <span className="text-on-surface font-semibold">VoxForm AI</span>
             <span>· The Voice-Native Form Platform</span>
           </div>
-          <span>© 2025 VoxForm AI · All Rights Reserved</span>
+          <span>© 2026 VoxForm AI · All Rights Reserved</span>
         </div>
       </footer>
     </div>
