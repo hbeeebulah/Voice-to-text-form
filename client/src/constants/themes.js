@@ -207,3 +207,72 @@ export const QUESTION_TYPES = [
     description: 'Allow respondents to attach documents, PDFs, images, or spreadsheets'
   }
 ];
+
+const makeSvgUri = (svg) => `data:image/svg+xml;utf8,${encodeURIComponent(svg.trim())}`;
+
+export const HEADSHOT_PRESETS = [
+  {
+    id: 'geom-triangle',
+    name: 'Neon Triangle',
+    title: 'Prism Delta',
+    url: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><rect width="120" height="120" rx="30" fill="#12132a"/><polygon points="60,20 102,96 18,96" fill="none" stroke="#8083ff" stroke-width="7" stroke-linejoin="round"/><polygon points="60,40 86,86 34,86" fill="#8083ff" fill-opacity="0.3"/><circle cx="60" cy="64" r="8" fill="#c0c1ff"/></svg>`),
+    aura: 'from-primary via-purple-500 to-tertiary',
+    animationClass: 'animate-pulse'
+  },
+  {
+    id: 'geom-hexagon',
+    name: 'Cyber Hexagon',
+    title: 'Emerald Node',
+    url: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><rect width="120" height="120" rx="30" fill="#0d1f18"/><polygon points="60,18 98,40 98,82 60,104 22,82 22,40" fill="none" stroke="#4edea3" stroke-width="7" stroke-linejoin="round"/><polygon points="60,34 83,48 83,74 60,88 37,74 37,48" fill="#4edea3" fill-opacity="0.28"/><circle cx="60" cy="61" r="7" fill="#a7f3d0"/></svg>`),
+    aura: 'from-tertiary via-cyan-400 to-primary',
+    animationClass: 'animate-spin [animation-duration:12s]'
+  },
+  {
+    id: 'geom-sine',
+    name: 'Sine Wave',
+    title: 'Sonic Flux',
+    url: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><rect width="120" height="120" rx="30" fill="#240c1d"/><path d="M18,60 C32,24 46,96 60,60 C74,24 88,96 102,60" fill="none" stroke="#ff66c4" stroke-width="7" stroke-linecap="round"/><circle cx="60" cy="60" r="8" fill="#ffa6df"/><circle cx="39" cy="42" r="5" fill="#ff66c4"/><circle cx="81" cy="78" r="5" fill="#ff66c4"/></svg>`),
+    aura: 'from-pink-500 via-rose-500 to-amber-400',
+    animationClass: 'animate-pulse'
+  },
+  {
+    id: 'geom-cube',
+    name: 'Isometric Cube',
+    title: 'Azure Prism',
+    url: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><rect width="120" height="120" rx="30" fill="#0c192c"/><polygon points="60,20 95,40 60,60 25,40" fill="#38bdf8" fill-opacity="0.85"/><polygon points="60,60 95,40 95,80 60,100" fill="#0284c7" fill-opacity="0.95"/><polygon points="25,40 60,60 60,100 25,80" fill="#1d4ed8" fill-opacity="0.75"/><circle cx="60" cy="60" r="5" fill="#ffffff"/></svg>`),
+    aura: 'from-blue-500 via-indigo-600 to-cyan-400',
+    animationClass: 'animate-spin [animation-duration:10s]'
+  },
+  {
+    id: 'geom-orbit',
+    name: 'Solar Orbit',
+    title: 'Concentric Ring',
+    url: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><rect width="120" height="120" rx="30" fill="#251606"/><circle cx="60" cy="60" r="42" fill="none" stroke="#f59e0b" stroke-width="5" stroke-dasharray="10 6"/><circle cx="60" cy="60" r="26" fill="none" stroke="#fbbf24" stroke-width="6"/><circle cx="60" cy="60" r="13" fill="#f59e0b" fill-opacity="0.45"/><circle cx="60" cy="60" r="6" fill="#fef3c7"/></svg>`),
+    aura: 'from-amber-400 via-orange-500 to-rose-500',
+    animationClass: 'animate-pulse'
+  },
+  {
+    id: 'geom-diamond',
+    name: 'Crystal Rhombus',
+    title: 'Diamond Core',
+    url: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><rect width="120" height="120" rx="30" fill="#140f28"/><polygon points="60,16 102,60 60,104 18,60" fill="none" stroke="#6366f1" stroke-width="7" stroke-linejoin="round"/><line x1="60" y1="16" x2="60" y2="104" stroke="#a5b4fc" stroke-width="4" stroke-opacity="0.5"/><line x1="18" y1="60" x2="102" y2="60" stroke="#a5b4fc" stroke-width="4" stroke-opacity="0.5"/><circle cx="60" cy="60" r="9" fill="#818cf8"/><circle cx="60" cy="60" r="4" fill="#ffffff"/></svg>`),
+    aura: 'from-indigo-500 via-purple-600 to-tertiary',
+    animationClass: 'animate-pulse'
+  },
+  {
+    id: 'geom-star',
+    name: 'Quantum Star',
+    title: 'Vertex Compass',
+    url: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><rect width="120" height="120" rx="30" fill="#091f1c"/><polygon points="60,16 71,46 102,60 71,74 60,104 49,74 18,60 49,46" fill="#10b981" fill-opacity="0.35" stroke="#10b981" stroke-width="6" stroke-linejoin="round"/><circle cx="60" cy="60" r="8" fill="#6ee7b7"/><circle cx="60" cy="60" r="4" fill="#ffffff"/></svg>`),
+    aura: 'from-emerald-400 via-teal-500 to-primary',
+    animationClass: 'animate-spin [animation-duration:14s]'
+  },
+  {
+    id: 'geom-chevron',
+    name: 'Energy Chevron',
+    title: 'Pulse Vector',
+    url: makeSvgUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120"><rect width="120" height="120" rx="30" fill="#250f0e"/><polyline points="28,42 60,70 92,42" fill="none" stroke="#f43f5e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="28,64 60,92 92,64" fill="none" stroke="#fb7185" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.75"/><circle cx="60" cy="32" r="6" fill="#fecdd3"/></svg>`),
+    aura: 'from-rose-500 via-pink-600 to-amber-500',
+    animationClass: 'animate-pulse'
+  }
+];

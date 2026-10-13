@@ -18,7 +18,8 @@ import {
   deleteForm,
   duplicateForm,
   getTranscribeStatus,
-  getCurrentUser
+  getCurrentUser,
+  logoutUser
 } from './services/api';
 
 export default function App() {
@@ -91,17 +92,38 @@ export default function App() {
     }
   }, [view, currentForm?.id, activeTab]);
 
+  const handleUserLogout = useCallback(() => {
+    try {
+      logoutUser();
+    } catch (e) {
+      console.warn('Logout error:', e);
+    }
+    setUser(null);
+    setForms([]);
+    setCurrentForm(null);
+    setView('landing');
+    window.location.hash = '#landing';
+  }, []);
+
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      const [formsData, transcribeStatus, currentUser] = await Promise.all([
-        fetchForms(),
+      const [transcribeStatus, currentUser] = await Promise.all([
         getTranscribeStatus(),
         getCurrentUser()
       ]);
-      setForms(formsData);
       setHasApiKey(Boolean(transcribeStatus.configured));
       setUser(currentUser);
+
+      let formsData = [];
+      if (currentUser?.id) {
+        try {
+          formsData = await fetchForms(currentUser.id);
+        } catch (e) {
+          console.warn('Could not load user forms:', e);
+        }
+      }
+      setForms(formsData);
 
       // Check initial pathname or hash
       const pathname = window.location.pathname;
@@ -273,7 +295,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col antialiased">
+    <div className="min-h-screen bg-surface text-on-surface flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
       {/* Top Navbar (visible in builder and responder) */}
       {view !== 'dashboard' && view !== 'landing' && currentForm && (
         <Navbar
@@ -303,18 +325,19 @@ export default function App() {
             window.location.hash = '#dashboard';
             fetchForms().then(setForms).catch(() => {});
           }}
+          onGoToMainPage={() => {
+            setView('landing');
+            window.location.hash = '#landing';
+          }}
           hasApiKey={hasApiKey}
           mode={view}
           user={user}
+          onUserUpdated={(updated) => setUser(updated)}
           onOpenAuth={(tab = 'login') => {
             setAuthModalTab(tab);
             setIsAuthModalOpen(true);
           }}
-          onUserLoggedOut={() => {
-            setUser(null);
-            setView('landing');
-            window.location.hash = '#landing';
-          }}
+          onUserLoggedOut={handleUserLogout}
         />
       )}
 
@@ -359,13 +382,18 @@ export default function App() {
               onDuplicateForm={handleDuplicate}
               onDeleteForm={handleDelete}
               onOpenResponder={(id) => openFormById(id, 'responder')}
+              onOpenShare={async (form) => {
+                setCurrentForm(form);
+                setIsShareOpen(true);
+              }}
               user={user}
+              onUserUpdated={(updated) => setUser(updated)}
               onOpenAuth={(tab = 'login') => {
                 setAuthModalTab(tab);
                 setIsAuthModalOpen(true);
               }}
-              onUserLoggedOut={() => {
-                setUser(null);
+              onUserLoggedOut={handleUserLogout}
+              onGoToMainPage={() => {
                 setView('landing');
                 window.location.hash = '#landing';
               }}
@@ -388,6 +416,19 @@ export default function App() {
                   window.location.hash = `#form/${currentForm.id}`;
                 }}
                 onOpenShare={() => setIsShareOpen(true)}
+                onOpenApiKey={() => setIsApiKeyOpen(true)}
+                onNavigateTab={(tab) => {
+                  if (tab === 'dashboard') {
+                    setView('dashboard');
+                    window.location.hash = '#dashboard';
+                  } else if (tab === 'responses') {
+                    setActiveTab('responses');
+                  } else if (tab === 'theme') {
+                    setIsThemeOpen(true);
+                  } else {
+                    setActiveTab('questions');
+                  }
+                }}
               />
             )}
 
@@ -398,6 +439,18 @@ export default function App() {
                 onOpenResponderPreview={() => {
                   setView('responder');
                   window.location.hash = `#form/${currentForm.id}`;
+                }}
+                onOpenTheme={() => setIsThemeOpen(true)}
+                onOpenApiKey={() => setIsApiKeyOpen(true)}
+                onNavigateTab={(tab) => {
+                  if (tab === 'dashboard') {
+                    setView('dashboard');
+                    window.location.hash = '#dashboard';
+                  } else if (tab === 'questions') {
+                    setActiveTab('questions');
+                  } else if (tab === 'theme') {
+                    setIsThemeOpen(true);
+                  }
                 }}
               />
             )}
@@ -480,12 +533,22 @@ export default function App() {
         isModal={true}
         initialTab={authModalTab}
         onClose={() => setIsAuthModalOpen(false)}
+        onGoToMainPage={() => {
+          setIsAuthModalOpen(false);
+          setView('landing');
+          window.location.hash = '#landing';
+        }}
         onAuthSuccess={(authUser) => {
           setUser(authUser);
           setIsAuthModalOpen(false);
           setView('dashboard');
           window.location.hash = '#dashboard';
-          fetchForms().then(setForms).catch(() => {});
+          setForms([]);
+          if (authUser?.id) {
+            fetchForms(authUser.id)
+              .then((formsData) => setForms(formsData))
+              .catch(() => setForms([]));
+          }
         }}
         onContinueAsGuest={() => setIsAuthModalOpen(false)}
       />

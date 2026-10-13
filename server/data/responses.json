@@ -1,5 +1,35 @@
 [
   {
+    "id": "01747b0b-db28-4157-8423-396a74dbbbbd",
+    "formId": "customer-feedback-demo",
+    "answers": {
+      "q-role": "Software Engineer / Developer",
+      "q-satisfaction": 5,
+      "q-features": [
+        "Voice-to-Text Multimodal Dictation"
+      ],
+      "q-name": "Jane Doe",
+      "q-experience-detailed": "Speaking into the microphone was very smooth and converted my voice seamlessly!",
+      "q-recommend": "Extremely likely (Definitely)"
+    },
+    "voiceFieldStats": {
+      "q-experience-detailed": true
+    },
+    "submittedAt": "2026-10-12T00:44:44.569Z"
+  },
+  {
+    "id": "6f375337-18dd-4be3-b448-d1db242ea7ea",
+    "formId": "customer-feedback-demo",
+    "answers": {
+      "q-name": "Alex Rivera",
+      "q-role": "Product Designer",
+      "q-satisfaction": 5,
+      "q-experience-detailed": "The voice dictation feature was incredible and captured my nuances perfectly!"
+    },
+    "voiceFieldStats": {},
+    "submittedAt": "2026-10-11T23:46:31.817Z"
+  },
+  {
     "id": "1386853f-ba1e-464c-99b8-76eb921f3ade",
     "formId": "customer-feedback-demo",
     "answers": {

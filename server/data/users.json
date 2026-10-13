@@ -1,46 +1,79 @@
 [
   {
+    "id": "cb1e1038-a17b-40b5-9e77-9e1655a8aeaf",
+    "name": "Clean Creator",
+    "email": "clean.creator.1791768940127@test.com",
+    "passwordHash": "$2b$10$SYoPF2zNCUlmCjSSk0gtjO2qzUkm7r0s10QM5w0guBygreIMLVoVm",
+    "avatarUrl": "data:image/svg+xml;utf8,<svg></svg>",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-10-12T01:35:40.315Z",
+    "updatedAt": "2026-10-12T01:35:40.315Z"
+  },
+  {
+    "id": "afc33048-e7a5-44c8-9228-57a4c51c9898",
+    "name": "Zero Form Creator",
+    "email": "zero.creator@test.com",
+    "passwordHash": "$2b$10$.6lxQnzeBVfvOT7eC66.qOEQ46Zu8e9KV4ItE57NJ9oztibpT3JSu",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-10-12T01:24:57.091Z",
+    "updatedAt": "2026-10-12T01:24:57.092Z"
+  },
+  {
+    "id": "69ae7fbc-cdd6-4833-9c4f-ffbeaec68f42",
+    "name": "Olamide Ajibola",
+    "email": "mavcom2020@gmail.com",
+    "passwordHash": "$2b$10$TrvQlY1WwHFeH0nuh6gcL.QnY/7Cx5dyqRw.xay2Kej9ENQAVT2Wu",
+    "avatarUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2230%22%20fill%3D%22%230d1f18%22%2F%3E%3Cpolygon%20points%3D%2260%2C18%2098%2C40%2098%2C82%2060%2C104%2022%2C82%2022%2C40%22%20fill%3D%22none%22%20stroke%3D%22%234edea3%22%20stroke-width%3D%227%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpolygon%20points%3D%2260%2C34%2083%2C48%2083%2C74%2060%2C88%2037%2C74%2037%2C48%22%20fill%3D%22%234edea3%22%20fill-opacity%3D%220.28%22%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2261%22%20r%3D%227%22%20fill%3D%22%23a7f3d0%22%2F%3E%3C%2Fsvg%3E",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-10-12T01:09:28.572Z",
+    "updatedAt": "2026-10-12T01:33:14.420Z"
+  },
+  {
+    "id": "c6186816-f925-4df9-94aa-dbf286dde53d",
+    "name": "Marcus Aurelius Imperator",
+    "email": "marcus@rome.com",
+    "passwordHash": "$2b$10$V29b/XpU4xLbcwNqOM2Y3uZHrny04/djQgNwgtp.spK1PTR2ZoiKW",
+    "avatarUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-10-12T00:50:09.590Z",
+    "updatedAt": "2026-10-12T00:50:17.878Z"
+  },
+  {
+    "id": "2eb9c9ec-7120-41df-a544-a824284071f8",
+    "name": "Sarah Connor",
+    "email": "sarah.connor@example.com",
+    "passwordHash": "$2b$10$Xzw8LdwQ9mN1.8kV0d8s1ecijPNbnG00upaBUtZ.EInpzh4qp8K0S",
+    "avatarUrl": "https://api.dicebear.com/7.x/initials/svg?seed=Sarah%20Connor&backgroundColor=6366f1,4f46e5,7c3aed",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-10-12T00:45:24.280Z",
+    "updatedAt": "2026-10-12T00:45:24.280Z"
+  },
+  {
     "id": "18ba5cc7-8f1b-4a1a-97e2-69cbf9da4819",
     "name": "Habeeb Ajibola",
     "email": "hbeebulah@gmail.com",
     "passwordHash": "$2b$10$mrUgYlmj3eDg9GppykQar.0OTSxWuTA4i4.WFgF94i4w7AaA4vXKS",
-    "avatarUrl": "https://api.dicebear.com/7.x/initials/svg?seed=Habeeb%20Ajibola&backgroundColor=6366f1,4f46e5,7c3aed",
+    "avatarUrl": "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2230%22%20fill%3D%22%230d1f18%22%2F%3E%3Cpolygon%20points%3D%2260%2C18%2098%2C40%2098%2C82%2060%2C104%2022%2C82%2022%2C40%22%20fill%3D%22none%22%20stroke%3D%22%234edea3%22%20stroke-width%3D%227%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpolygon%20points%3D%2260%2C34%2083%2C48%2083%2C74%2060%2C88%2037%2C74%2037%2C48%22%20fill%3D%22%234edea3%22%20fill-opacity%3D%220.28%22%2F%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2261%22%20r%3D%227%22%20fill%3D%22%23a7f3d0%22%2F%3E%3C%2Fsvg%3E",
     "provider": "email",
     "role": "creator",
     "createdAt": "2026-09-24T21:55:29.150Z",
-    "updatedAt": "2026-09-24T21:55:29.150Z"
+    "updatedAt": "2026-10-12T01:42:17.283Z"
   },
   {
-    "id": "9bc03e20-3e51-465a-83e2-f100f42f53c8",
-    "googleId": "google-sub-998877",
-    "name": "Google Test Creator",
-    "email": "google.tester@gmail.com",
-    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-    "provider": "google",
-    "role": "creator",
-    "createdAt": "2026-09-24T21:50:34.718Z",
-    "lastLoginAt": "2026-09-24T21:50:34.718Z",
-    "updatedAt": "2026-09-24T21:50:34.718Z"
-  },
-  {
-    "id": "2c4772e6-9ae7-4cca-9973-60f9fcc916dc",
-    "name": "Sam Formsmith",
-    "email": "testcreator_1790286634607@example.com",
-    "passwordHash": "$2b$10$AEWLeI25agYbz5nhrelD/.E60nAnlJWUIz3BAbGeznz5eeO8Wxe3C",
-    "avatarUrl": "https://api.dicebear.com/7.x/initials/svg?seed=Sam%20Formsmith&backgroundColor=6366f1,4f46e5,7c3aed",
-    "provider": "email",
-    "role": "creator",
-    "createdAt": "2026-09-24T21:50:34.699Z",
-    "updatedAt": "2026-09-24T21:50:34.699Z"
-  },
-  {
-    "id": "user-demo-creator",
-    "name": "John Doe",
-    "email": "creator@voxform.ai",
-    "passwordHash": "$2b$10$8ZBiAw4PQYdkN9pdwmFjkOBcpX4AcmkKfnolNBe1uBFzzQLpiLoqi",
+    "id": "298dcfca-60f3-42df-9199-089e140b9b19",
+    "name": "Tester User",
+    "email": "tester@voxform.ai",
+    "passwordHash": "$2b$10$8igg6/fdQgdzjpdh6rpXEukuxkEro.9T6ELUlCCLuyAx3TYVHf6Tu",
     "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
     "provider": "email",
     "role": "creator",
-    "createdAt": "2026-09-24T21:44:34.936Z"
+    "createdAt": "2026-10-11T23:41:35.817Z",
+    "updatedAt": "2026-10-12T00:15:00.000Z"
   }
 ]

@@ -5,24 +5,15 @@ import {
   Copy,
   ChevronUp,
   ChevronDown,
-  Sparkles,
-  AlignLeft,
-  AlignJustify,
-  CircleDot,
-  CheckSquare,
-  ChevronDownCircle,
-  SlidersHorizontal,
   Plus,
   X,
-  HelpCircle,
   Mic,
-  Paperclip,
   UploadCloud,
-  FileText,
-  FileUp
+  Paperclip,
+  CheckCircle2,
+  ListOrdered
 } from 'lucide-react';
 import { QUESTION_TYPES } from '../../constants/themes';
-import AudioRecorder from '../common/AudioRecorder';
 
 export default function QuestionCard({
   question,
@@ -35,16 +26,17 @@ export default function QuestionCard({
   onDuplicate,
   onMoveUp,
   onMoveDown,
-  accentColor = '#6366f1'
+  accentColor = '#8083ff'
 }) {
-  const [builderTestText, setBuilderTestText] = useState('');
+  const [showTypeMenu, setShowTypeMenu] = useState(false);
+
   const currentType = QUESTION_TYPES.find(t => t.type === question.type) || QUESTION_TYPES[0];
 
   const handleTypeChange = (newType) => {
     const typeDef = QUESTION_TYPES.find(t => t.type === newType);
     const updates = {
       type: newType,
-      voiceEnabled: typeDef?.voiceEnabled || false
+      voiceEnabled: typeDef?.voiceEnabled !== false
     };
 
     if (['multiple_choice', 'checkboxes', 'dropdown'].includes(newType) && (!question.options || question.options.length === 0)) {
@@ -69,13 +61,13 @@ export default function QuestionCard({
     }
 
     onUpdate(updates);
+    setShowTypeMenu(false);
   };
 
   const handleAddOption = () => {
     const currentOptions = question.options || [];
-    const nextNumber = currentOptions.length + 1;
     onUpdate({
-      options: [...currentOptions, `Option ${nextNumber}`]
+      options: [...currentOptions, `Option ${currentOptions.length + 1}`]
     });
   };
 
@@ -93,363 +85,324 @@ export default function QuestionCard({
   return (
     <div
       onClick={onSelect}
-      className={`bg-white rounded-2xl border transition-all duration-150 relative ${
+      className={`relative group bg-surface-container-low rounded-2xl p-5 sm:p-6 shadow-xl border transition-all duration-200 overflow-hidden flex flex-col gap-4 cursor-pointer ${
         isActive
-          ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500/20'
-          : 'border-slate-200 hover:border-slate-300 shadow-xs'
+          ? 'border-primary-container shadow-[0_4px_24px_-4px_rgba(128,131,255,0.25)] ring-1 ring-primary/40'
+          : 'border-outline-variant/20 hover:border-outline-variant/40'
       }`}
-      style={{
-        borderLeftWidth: isActive ? '6px' : '1px',
-        borderLeftColor: isActive ? accentColor : undefined
-      }}
     >
-      {/* Drag & Reorder Bar */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b border-slate-100/60">
-        <div className="flex items-center gap-2 cursor-grab text-slate-400 hover:text-slate-600">
-          <GripVertical className="w-4 h-4" />
-          <span className="text-xs font-semibold text-slate-500">Question {index + 1}</span>
+      {/* Active Question Left Indicator */}
+      {isActive && (
+        <div
+          className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full"
+          style={{ backgroundColor: accentColor }}
+        />
+      )}
+
+      {/* Question Header: Drag indicator, Title, Type dropdown */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <span className="p-1 rounded text-outline group-hover:text-on-surface-variant transition-colors cursor-grab shrink-0">
+            <GripVertical className="w-4 h-4" />
+          </span>
+
+          <span className="font-mono text-xs font-bold text-primary shrink-0">
+            Q{index + 1}
+          </span>
+
+          <input
+            type="text"
+            value={question.title || ''}
+            onChange={(e) => onUpdate({ title: e.target.value })}
+            placeholder="Enter question title..."
+            className="w-full bg-transparent font-semibold text-base sm:text-lg text-on-surface focus:outline-none focus:bg-surface-container/70 px-2 py-1 rounded-lg transition-colors placeholder:text-outline/70 border border-transparent focus:border-outline-variant/30"
+          />
         </div>
 
-        {/* Quick Move Buttons */}
-        <div className="flex items-center gap-1">
+        {/* Question Type Selector Dropdown */}
+        <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
-            disabled={index === 0}
-            onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
-            className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 disabled:hover:text-slate-400 rounded-md hover:bg-slate-100 transition-colors"
-            title="Move Question Up"
+            onClick={() => setShowTypeMenu(!showTypeMenu)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-medium transition-all border border-outline-variant/30"
           >
-            <ChevronUp className="w-4 h-4" />
+            <span>{currentType.label}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-outline" />
           </button>
-          <button
-            type="button"
-            disabled={index === totalQuestions - 1}
-            onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
-            className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 disabled:hover:text-slate-400 rounded-md hover:bg-slate-100 transition-colors"
-            title="Move Question Down"
-          >
-            <ChevronDown className="w-4 h-4" />
-          </button>
+
+          {showTypeMenu && (
+            <div className="absolute right-0 top-full mt-1.5 z-30 w-56 rounded-xl bg-surface-container-highest/95 backdrop-blur-xl border border-outline-variant/40 shadow-2xl p-1.5 flex flex-col gap-0.5">
+              {QUESTION_TYPES.map((t) => (
+                <button
+                  key={t.type}
+                  type="button"
+                  onClick={() => handleTypeChange(t.type)}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors text-left ${
+                    question.type === t.type
+                      ? 'bg-primary-container text-on-primary-container font-semibold'
+                      : 'text-on-surface hover:bg-surface-container'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                  {t.voiceEnabled && (
+                    <span className="flex items-center gap-1 text-[10px] text-tertiary font-mono">
+                      <Mic className="w-3 h-3" />
+                      Voice
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="p-3.5 sm:p-5 space-y-3.5 sm:space-y-4">
-        {/* Question Header: Title & Type Selector */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 items-start">
-          <div className="md:col-span-2">
-            <input
-              type="text"
-              value={question.title || ''}
-              onChange={(e) => onUpdate({ title: e.target.value })}
-              placeholder="Question Title (e.g., What are your thoughts?)"
-              className="w-full text-sm sm:text-base font-semibold text-slate-900 placeholder:text-slate-400 bg-transparent px-2 sm:px-3 py-1.5 sm:py-2 border-b-2 border-slate-200 hover:border-slate-300 focus:border-indigo-600 focus:outline-none transition-colors"
-            />
-            {/* Optional Description / Help Text */}
-            <input
-              type="text"
-              value={question.description || ''}
-              onChange={(e) => onUpdate({ description: e.target.value })}
-              placeholder="Description or help text (optional)"
-              className="w-full text-xs text-slate-600 placeholder:text-slate-400 bg-transparent px-2 sm:px-3 py-1 focus:outline-none focus:text-slate-800 transition-colors mt-1"
-            />
-          </div>
+      {/* Sub-description input */}
+      <div className="pl-6 sm:pl-8 -mt-2">
+        <input
+          type="text"
+          value={question.description || ''}
+          onChange={(e) => onUpdate({ description: e.target.value })}
+          placeholder="Add description or instructions for responders (optional)..."
+          className="w-full bg-transparent text-on-surface-variant text-xs focus:outline-none focus:text-on-surface px-2 py-1 rounded focus:bg-surface-container/50 placeholder:text-outline/60"
+        />
+      </div>
 
-          {/* Question Type Selector */}
-          <div>
-            <select
-              value={question.type}
-              onChange={(e) => handleTypeChange(e.target.value)}
-              className="w-full px-2.5 sm:px-3 py-2 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer shadow-2xs"
-            >
-              {QUESTION_TYPES.map((t) => (
-                <option key={t.type} value={t.type}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Dynamic Question Body by Type */}
-        <div className="pt-2">
-          {/* Short Answer & Paragraph: Voice-enabled preview */}
-          {(question.type === 'short_answer' || question.type === 'paragraph') && (
-            <div className="space-y-3">
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
-                  <span className="font-mono text-[11px]">
-                    {question.type === 'short_answer' ? 'Short-answer text field' : 'Long-answer paragraph text field'}
-                  </span>
-                  {question.voiceEnabled && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-semibold border border-indigo-200">
-                      <Mic className="w-3 h-3 text-indigo-500" />
-                      Voice Dictation Active
-                    </span>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  {question.type === 'short_answer' ? (
-                    <input
-                      type="text"
-                      value={builderTestText}
-                      onChange={(e) => setBuilderTestText(e.target.value)}
-                      placeholder="Type or click the microphone below to test voice dictation..."
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs"
-                    />
-                  ) : (
-                    <textarea
-                      rows={2}
-                      value={builderTestText}
-                      onChange={(e) => setBuilderTestText(e.target.value)}
-                      placeholder="Type or click the microphone below to test voice dictation..."
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs resize-y"
-                    />
-                  )}
-
-                  {question.voiceEnabled !== false && (
-                    <AudioRecorder
-                      questionTitle={question.title || 'Sample Question'}
-                      questionDescription={question.description}
-                      fieldType={question.type}
-                      currentValue={builderTestText}
-                      onTranscriptionComplete={(text) => setBuilderTestText(text)}
-                      accentColor={accentColor}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Voice Transcription Toggle Option */}
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                  <span className="font-medium">Enable AI Voice Dictation</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={question.voiceEnabled !== false}
-                    onChange={(e) => onUpdate({ voiceEnabled: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
+      {/* QUESTION BODY: TYPE-SPECIFIC EDITOR */}
+      <div className="ml-0 sm:ml-8">
+        {/* 1. SHORT ANSWER & PARAGRAPH */}
+        {['paragraph', 'short_answer'].includes(question.type) && (
+          <div className="p-4 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/20 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between text-xs text-on-surface-variant font-mono">
+              <span className="flex items-center gap-1.5">
+                <Mic className="w-3.5 h-3.5 text-tertiary" />
+                <span>{question.voiceEnabled !== false ? 'Voice Dictation Enabled' : 'Text Input Only'}</span>
+              </span>
+              <span className="text-[11px] text-outline">
+                {question.type === 'paragraph' ? 'Multi-line answer' : 'Single-line answer'}
+              </span>
             </div>
-          )}
 
-          {/* Multiple Choice, Checkboxes, Dropdown Options */}
-          {['multiple_choice', 'checkboxes', 'dropdown'].includes(question.type) && (
-            <div className="space-y-2.5">
-              {(question.options || []).map((option, optIdx) => (
-                <div key={optIdx} className="flex items-center gap-2 group">
-                  <div className="text-slate-400 shrink-0">
-                    {question.type === 'multiple_choice' && <CircleDot className="w-4 h-4 text-slate-300" />}
-                    {question.type === 'checkboxes' && <CheckSquare className="w-4 h-4 text-slate-300" />}
-                    {question.type === 'dropdown' && <span className="text-xs font-mono w-4 text-center">{optIdx + 1}.</span>}
-                  </div>
+            <div className="p-3 rounded-lg bg-surface-container/50 border border-outline-variant/20 text-xs text-outline italic">
+              {question.voiceEnabled !== false
+                ? 'Responders can type their answer or tap the microphone to dictate with speech-to-text...'
+                : 'Responders will type their answer here...'}
+            </div>
+          </div>
+        )}
 
+        {/* 2. MULTIPLE CHOICE / CHECKBOXES / DROPDOWN */}
+        {['multiple_choice', 'checkboxes', 'dropdown'].includes(question.type) && (
+          <div className="flex flex-col gap-2">
+            {(question.options || []).map((option, optIdx) => (
+              <div
+                key={optIdx}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-surface-container/60 hover:bg-surface-container border border-outline-variant/20 transition-colors group/opt"
+              >
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <span className="text-outline text-xs">
+                    {question.type === 'multiple_choice' && '○'}
+                    {question.type === 'checkboxes' && '□'}
+                    {question.type === 'dropdown' && `${optIdx + 1}.`}
+                  </span>
                   <input
                     type="text"
                     value={option}
                     onChange={(e) => handleUpdateOption(optIdx, e.target.value)}
-                    className="flex-1 text-xs text-slate-800 bg-transparent px-2.5 py-1.5 border-b border-transparent hover:border-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
                     placeholder={`Option ${optIdx + 1}`}
+                    className="bg-transparent text-on-surface text-xs sm:text-sm focus:outline-none flex-1"
                   />
-
-                  {(question.options || []).length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteOption(optIdx)}
-                      className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Remove option"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
                 </div>
-              ))}
 
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={handleAddOption}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add option</span>
-                </button>
+                {(question.options || []).length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteOption(optIdx)}
+                    className="opacity-0 group-hover/opt:opacity-100 text-outline hover:text-error transition-opacity p-1 rounded"
+                    title="Remove option"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
-            </div>
-          )}
+            ))}
 
-          {/* Linear Scale Configuration */}
-          {question.type === 'linear_scale' && (
-            <div className="space-y-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                <span className="text-slate-600 font-medium">Scale Range:</span>
+            <div className="flex items-center justify-between pt-1">
+              <button
+                type="button"
+                onClick={handleAddOption}
+                className="flex items-center gap-1.5 text-primary hover:text-primary-container text-xs font-semibold cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Option</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 3. LINEAR SCALE (1 to 5 or 10) */}
+        {question.type === 'linear_scale' && (
+          <div className="p-4 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/20 flex flex-col gap-3">
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-on-surface-variant font-medium">Scale from</span>
                 <select
                   value={question.scaleConfig?.min ?? 1}
                   onChange={(e) => onUpdate({
-                    scaleConfig: { ...question.scaleConfig, min: Number(e.target.value) }
+                    scaleConfig: { ...(question.scaleConfig || {}), min: Number(e.target.value) }
                   })}
-                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs"
+                  className="bg-surface-container text-on-surface rounded-lg px-2 py-1 border border-outline-variant/30 text-xs focus:outline-none"
                 >
                   <option value={0}>0</option>
                   <option value={1}>1</option>
                 </select>
-                <span className="text-slate-400">to</span>
+                <span className="text-on-surface-variant font-medium">to</span>
                 <select
                   value={question.scaleConfig?.max ?? 5}
                   onChange={(e) => onUpdate({
-                    scaleConfig: { ...question.scaleConfig, max: Number(e.target.value) }
+                    scaleConfig: { ...(question.scaleConfig || {}), max: Number(e.target.value) }
                   })}
-                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs"
+                  className="bg-surface-container text-on-surface rounded-lg px-2 py-1 border border-outline-variant/30 text-xs focus:outline-none"
                 >
-                  <option value={3}>3</option>
                   <option value={5}>5</option>
                   <option value={10}>10</option>
                 </select>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-1">
-                <div>
-                  <label className="block text-[11px] text-slate-500 mb-1">
-                    Label for {question.scaleConfig?.min ?? 1} (e.g., Needs Work)
-                  </label>
-                  <input
-                    type="text"
-                    value={question.scaleConfig?.minLabel || ''}
-                    onChange={(e) => onUpdate({
-                      scaleConfig: { ...question.scaleConfig, minLabel: e.target.value }
-                    })}
-                    placeholder="Min Label"
-                    className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-slate-500 mb-1">
-                    Label for {question.scaleConfig?.max ?? 5} (e.g., Delighted)
-                  </label>
-                  <input
-                    type="text"
-                    value={question.scaleConfig?.maxLabel || ''}
-                    onChange={(e) => onUpdate({
-                      scaleConfig: { ...question.scaleConfig, maxLabel: e.target.value }
-                    })}
-                    placeholder="Max Label"
-                    className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
-                  />
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-[11px] text-on-surface-variant mb-1 font-mono">
+                  Label for {question.scaleConfig?.min ?? 1} (e.g. Lowest)
+                </label>
+                <input
+                  type="text"
+                  value={question.scaleConfig?.minLabel || ''}
+                  onChange={(e) => onUpdate({
+                    scaleConfig: { ...(question.scaleConfig || {}), minLabel: e.target.value }
+                  })}
+                  placeholder="Low"
+                  className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-on-surface-variant mb-1 font-mono">
+                  Label for {question.scaleConfig?.max ?? 5} (e.g. Highest)
+                </label>
+                <input
+                  type="text"
+                  value={question.scaleConfig?.maxLabel || ''}
+                  onChange={(e) => onUpdate({
+                    scaleConfig: { ...(question.scaleConfig || {}), maxLabel: e.target.value }
+                  })}
+                  placeholder="High"
+                  className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
+                />
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* File / Document Upload Configuration & Preview */}
-          {question.type === 'file_upload' && (
-            <div className="space-y-4 pt-1">
-              {/* Creator Settings Bar */}
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                  <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Document Attachment Settings</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                      Button Label
-                    </label>
-                    <input
-                      type="text"
-                      value={question.fileConfig?.buttonLabel || 'Attach File'}
-                      onChange={(e) => onUpdate({
-                        fileConfig: {
-                          ...(question.fileConfig || {}),
-                          buttonLabel: e.target.value
-                        }
-                      })}
-                      placeholder="e.g. Attach File, Upload Document"
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                      Allowed Formats
-                    </label>
-                    <select
-                      value={question.fileConfig?.allowedTypes || 'all'}
-                      onChange={(e) => onUpdate({
-                        fileConfig: {
-                          ...(question.fileConfig || {}),
-                          allowedTypes: e.target.value
-                        }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-                    >
-                      <option value="all">All Formats (PDF, Docs, Images, Sheets)</option>
-                      <option value="documents">Documents (.pdf, .doc, .docx, .txt)</option>
-                      <option value="images">Images (.png, .jpg, .jpeg, .webp)</option>
-                      <option value="spreadsheets">Spreadsheets (.xlsx, .xls, .csv)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-500 mb-1">
-                      Max File Size
-                    </label>
-                    <select
-                      value={question.fileConfig?.maxSizeMB || 10}
-                      onChange={(e) => onUpdate({
-                        fileConfig: {
-                          ...(question.fileConfig || {}),
-                          maxSizeMB: Number(e.target.value)
-                        }
-                      })}
-                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-                    >
-                      <option value={5}>5 MB</option>
-                      <option value={10}>10 MB</option>
-                      <option value={25}>25 MB</option>
-                    </select>
-                  </div>
-                </div>
+        {/* 4. FILE UPLOAD CONFIG */}
+        {question.type === 'file_upload' && (
+          <div className="p-4 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/20 flex flex-col gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-mono text-on-surface-variant mb-1">
+                  Button Label
+                </label>
+                <input
+                  type="text"
+                  value={question.fileConfig?.buttonLabel || 'Attach File'}
+                  onChange={(e) => onUpdate({
+                    fileConfig: { ...(question.fileConfig || {}), buttonLabel: e.target.value }
+                  })}
+                  placeholder="Attach File"
+                  className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
+                />
               </div>
-
-              {/* Live Preview Dropzone */}
-              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-4 sm:p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto mb-2.5 text-indigo-600">
-                  <UploadCloud className="w-5 h-5" />
-                </div>
-                <p className="text-xs font-semibold text-slate-700 mb-1">
-                  Drag and drop document here, or browse
-                </p>
-                <p className="text-[11px] text-slate-400 mb-3">
-                  {question.fileConfig?.allowedTypes === 'documents' && 'PDF, DOC, DOCX, TXT'}
-                  {question.fileConfig?.allowedTypes === 'images' && 'PNG, JPG, JPEG, WEBP'}
-                  {question.fileConfig?.allowedTypes === 'spreadsheets' && 'XLSX, XLS, CSV'}
-                  {(!question.fileConfig?.allowedTypes || question.fileConfig?.allowedTypes === 'all') && 'PDF, Word, Excel, Images, or Text'}
-                  {' '}up to {question.fileConfig?.maxSizeMB || 10} MB
-                </p>
-                <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-slate-200 shadow-2xs text-xs font-bold text-slate-700 pointer-events-none">
-                  <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>{question.fileConfig?.buttonLabel || 'Attach File'}</span>
-                </div>
+              <div>
+                <label className="block text-[11px] font-mono text-on-surface-variant mb-1">
+                  Allowed Formats
+                </label>
+                <select
+                  value={question.fileConfig?.allowedTypes || 'all'}
+                  onChange={(e) => onUpdate({
+                    fileConfig: { ...(question.fileConfig || {}), allowedTypes: e.target.value }
+                  })}
+                  className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Formats</option>
+                  <option value="documents">Documents (PDF, Word, TXT)</option>
+                  <option value="images">Images (PNG, JPG, WEBP)</option>
+                  <option value="spreadsheets">Spreadsheets (Excel, CSV)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-mono text-on-surface-variant mb-1">
+                  Max File Size
+                </label>
+                <select
+                  value={question.fileConfig?.maxSizeMB || 10}
+                  onChange={(e) => onUpdate({
+                    fileConfig: { ...(question.fileConfig || {}), maxSizeMB: Number(e.target.value) }
+                  })}
+                  className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none cursor-pointer"
+                >
+                  <option value={5}>5 MB</option>
+                  <option value={10}>10 MB</option>
+                  <option value={25}>25 MB</option>
+                </select>
               </div>
             </div>
-          )}
-        </div>
+
+            <div className="p-4 rounded-xl border-2 border-dashed border-outline-variant/30 flex items-center justify-center gap-2 text-xs text-on-surface-variant">
+              <UploadCloud className="w-4 h-4 text-primary" />
+              <span>Responders will see an upload dropzone here</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Bottom Action Footer */}
-      <div className="px-3.5 sm:px-5 py-2.5 sm:py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-b-2xl">
-        <div className="flex items-center gap-1">
+      {/* QUESTION FOOTER CONTROLS */}
+      <div className="flex items-center justify-between pt-3 border-t border-outline-variant/20 ml-0 sm:ml-8">
+        <div className="flex items-center gap-4">
+          {/* Required Switch */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={question.required || false}
+              onChange={(e) => onUpdate({ required: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-8 h-4 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary-container relative" />
+            <span className="text-xs text-on-surface font-medium">Required</span>
+          </label>
+
+          {/* Voice Dictation Switch (if applicable) */}
+          {['paragraph', 'short_answer'].includes(question.type) && (
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={question.voiceEnabled !== false}
+                onChange={(e) => onUpdate({ voiceEnabled: e.target.checked })}
+                className="sr-only peer"
+              />
+              <div className="w-8 h-4 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-tertiary relative" />
+              <span className="flex items-center gap-1 text-xs text-tertiary font-medium">
+                <Mic className="w-3 h-3" />
+                Voice-to-Text
+              </span>
+            </label>
+          )}
+        </div>
+
+        {/* Action Buttons: Duplicate, Delete, Move Up/Down */}
+        <div className="flex items-center gap-1 text-on-surface-variant">
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onDuplicate(); }}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition-colors"
+            className="p-1.5 rounded-lg hover:bg-surface-container hover:text-on-surface transition-colors cursor-pointer"
             title="Duplicate Question"
           >
             <Copy className="w-4 h-4" />
@@ -457,27 +410,30 @@ export default function QuestionCard({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-1.5 rounded-lg hover:bg-surface-container hover:text-error transition-colors cursor-pointer"
             title="Delete Question"
           >
             <Trash2 className="w-4 h-4" />
           </button>
-        </div>
-
-        <div className="flex items-center gap-4">
-          {/* Required Switch */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-600">Required</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={question.required || false}
-                onChange={(e) => onUpdate({ required: e.target.checked })}
-                className="sr-only peer"
-              />
-              <div className="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
-            </label>
-          </div>
+          <div className="h-3 w-px bg-outline-variant/30 mx-0.5" />
+          <button
+            type="button"
+            disabled={index === 0}
+            onClick={(e) => { e.stopPropagation(); onMoveUp(); }}
+            className="p-1.5 rounded-lg hover:bg-surface-container hover:text-on-surface disabled:opacity-30 transition-colors cursor-pointer"
+            title="Move Up"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            disabled={index === totalQuestions - 1}
+            onClick={(e) => { e.stopPropagation(); onMoveDown(); }}
+            className="p-1.5 rounded-lg hover:bg-surface-container hover:text-on-surface disabled:opacity-30 transition-colors cursor-pointer"
+            title="Move Down"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

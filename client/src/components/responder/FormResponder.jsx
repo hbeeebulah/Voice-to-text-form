@@ -1,26 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Sparkles,
+  Mic,
   CheckCircle2,
   AlertCircle,
-  RotateCcw,
-  Check,
-  ChevronDown,
-  ArrowRight,
-  Eye,
-  Edit3,
   Paperclip,
   UploadCloud,
   FileText,
   Download,
   X,
-  File,
-  Lock
+  ArrowRight,
+  RotateCcw,
+  Sparkles,
+  Edit3
 } from 'lucide-react';
 import AudioRecorder from '../common/AudioRecorder';
 import { submitResponse, uploadFile, getAssetUrl } from '../../services/api';
 
-// Format bytes into human-readable string
 function formatFileSize(bytes) {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
@@ -29,37 +24,8 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-// Get icon corresponding to file type/extension
-function getFileIcon(type = '', name = '') {
-  const ext = (name || '').split('.').pop()?.toLowerCase();
-  if (type.includes('pdf') || ext === 'pdf') {
-    return <FileText className="w-5 h-5 text-red-500" />;
-  }
-  if (type.includes('image') || ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext)) {
-    return <FileText className="w-5 h-5 text-emerald-500" />;
-  }
-  if (type.includes('sheet') || type.includes('csv') || ['xlsx', 'xls', 'csv'].includes(ext)) {
-    return <FileText className="w-5 h-5 text-teal-500" />;
-  }
-  return <Paperclip className="w-5 h-5 text-indigo-500" />;
-}
-
-// Compute accept attribute for file input
-function getAcceptedMimeTypes(allowedTypes) {
-  if (allowedTypes === 'documents') {
-    return '.pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain';
-  }
-  if (allowedTypes === 'images') {
-    return 'image/*,.png,.jpg,.jpeg,.webp';
-  }
-  if (allowedTypes === 'spreadsheets') {
-    return '.xlsx,.xls,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv';
-  }
-  return '*/*';
-}
-
 export default function FormResponder({
-  form,
+  form = {},
   onBackToBuilder,
   apiKey = ''
 }) {
@@ -68,27 +34,22 @@ export default function FormResponder({
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showReview, setShowReview] = useState(false);
-  const [confirmationMessage, setConfirmationMessage] = useState('');
   const [uploadingFiles, setUploadingFiles] = useState({});
   const [dragOverQuestionId, setDragOverQuestionId] = useState(null);
 
   const theme = form.theme || {};
   const questions = form.questions || [];
-  const accentColor = theme.accentColor || '#6366f1';
   const headerBannerUrl = theme.headerBannerUrl || form.headerBannerUrl || form.headerImage || '';
+  const accentColor = theme.accentColor || '#8083ff';
 
-  // Handle value change for any question
+  // Handle value change
   const handleAnswerChange = (qId, value, wasVoice = false) => {
-    setAnswers(prev => ({ ...prev, [qId]: value }));
-
+    setAnswers((prev) => ({ ...prev, [qId]: value }));
     if (wasVoice) {
-      setVoiceFieldStats(prev => ({ ...prev, [qId]: true }));
+      setVoiceFieldStats((prev) => ({ ...prev, [qId]: true }));
     }
-
-    // Clear error if field is filled
     if (errors[qId]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const next = { ...prev };
         delete next[qId];
         return next;
@@ -101,15 +62,15 @@ export default function FormResponder({
     const currentList = Array.isArray(answers[qId]) ? answers[qId] : [];
     let updated;
     if (currentList.includes(option)) {
-      updated = currentList.filter(item => item !== option);
+      updated = currentList.filter((item) => item !== option);
     } else {
       updated = [...currentList, option];
     }
     handleAnswerChange(qId, updated);
   };
 
-  // Calculate completion progress
-  const answeredCount = questions.filter(q => {
+  // Progress calculation
+  const answeredCount = questions.filter((q) => {
     const val = answers[q.id];
     if (val === undefined || val === null || val === '') return false;
     if (Array.isArray(val) && val.length === 0) return false;
@@ -120,105 +81,78 @@ export default function FormResponder({
     ? Math.round((answeredCount / questions.length) * 100)
     : 0;
 
-  // Handle file attachment selection and upload
+  // File upload handler
   const handleFileSelect = async (qId, file, fileConfig = {}) => {
     if (!file) return;
 
+    // Check size limit
     const maxSizeMB = fileConfig.maxSizeMB || 10;
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-
-    if (file.size > maxSizeBytes) {
-      setErrors(prev => ({
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      setErrors((prev) => ({
         ...prev,
-        [qId]: `File size (${formatFileSize(file.size)}) exceeds the maximum allowed limit of ${maxSizeMB} MB.`
+        [qId]: `File size exceeds the ${maxSizeMB}MB limit.`
       }));
       return;
     }
 
-    setUploadingFiles(prev => ({ ...prev, [qId]: true }));
-    if (errors[qId]) {
-      setErrors(prev => {
-        const next = { ...prev };
-        delete next[qId];
-        return next;
-      });
-    }
-
+    setUploadingFiles((prev) => ({ ...prev, [qId]: true }));
     try {
-      // 1. Read base64 dataUrl for instant client-side preview & fallback
-      const reader = new FileReader();
-      const dataUrlPromise = new Promise((resolve) => {
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = () => resolve('');
-        reader.readAsDataURL(file);
-      });
-
-      // 2. Upload to backend if available
-      let serverResult = null;
-      try {
-        serverResult = await uploadFile(file);
-      } catch (uploadErr) {
-        console.warn('[File Upload] Using dataUrl fallback:', uploadErr.message);
-      }
-
-      const dataUrl = await dataUrlPromise;
-
-      const fileRecord = {
+      const data = await uploadFile(file);
+      handleAnswerChange(qId, {
         fileName: file.name,
         fileSize: file.size,
-        fileType: file.type || 'application/octet-stream',
-        fileUrl: serverResult?.fileUrl || '',
-        dataUrl: dataUrl || ''
-      };
-
-      handleAnswerChange(qId, fileRecord);
+        fileType: file.type,
+        fileUrl: data?.fileUrl || ''
+      });
     } catch (err) {
-      console.error('[File Select] Error:', err);
-      setErrors(prev => ({ ...prev, [qId]: 'Failed to process attached file.' }));
+      setErrors((prev) => ({ ...prev, [qId]: `Upload failed: ${err.message}` }));
     } finally {
-      setUploadingFiles(prev => ({ ...prev, [qId]: false }));
+      setUploadingFiles((prev) => ({ ...prev, [qId]: false }));
     }
   };
 
-  // Validate and submit
+  // Submit response
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newErrors = {};
+    if (e) e.preventDefault();
 
-    questions.forEach(q => {
+    const newErrors = {};
+    questions.forEach((q) => {
       if (q.required) {
         const val = answers[q.id];
-        if (val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0)) {
-          newErrors[q.id] = q.type === 'file_upload' ? 'Please attach a document or file.' : 'This question is required.';
+        if (val === undefined || val === null || val === '') {
+          newErrors[q.id] = 'This question is required.';
+        } else if (Array.isArray(val) && val.length === 0) {
+          newErrors[q.id] = 'Please select at least one option.';
         }
       }
     });
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-
-      // Scroll to first invalid field
-      const firstInvalidId = Object.keys(newErrors)[0];
-      const el = document.getElementById(`field-${firstInvalidId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const firstErrorQ = questions.find((q) => newErrors[q.id]);
+      if (firstErrorQ) {
+        const el = document.getElementById(`q-card-${firstErrorQ.id}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const res = await submitResponse(form.id, {
-        answers,
+      const formattedAnswers = questions.map((q) => ({
+        questionId: q.id,
+        questionTitle: q.title,
+        value: answers[q.id] ?? '',
+        wasVoice: Boolean(voiceFieldStats[q.id])
+      }));
+
+      await submitResponse(form.id, {
+        answers: { ...answers },
+        formattedAnswers,
         voiceFieldStats
       });
-
-      setConfirmationMessage(
-        res.confirmationMessage ||
-        form.settings?.confirmationMessage ||
-        'Your response has been recorded. Thank you!'
-      );
       setIsSubmitted(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       alert(`Submission error: ${err.message}`);
     } finally {
@@ -226,536 +160,358 @@ export default function FormResponder({
     }
   };
 
-  const resetForm = () => {
-    setAnswers({});
-    setVoiceFieldStats({});
-    setErrors({});
-    setIsSubmitted(false);
-    setShowReview(false);
+  const handleResetForm = () => {
+    if (window.confirm('Are you sure you want to clear all your answers?')) {
+      setAnswers({});
+      setVoiceFieldStats({});
+      setErrors({});
+      setIsSubmitted(false);
+    }
   };
 
-  // Confirmation screen
-  if (isSubmitted) {
-    return (
-      <div
-        className="min-h-screen py-12 px-4 flex items-center justify-center transition-colors"
-        style={{ backgroundColor: theme.backgroundColor || '#f8fafc' }}
-      >
-        <div className="max-w-xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-fadeIn">
-          {/* Accent Header / Header Banner */}
-          {headerBannerUrl ? (
-            <div className="relative w-full h-32 sm:h-44 overflow-hidden bg-slate-100">
-              <img
-                src={getAssetUrl(headerBannerUrl)}
-                alt={form.title || 'Form Header'}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
-            </div>
-          ) : (
-            <div
-              className="h-3.5 w-full"
-              style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
-            />
-          )}
-
-          <div className="p-8 text-center space-y-5">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
-              <CheckCircle2 className="w-9 h-9" />
-            </div>
-
-            <div className="space-y-2">
-              <h2
-                className="text-2xl font-bold text-slate-900"
-                style={{ fontFamily: theme.fontHeader || 'Inter' }}
-              >
-                Submission Received!
-              </h2>
-              <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto">
-                {confirmationMessage}
-              </p>
-            </div>
-
-            <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Submit Another Response</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowReview(!showReview)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all"
-              >
-                <Eye className="w-4 h-4" />
-                <span>{showReview ? 'Hide Responses' : 'Review My Answers'}</span>
-              </button>
-            </div>
-
-            {/* Submission Receipt Review */}
-            {showReview && (
-              <div className="mt-6 text-left p-5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-3 animate-fadeIn">
-                <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[11px] pb-1 border-b border-slate-200">
-                  Response Summary Receipt
-                </h4>
-                {questions.map((q) => {
-                  const val = answers[q.id];
-                  return (
-                    <div key={q.id} className="space-y-1">
-                      <p className="font-semibold text-slate-700">{q.title}</p>
-                      <p className="text-slate-600 bg-white p-2 rounded-lg border border-slate-200">
-                        {Array.isArray(val) ? (
-                          val.join(', ')
-                        ) : val && typeof val === 'object' && val.fileName ? (
-                          <span className="inline-flex items-center gap-1.5 font-medium text-slate-800">
-                            <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
-                            {val.fileName} ({formatFileSize(val.fileSize)})
-                          </span>
-                        ) : (
-                          val || <span className="italic text-slate-400">No answer provided</span>
-                        )}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {onBackToBuilder && (
-              <div className="pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={onBackToBuilder}
-                  className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Return to Form Builder</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // If the form has been closed by the creator (not accepting responses)
-  const isAcceptingResponses = form.settings?.acceptingResponses !== false;
-  if (!isAcceptingResponses) {
-    return (
-      <div
-        className="min-h-screen py-12 px-4 flex items-center justify-center transition-colors"
-        style={{
-          backgroundColor: theme.backgroundColor || '#f8fafc',
-          fontFamily: theme.fontBody || 'Inter'
-        }}
-      >
-        <div className="max-w-xl w-full bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden animate-fadeIn">
-          {/* Accent Header Banner / Header Image */}
-          {headerBannerUrl ? (
-            <div className="relative w-full h-32 sm:h-44 overflow-hidden bg-slate-100">
-              <img
-                src={getAssetUrl(headerBannerUrl)}
-                alt={form.title || 'Form Header'}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
-            </div>
-          ) : (
-            <div
-              className="h-3.5 w-full"
-              style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
-            />
-          )}
-
-          <div className="p-8 text-center space-y-5">
-            <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
-              <Lock className="w-8 h-8" />
-            </div>
-
-            <div className="space-y-2">
-              <h1
-                className="text-2xl font-bold text-slate-900"
-                style={{ fontFamily: theme.fontHeader || 'Inter' }}
-              >
-                {form.title || 'Untitled Form'}
-              </h1>
-              <h3 className="text-sm font-bold text-rose-600 uppercase tracking-wider">
-                This form is no longer accepting responses
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed max-w-md mx-auto whitespace-pre-line pt-1">
-                {form.settings?.closedMessage ||
-                  'The creator has closed this form to new responses. If you think this is a mistake, please reach out to the form administrator.'}
-              </p>
-            </div>
-
-            {onBackToBuilder && (
-              <div className="pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
-                <span className="text-[11px] text-slate-400">
-                  (You are previewing this form as the creator)
-                </span>
-                <button
-                  type="button"
-                  onClick={onBackToBuilder}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Return to Form Editor to Re-open</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // If form is closed
+  const isFormClosed = form.settings?.acceptingResponses === false;
 
   return (
-    <div
-      className="min-h-screen py-6 px-3 sm:py-10 sm:px-6 relative transition-colors"
-      style={{
-        backgroundColor: theme.backgroundColor || '#f8fafc',
-        fontFamily: theme.fontBody || 'Inter'
-      }}
-    >
-      <div className="max-w-2xl mx-auto space-y-4 sm:space-y-5 pb-24">
-        {/* Switch to Builder button banner (top) */}
-        {onBackToBuilder && (
-          <div className="flex items-center justify-between px-1 sm:px-2 text-xs">
-            <button
-              onClick={onBackToBuilder}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/90 hover:bg-white text-slate-700 hover:text-indigo-600 rounded-xl border border-slate-200 shadow-2xs transition-colors font-medium"
-            >
-              <Edit3 className="w-3.5 h-3.5 text-indigo-500" />
-              <span>Back to Form Editor</span>
-            </button>
+    <div className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container pb-24">
+      {/* Top Header Bar */}
+      <header className="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 px-4 sm:px-8 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-on-primary font-bold shadow-md">
+            <Mic className="w-4 h-4" />
+          </div>
+          <span className="font-bold text-sm tracking-tight text-on-surface">
+            VoxForm
+          </span>
+        </div>
 
-            <span className="text-slate-500 text-[11px]">
-              Public Form Responder View
-            </span>
+        {onBackToBuilder && (
+          <button
+            type="button"
+            onClick={onBackToBuilder}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-primary" />
+            <span>Back to Builder</span>
+          </button>
+        )}
+      </header>
+
+      {/* Main Centered Responder Canvas */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 flex flex-col gap-5">
+        {/* Cover Banner (if present) */}
+        {headerBannerUrl && (
+          <div className="rounded-2xl overflow-hidden shadow-xl bg-surface-container-low border border-outline-variant/20 h-44 sm:h-56 w-full">
+            <img
+              src={getAssetUrl(headerBannerUrl)}
+              alt="Form Cover"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
           </div>
         )}
 
-        {/* Form Title & Header Card */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          {headerBannerUrl ? (
-            <div className="relative w-full h-36 sm:h-52 md:h-64 overflow-hidden bg-slate-100">
-              <img
-                src={getAssetUrl(headerBannerUrl)}
-                alt={form.title || 'Form Header Banner'}
-                className="w-full h-full object-cover transition-transform duration-700 hover:scale-101"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
-            </div>
-          ) : (
-            <div
-              className="h-3.5 w-full"
-              style={{ background: theme.bannerGradient || theme.accentColor || '#6366f1' }}
-            />
+        {/* Form Title & Description Card */}
+        <div className="bg-surface-container-low rounded-2xl p-6 sm:p-8 shadow-xl border border-outline-variant/20 flex flex-col gap-3">
+          <h1 className="font-bold text-2xl sm:text-3xl text-on-surface tracking-tight">
+            {form.title || 'Untitled Form'}
+          </h1>
+          {form.description && (
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed whitespace-pre-line">
+              {form.description}
+            </p>
           )}
-          <div className="p-4 sm:p-6 md:p-8 space-y-3">
-            <h1
-              className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 leading-tight"
-              style={{ fontFamily: theme.fontHeader || 'Inter' }}
-            >
-              {form.title || 'Untitled Form'}
-            </h1>
 
-            {form.description && (
-              <p className="text-xs sm:text-sm text-slate-600 whitespace-pre-line leading-relaxed">
-                {form.description}
-              </p>
-            )}
-
-            <div className="pt-3 border-t border-slate-100 flex flex-col xs:flex-row xs:items-center justify-between gap-1 text-xs text-slate-500">
-              <span className="text-red-500 font-medium">* Indicates required question</span>
-
-              {form.settings?.showProgressBar !== false && (
-                <span className="font-medium text-slate-600">
-                  {progressPercentage}% Completed
-                </span>
-              )}
-            </div>
-
-            {/* Progress Bar */}
-            {form.settings?.showProgressBar !== false && (
-              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
-                <div
-                  className="h-full transition-all duration-300 rounded-full"
-                  style={{
-                    width: `${progressPercentage}%`,
-                    backgroundColor: accentColor
-                  }}
-                />
-              </div>
+          <div className="pt-2 border-t border-outline-variant/20 flex items-center justify-between text-xs text-on-surface-variant font-mono">
+            <span className="text-primary font-medium">* Indicates required question</span>
+            {form.creatorName && (
+              <span>Created by {form.creatorName}</span>
             )}
           </div>
         </div>
 
-        {/* Questions Cards */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {questions.map((q, index) => {
-            const hasError = Boolean(errors[q.id]);
-            const val = answers[q.id];
-
-            return (
+        {/* Progress Bar (if enabled) */}
+        {form.settings?.showProgressBar !== false && !isSubmitted && !isFormClosed && questions.length > 0 && (
+          <div className="bg-surface-container-low rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-xs font-mono text-on-surface-variant">
+              <span>{answeredCount} of {questions.length} answered</span>
+              <span className="text-primary font-bold">{progressPercentage}%</span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
               <div
-                key={q.id}
-                id={`field-${q.id}`}
-                className={`bg-white rounded-2xl border p-4 sm:p-6 transition-all duration-200 ${
-                  hasError
-                    ? 'border-red-400 ring-2 ring-red-100'
-                    : 'border-slate-200 shadow-2xs hover:shadow-xs'
-                }`}
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${progressPercentage}%`,
+                  backgroundColor: accentColor
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Case 1: Form is Closed */}
+        {isFormClosed ? (
+          <div className="bg-surface-container-low rounded-2xl p-8 shadow-xl border border-outline-variant/20 text-center flex flex-col items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h2 className="font-bold text-lg text-on-surface">Form Closed</h2>
+            <p className="text-xs sm:text-sm text-on-surface-variant max-w-md">
+              {form.settings?.closedMessage || 'This form is no longer accepting responses.'}
+            </p>
+          </div>
+        ) : isSubmitted ? (
+          /* Case 2: Response Submitted Successfully */
+          <div className="bg-surface-container-low rounded-2xl p-8 sm:p-10 shadow-xl border border-outline-variant/20 text-center flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-tertiary/20 text-tertiary flex items-center justify-center shadow-lg">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <h2 className="font-bold text-xl sm:text-2xl text-on-surface">
+              {form.settings?.confirmationMessage || 'Thank you! Your response has been recorded.'}
+            </h2>
+            <p className="text-xs sm:text-sm text-on-surface-variant">
+              Your voice and text inputs were successfully saved.
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAnswers({});
+                  setVoiceFieldStats({});
+                  setIsSubmitted(false);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-all border border-outline-variant/30 cursor-pointer"
               >
-                {/* Question Title & Description */}
-                <div className="mb-4">
-                  <h3
-                    className="text-base font-semibold text-slate-900 leading-snug"
-                    style={{ fontFamily: theme.fontHeader || 'Inter' }}
-                  >
-                    {q.title || `Question ${index + 1}`}
-                    {q.required && <span className="text-red-500 ml-1 font-bold">*</span>}
-                  </h3>
+                Submit another response
+              </button>
+              {onBackToBuilder && (
+                <button
+                  type="button"
+                  onClick={onBackToBuilder}
+                  className="px-5 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-semibold transition-all shadow-md cursor-pointer"
+                >
+                  Back to Editor
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Case 3: Normal Form Questions List */
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {questions.map((q, idx) => {
+              const val = answers[q.id];
+              const hasError = Boolean(errors[q.id]);
+              const isVoiceUsed = Boolean(voiceFieldStats[q.id]);
 
-                  {q.description && (
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      {q.description}
-                    </p>
-                  )}
-                </div>
+              return (
+                <div
+                  key={q.id}
+                  id={`q-card-${q.id}`}
+                  className={`bg-surface-container-low rounded-2xl p-5 sm:p-7 shadow-lg border transition-all flex flex-col gap-3.5 ${
+                    hasError
+                      ? 'border-error ring-1 ring-error/50'
+                      : 'border-outline-variant/20'
+                  }`}
+                >
+                  {/* Question Title & Description */}
+                  <div className="flex flex-col gap-1">
+                    <h3 className="font-semibold text-base sm:text-lg text-on-surface leading-snug">
+                      {q.title || `Question ${idx + 1}`}
+                      {q.required && <span className="text-error ml-1">*</span>}
+                    </h3>
+                    {q.description && (
+                      <p className="text-xs text-on-surface-variant leading-relaxed">
+                        {q.description}
+                      </p>
+                    )}
+                  </div>
 
-                {/* Question Input Controls */}
-                <div>
-                  {/* Short Answer */}
-                  {q.type === 'short_answer' && (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={val || ''}
-                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        placeholder="Your answer (or click dictate below)..."
-                        className="w-full px-3.5 py-2.5 text-sm border-b-2 border-slate-200 focus:border-indigo-600 bg-transparent focus:outline-none transition-colors"
-                      />
-
-                      {/* Voice Dictation Toolbar */}
-                      {q.voiceEnabled !== false && (
-                        <AudioRecorder
-                          questionTitle={q.title}
-                          questionDescription={q.description}
-                          fieldType="short_answer"
-                          currentValue={val || ''}
-                          onTranscriptionComplete={(text, mode) => {
-                            handleAnswerChange(q.id, text, true);
-                          }}
-                          accentColor={accentColor}
-                          apiKey={apiKey}
+                  {/* 1. SHORT ANSWER / PARAGRAPH */}
+                  {['paragraph', 'short_answer'].includes(q.type) && (
+                    <div className="flex flex-col gap-2.5">
+                      {q.type === 'short_answer' ? (
+                        <input
+                          type="text"
+                          value={val || ''}
+                          onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                          placeholder="Your answer..."
+                          className="w-full px-3.5 py-2.5 bg-surface-container text-on-surface text-xs sm:text-sm rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary transition-colors placeholder:text-outline"
                         />
+                      ) : (
+                        <textarea
+                          rows={3}
+                          value={val || ''}
+                          onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                          placeholder="Your answer (type or speak)..."
+                          className="w-full px-3.5 py-2.5 bg-surface-container text-on-surface text-xs sm:text-sm rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary transition-colors placeholder:text-outline resize-y"
+                        />
+                      )}
+
+                      {/* Integrated AudioRecorder Voice Dictation */}
+                      {q.voiceEnabled !== false && (
+                        <div className="pt-1 flex items-center justify-between flex-wrap gap-2">
+                          <AudioRecorder
+                            questionTitle={q.title}
+                            questionDescription={q.description}
+                            fieldType={q.type}
+                            currentValue={val || ''}
+                            onTranscriptionComplete={(text) => handleAnswerChange(q.id, text, true)}
+                            accentColor={accentColor}
+                            apiKey={apiKey}
+                          />
+
+                          {val && (
+                            <button
+                              type="button"
+                              onClick={() => handleAnswerChange(q.id, '')}
+                              className="text-[11px] text-outline hover:text-on-surface font-mono transition-colors"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
 
-                  {/* Paragraph (Long Answer) */}
-                  {q.type === 'paragraph' && (
-                    <div className="space-y-2">
-                      <textarea
-                        rows={3}
-                        value={val || ''}
-                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        placeholder="Your detailed response (or click dictate below)..."
-                        className="w-full px-3.5 py-2.5 text-sm border-2 border-slate-200 focus:border-indigo-600 rounded-xl focus:outline-none transition-colors resize-y min-h-[90px]"
-                      />
-
-                      {/* Voice Dictation Toolbar */}
-                      {q.voiceEnabled !== false && (
-                        <AudioRecorder
-                          questionTitle={q.title}
-                          questionDescription={q.description}
-                          fieldType="paragraph"
-                          currentValue={val || ''}
-                          onTranscriptionComplete={(text, mode) => {
-                            handleAnswerChange(q.id, text, true);
-                          }}
-                          accentColor={accentColor}
-                          apiKey={apiKey}
-                        />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Multiple Choice */}
+                  {/* 2. MULTIPLE CHOICE */}
                   {q.type === 'multiple_choice' && (
-                    <div className="space-y-2.5">
-                      {(q.options || []).map((opt, optIdx) => {
-                        const isSelected = val === opt;
-                        return (
-                          <label
-                            key={optIdx}
-                            onClick={() => handleAnswerChange(q.id, opt)}
-                            className={`flex items-center gap-3 p-3 rounded-xl border text-sm cursor-pointer transition-all ${
-                              isSelected
-                                ? 'border-indigo-500 bg-indigo-50/40 text-indigo-950 font-medium shadow-2xs'
-                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 text-slate-800'
-                            }`}
-                          >
-                            <span
-                              className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                                isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300'
-                              }`}
-                            >
-                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                            </span>
-                            <span>{opt}</span>
-                          </label>
-                        );
-                      })}
+                    <div className="flex flex-col gap-2 pt-1">
+                      {(q.options || []).map((option, optIdx) => (
+                        <label
+                          key={optIdx}
+                          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                            val === option
+                              ? 'bg-surface-container-high border-primary text-on-surface font-medium'
+                              : 'bg-surface-container/60 hover:bg-surface-container border-outline-variant/20 text-on-surface-variant'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`q-${q.id}`}
+                            checked={val === option}
+                            onChange={() => handleAnswerChange(q.id, option)}
+                            className="sr-only"
+                          />
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                            val === option ? 'border-primary bg-primary' : 'border-outline'
+                          }`}>
+                            {val === option && <div className="w-1.5 h-1.5 rounded-full bg-on-primary" />}
+                          </div>
+                          <span className="text-xs sm:text-sm">{option}</span>
+                        </label>
+                      ))}
                     </div>
                   )}
 
-                  {/* Checkboxes */}
+                  {/* 3. CHECKBOXES */}
                   {q.type === 'checkboxes' && (
-                    <div className="space-y-2.5">
-                      {(q.options || []).map((opt, optIdx) => {
-                        const isChecked = Array.isArray(val) && val.includes(opt);
+                    <div className="flex flex-col gap-2 pt-1">
+                      {(q.options || []).map((option, optIdx) => {
+                        const isChecked = Array.isArray(val) && val.includes(option);
                         return (
                           <label
                             key={optIdx}
-                            onClick={() => handleCheckboxToggle(q.id, opt)}
-                            className={`flex items-center gap-3 p-3 rounded-xl border text-sm cursor-pointer transition-all ${
+                            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                               isChecked
-                                ? 'border-indigo-500 bg-indigo-50/40 text-indigo-950 font-medium shadow-2xs'
-                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 text-slate-800'
+                                ? 'bg-surface-container-high border-primary text-on-surface font-medium'
+                                : 'bg-surface-container/60 hover:bg-surface-container border-outline-variant/20 text-on-surface-variant'
                             }`}
                           >
-                            <span
-                              className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
-                                isChecked ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'
-                              }`}
-                            >
-                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
-                            </span>
-                            <span>{opt}</span>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleCheckboxToggle(q.id, option)}
+                              className="sr-only"
+                            />
+                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ${
+                              isChecked ? 'border-primary bg-primary' : 'border-outline'
+                            }`}>
+                              {isChecked && <CheckCircle2 className="w-3.5 h-3.5 text-on-primary" />}
+                            </div>
+                            <span className="text-xs sm:text-sm">{option}</span>
                           </label>
                         );
                       })}
                     </div>
                   )}
 
-                  {/* Dropdown */}
+                  {/* 4. DROPDOWN */}
                   {q.type === 'dropdown' && (
-                    <div>
+                    <div className="pt-1">
                       <select
                         value={val || ''}
                         onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-800 cursor-pointer"
+                        className="w-full px-3.5 py-2.5 bg-surface-container text-on-surface text-xs sm:text-sm rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary cursor-pointer"
                       >
-                        <option value="">Select an option...</option>
-                        {(q.options || []).map((opt, optIdx) => (
-                          <option key={optIdx} value={opt}>
-                            {opt}
+                        <option value="">Select an option</option>
+                        {(q.options || []).map((option, optIdx) => (
+                          <option key={optIdx} value={option}>
+                            {option}
                           </option>
                         ))}
                       </select>
                     </div>
                   )}
 
-                  {/* Linear Scale */}
+                  {/* 5. LINEAR SCALE */}
                   {q.type === 'linear_scale' && (
-                    <div className="pt-2">
-                      <div className="flex items-center justify-between text-xs text-slate-500 mb-3 px-1">
-                        <span>{q.scaleConfig?.minLabel || 'Min'}</span>
-                        <span>{q.scaleConfig?.maxLabel || 'Max'}</span>
+                    <div className="pt-2 flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-1 sm:gap-2">
+                        {Array.from({
+                          length: (q.scaleConfig?.max || 5) - (q.scaleConfig?.min || 1) + 1
+                        }, (_, i) => (q.scaleConfig?.min || 1) + i).map((num) => (
+                          <button
+                            key={num}
+                            type="button"
+                            onClick={() => handleAnswerChange(q.id, num)}
+                            className={`flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer ${
+                              val === num
+                                ? 'bg-primary text-on-primary border-primary shadow-md'
+                                : 'bg-surface-container hover:bg-surface-container-high text-on-surface border-outline-variant/20'
+                            }`}
+                          >
+                            {num}
+                          </button>
+                        ))}
                       </div>
-
-                      <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
-                        {Array.from(
-                          { length: (q.scaleConfig?.max ?? 5) - (q.scaleConfig?.min ?? 1) + 1 },
-                          (_, i) => (q.scaleConfig?.min ?? 1) + i
-                        ).map((num) => {
-                          const isSelected = Number(val) === num;
-                          return (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => handleAnswerChange(q.id, num)}
-                              className={`flex-1 min-w-[32px] sm:min-w-[36px] h-9 sm:h-10 rounded-xl flex items-center justify-center text-xs font-bold transition-all shrink-0 sm:shrink ${
-                                isSelected
-                                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-105'
-                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                              }`}
-                            >
-                              {num}
-                            </button>
-                          );
-                        })}
+                      <div className="flex items-center justify-between text-[11px] text-on-surface-variant px-1 font-mono">
+                        <span>{q.scaleConfig?.minLabel || 'Low'}</span>
+                        <span>{q.scaleConfig?.maxLabel || 'High'}</span>
                       </div>
                     </div>
                   )}
 
-                  {/* File / Document Attachment */}
+                  {/* 6. FILE UPLOAD */}
                   {q.type === 'file_upload' && (
-                    <div className="space-y-3">
-                      {val && typeof val === 'object' && val.fileName ? (
-                        /* Attached File Card */
-                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                    <div className="pt-1 flex flex-col gap-2">
+                      {val && (val.fileName || val.name) ? (
+                        <div className="p-3.5 rounded-xl bg-surface-container border border-outline-variant/30 flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                              {getFileIcon(val.fileType, val.fileName)}
+                            <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                              <FileText className="w-4 h-4" />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-bold text-slate-800 truncate" title={val.fileName}>
-                                {val.fileName}
+                              <p className="text-xs font-semibold text-on-surface truncate">
+                                {val.fileName || val.name}
                               </p>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
-                                <span>{formatFileSize(val.fileSize)}</span>
-                                <span>•</span>
-                                <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-                                  <Check className="w-3 h-3 stroke-[3]" />
-                                  Attached
-                                </span>
-                              </div>
+                              <p className="text-[10px] text-on-surface-variant">
+                                {formatFileSize(val.fileSize)}
+                              </p>
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            {(val.dataUrl || val.fileUrl) && (
-                              <a
-                                href={val.dataUrl || val.fileUrl}
-                                download={val.fileName}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-colors"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                                <span>Download</span>
-                              </a>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleAnswerChange(q.id, null)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors cursor-pointer"
-                              title="Remove attached document"
-                            >
-                              <X className="w-4 h-4" />
-                              <span className="sm:hidden">Remove</span>
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAnswerChange(q.id, null)}
+                            className="p-1 rounded-lg text-outline hover:text-error transition-colors cursor-pointer"
+                            title="Remove file"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
                         </div>
                       ) : (
-                        /* Upload Dropzone */
                         <div
                           onDragOver={(e) => {
                             e.preventDefault();
@@ -768,95 +524,73 @@ export default function FormResponder({
                             const file = e.dataTransfer?.files?.[0];
                             if (file) handleFileSelect(q.id, file, q.fileConfig);
                           }}
-                          className={`relative border-2 border-dashed rounded-2xl p-6 sm:p-7 text-center transition-all ${
+                          className={`p-6 rounded-xl border-2 border-dashed text-center flex flex-col items-center justify-center gap-2 transition-all ${
                             dragOverQuestionId === q.id
-                              ? 'border-indigo-500 bg-indigo-50/60 scale-[1.01]'
-                              : 'border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50'
+                              ? 'border-primary bg-surface-container-high'
+                              : 'border-outline-variant/30 hover:border-outline-variant/60 bg-surface-container/50'
                           }`}
                         >
                           <input
                             type="file"
                             id={`file-input-${q.id}`}
-                            accept={getAcceptedMimeTypes(q.fileConfig?.allowedTypes)}
+                            className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) handleFileSelect(q.id, file, q.fileConfig);
                             }}
-                            className="hidden"
                           />
-
-                          {uploadingFiles[q.id] ? (
-                            <div className="flex flex-col items-center justify-center py-4 space-y-2">
-                              <div className="w-7 h-7 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                              <p className="text-xs font-semibold text-slate-700">Attaching document...</p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3">
-                              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto text-indigo-600 shadow-2xs">
-                                <UploadCloud className="w-6 h-6 stroke-[2]" />
-                              </div>
-
-                              <div>
-                                <p className="text-xs font-bold text-slate-800">
-                                  Drag & drop document here, or browse
-                                </p>
-                                <p className="text-[11px] text-slate-500 mt-0.5">
-                                  {q.fileConfig?.allowedTypes === 'documents' && 'PDF, DOC, DOCX, TXT'}
-                                  {q.fileConfig?.allowedTypes === 'images' && 'PNG, JPG, JPEG, WEBP'}
-                                  {q.fileConfig?.allowedTypes === 'spreadsheets' && 'XLSX, XLS, CSV'}
-                                  {(!q.fileConfig?.allowedTypes || q.fileConfig?.allowedTypes === 'all') && 'PDF, Word, Excel, Images, or Text'}
-                                  {' '}up to {q.fileConfig?.maxSizeMB || 10} MB
-                                </p>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => document.getElementById(`file-input-${q.id}`)?.click()}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 font-bold text-xs border border-slate-300 shadow-2xs transition-all hover:scale-102 cursor-pointer"
-                              >
-                                <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
-                                <span>{q.fileConfig?.buttonLabel || 'Attach File'}</span>
-                              </button>
-                            </div>
-                          )}
+                          <UploadCloud className="w-6 h-6 text-primary" />
+                          <p className="text-xs text-on-surface font-medium">
+                            Drag & drop file here, or{' '}
+                            <button
+                              type="button"
+                              onClick={() => document.getElementById(`file-input-${q.id}`)?.click()}
+                              className="text-primary underline cursor-pointer"
+                            >
+                              browse
+                            </button>
+                          </p>
+                          <p className="text-[10px] text-outline font-mono">
+                            Up to {q.fileConfig?.maxSizeMB || 10} MB
+                          </p>
                         </div>
                       )}
                     </div>
                   )}
+
+                  {/* Validation Error */}
+                  {hasError && (
+                    <div className="flex items-center gap-1.5 text-xs text-error font-medium pt-1">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>{errors[q.id]}</span>
+                    </div>
+                  )}
                 </div>
+              );
+            })}
 
-                {/* Validation Error Message */}
-                {hasError && (
-                  <div className="mt-2.5 flex items-center gap-1.5 text-xs text-red-600 animate-fadeIn">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{errors[q.id]}</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+            {/* Bottom Actions Bar */}
+            <div className="pt-4 flex items-center justify-between gap-3">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-8 py-3 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-bold text-xs sm:text-sm shadow-xl transition-all hover:scale-[1.02] cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                style={{ backgroundColor: accentColor }}
+              >
+                <span>{isSubmitting ? 'Submitting...' : 'Submit Form'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
 
-          {/* Form Submit & Clear Action Bar */}
-          <div className="flex flex-col-reverse xs:flex-row items-stretch xs:items-center justify-between gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full xs:w-auto px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-200 transition-all hover:scale-102 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-              style={{ backgroundColor: accentColor }}
-            >
-              <span>{isSubmitting ? 'Submitting...' : 'Submit Form'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              type="button"
-              onClick={resetForm}
-              className="text-xs text-slate-500 hover:text-slate-800 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors text-center"
-            >
-              Clear form
-            </button>
-          </div>
-        </form>
+              <button
+                type="button"
+                onClick={handleResetForm}
+                className="text-xs text-on-surface-variant hover:text-on-surface px-3 py-2 transition-colors cursor-pointer"
+              >
+                Clear form
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

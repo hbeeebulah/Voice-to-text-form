@@ -29,7 +29,7 @@ function sanitizeUser(user) {
 // POST /api/auth/register - Sign up with email & password
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, avatarUrl: customAvatar } = req.body;
 
     if (!email || !email.trim()) {
       return res.status(400).json({ error: 'Email address is required.' });
@@ -50,7 +50,8 @@ router.post('/register', async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=6366f1,4f46e5,7c3aed`;
+    const defaultHeadshot = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    const avatarUrl = (customAvatar && customAvatar.trim()) || defaultHeadshot;
 
     const newUser = {
       id: uuidv4(),
@@ -240,6 +241,31 @@ router.get('/me', authenticate, async (req, res) => {
   res.json({
     user: req.user
   });
+});
+
+// PUT /api/auth/profile - Update user profile (name, headshot avatar)
+router.put('/profile', authenticate, async (req, res) => {
+  try {
+    const user = await db.getUserById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    if (req.body.name && req.body.name.trim()) {
+      user.name = req.body.name.trim();
+    }
+    if (req.body.avatarUrl && req.body.avatarUrl.trim()) {
+      user.avatarUrl = req.body.avatarUrl.trim();
+    }
+    user.updatedAt = new Date().toISOString();
+    await db.saveUser(user);
+    res.json({
+      message: 'Profile updated successfully!',
+      user: sanitizeUser(user)
+    });
+  } catch (err) {
+    console.error('[Auth Profile Update] Error:', err);
+    res.status(500).json({ error: 'Failed to update profile.' });
+  }
 });
 
 // GET /api/auth/config - Get public auth configuration (e.g. Google Client ID)

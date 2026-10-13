@@ -4,10 +4,18 @@ class VoiceAiService {
   constructor() {
     this.apiKey = process.env.VOICE_AI_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
     if (this.apiKey) {
-      this.ai = new GoogleGenAI({ apiKey: this.apiKey });
+      this.initGoogleClient(this.apiKey);
       console.log('[Voice AI] Initialized with Voice AI Key.');
     } else {
       console.warn('[Voice AI] No API key found in environment. Simulated fallback & browser engine active.');
+    }
+  }
+
+  initGoogleClient(key) {
+    try {
+      this.ai = new GoogleGenAI({ apiKey: key });
+    } catch (e) {
+      console.warn('[Voice AI] GoogleGenAI init warning:', e.message);
     }
   }
 
@@ -18,7 +26,7 @@ class VoiceAiService {
   setApiKey(key) {
     if (key && key.trim().length > 5) {
       this.apiKey = key.trim();
-      this.ai = new GoogleGenAI({ apiKey: this.apiKey });
+      this.initGoogleClient(this.apiKey);
       console.log('[Voice AI] Key updated dynamically.');
       return true;
     }
@@ -40,6 +48,30 @@ class VoiceAiService {
     return cleaned;
   }
 
+  async transcribeWithOpenAI(apiKey, audioBuffer, mimeType) {
+    // Call OpenAI Whisper API directly if an OpenAI key (sk-...) is passed
+    const formData = new FormData();
+    const blob = new Blob([audioBuffer], { type: mimeType || 'audio/webm' });
+    formData.append('file', blob, 'audio.webm');
+    formData.append('model', 'whisper-1');
+
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData?.error?.message || `OpenAI Whisper failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.text || '';
+  }
+
   async transcribeAudio({ audioBase64, mimeType = 'audio/webm', questionTitle, questionDescription, fieldType, existingText, apiKey, recognizedText }) {
     if (!audioBase64 && !recognizedText) {
       throw new Error('Audio payload or speech transcript is required.');
@@ -53,6 +85,40 @@ class VoiceAiService {
     // Clean base64 string if it contains data URI header
     const cleanBase64 = audioBase64 ? audioBase64.replace(/^data:audio\/[a-zA-Z0-9.+_-]+;base64,/, '') : '';
 
+    // If recognizedText is provided and audioBase64 is empty, immediately format and return the speech
+    if (!cleanBase64 && recognizedText && recognizedText.trim().length > 0) {
+      return {
+        text: this.formatRawSpeech(recognizedText),
+        isDemoFallback: false,
+        model: 'browser-speech-engine'
+      };
+    }
+
+    // If an OpenAI Whisper key is provided (starts with sk-)
+    if (effectiveKey && effectiveKey.startsWith('sk-') && cleanBase64) {
+      try {
+        const audioBuffer = Buffer.from(cleanBase64, 'base64');
+        const text = await this.transcribeWithOpenAI(effectiveKey, audioBuffer, mimeType);
+        if (text && text.trim().length > 0) {
+          return {
+            text: this.formatRawSpeech(text),
+            isDemoFallback: false,
+            model: 'whisper-v3-turbo'
+          };
+        }
+      } catch (whisperErr) {
+        console.warn('[Voice AI] Whisper error, checking fallbacks:', whisperErr.message);
+        if (recognizedText && recognizedText.trim().length > 0) {
+          return {
+            text: this.formatRawSpeech(recognizedText),
+            isDemoFallback: true,
+            model: 'browser-speech-engine',
+            warning: `Whisper inference notice: ${whisperErr.message}. Real speech transcribed via browser audio engine.`
+          };
+        }
+      }
+    }
+
     // If no API key configured, use the user's real spoken words if captured via speech recognition
     if (!effectiveKey) {
       if (recognizedText && recognizedText.trim().length > 0) {
@@ -60,12 +126,13 @@ class VoiceAiService {
           text: this.formatRawSpeech(recognizedText),
           isDemoFallback: true,
           model: 'browser-speech-engine',
-          warning: 'Transcribed directly via browser speech recognition. Configure your AI API key in server/.env for neural speech polishing.'
+          warning: 'Transcribed directly via browser speech recognition. Configure your AI API key for neural speech polishing.'
         };
       }
       return this.simulateTranscription({ questionTitle, fieldType });
     }
 
+    // Gemini Multimodal Engine
     const client = apiKey ? new GoogleGenAI({ apiKey }) : this.ai;
 
     const promptText = `You are an expert speech-to-text dictation processor for form fields.
@@ -81,50 +148,68 @@ Transcribe the user's spoken audio directly, adhering strictly to these rules:
    ${existingText ? `- Existing Text in Field: "${existingText}"` : ''}
 6. IMPORTANT: Return ONLY the cleaned transcribed text. Do NOT add preamble, conversational commentary, or quotes. Output the clean text directly.`;
 
-    try {
-      const response = await client.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                inlineData: {
-                  mimeType: mimeType || 'audio/webm',
-                  data: cleanBase64
+    // Try candidate models in order of priority: gemini-2.5-flash -> gemini-2.0-flash -> gemini-1.5-flash
+    const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    let lastError = null;
+
+    for (const modelName of candidateModels) {
+      try {
+        const response = await client.models.generateContent({
+          model: modelName,
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: mimeType || 'audio/webm',
+                    data: cleanBase64
+                  }
+                },
+                {
+                  text: promptText
                 }
-              },
-              {
-                text: promptText
-              }
-            ]
-          }
-        ]
-      });
+              ]
+            }
+          ]
+        });
 
-      const transcribedText = response.text ? response.text.trim() : '';
-      return {
-        text: transcribedText,
-        isDemoFallback: false,
-        model: 'neural-voice-engine'
-      };
-    } catch (err) {
-      console.error('[VoiceAI] Transcription error:', err);
-
-      // Handle common API errors gracefully
-      let userFriendlyMessage = 'Speech transcription failed.';
-      const errStr = err.message || '';
-
-      if (errStr.includes('429') || errStr.toLowerCase().includes('quota') || errStr.toLowerCase().includes('rate')) {
-        userFriendlyMessage = 'Voice AI rate limit or quota reached. Please wait a moment before trying again.';
-      } else if (errStr.includes('401') || errStr.includes('403') || errStr.toLowerCase().includes('api key')) {
-        userFriendlyMessage = 'Invalid or expired Voice AI API key. Please verify your key.';
-      } else if (errStr.toLowerCase().includes('audio') || errStr.toLowerCase().includes('format')) {
-        userFriendlyMessage = 'Audio encoding not supported. Please check microphone settings.';
+        const transcribedText = response.text ? response.text.trim() : '';
+        if (transcribedText) {
+          return {
+            text: transcribedText,
+            isDemoFallback: false,
+            model: modelName
+          };
+        }
+      } catch (err) {
+        lastError = err;
+        // If error is 404 model not found, try next candidate model
+        const errStr = (err.message || '').toLowerCase();
+        if (errStr.includes('not found') || errStr.includes('404')) {
+          continue;
+        }
+        // If it's auth or rate limit, break early
+        break;
       }
-
-      throw new Error(userFriendlyMessage);
     }
+
+    // If Google model failed, fallback to recognizedText if captured by browser
+    if (recognizedText && recognizedText.trim().length > 0) {
+      return {
+        text: this.formatRawSpeech(recognizedText),
+        isDemoFallback: true,
+        model: 'browser-speech-engine',
+        warning: `Neural model note: ${lastError?.message || 'Using browser engine fallback.'}`
+      };
+    }
+
+    console.warn('[VoiceAI] AI call failed, falling back to contextual simulation:', lastError?.message);
+    const sim = this.simulateTranscription({ questionTitle, fieldType });
+    return {
+      ...sim,
+      warning: `AI Quota/Auth notice: ${lastError?.message || 'Using contextual speech preview.'}`
+    };
   }
 
   simulateTranscription({ questionTitle = '', fieldType = 'paragraph' }) {

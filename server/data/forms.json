@@ -1,5 +1,188 @@
 [
   {
+    "id": "05e158d9-61c7-4993-8590-c318171a6059",
+    "customSlug": "customer-experience-surv-05e158",
+    "title": "Customer Experience Survey",
+    "description": "Audio feedback test",
+    "creatorId": null,
+    "creatorName": null,
+    "creatorEmail": null,
+    "theme": {
+      "themeId": "modern-minimalist",
+      "accentColor": "#3b82f6",
+      "headerColor": "#2563eb",
+      "backgroundColor": "#f8fafc",
+      "fontHeader": "Inter",
+      "fontBody": "Inter",
+      "headerBannerUrl": "",
+      "cardRoundness": "rounded-2xl",
+      "buttonStyle": "rounded-xl"
+    },
+    "questions": [
+      {
+        "id": "q-1",
+        "title": "How was your experience?",
+        "type": "paragraph",
+        "voiceEnabled": true
+      }
+    ],
+    "settings": {
+      "allowMultipleSubmissions": true,
+      "showProgressBar": true,
+      "confirmationMessage": "Your response has been recorded."
+    },
+    "createdAt": "2026-10-12T01:57:02.329Z",
+    "updatedAt": "2026-10-12T01:57:02.329Z"
+  },
+  {
+    "id": "40d1a8fa-ef61-4fb2-809a-d5558144ff87",
+    "title": "Customer Experience Survey",
+    "description": "Audio feedback test",
+    "creatorId": null,
+    "creatorName": null,
+    "creatorEmail": null,
+    "theme": {
+      "themeId": "modern-minimalist",
+      "accentColor": "#3b82f6",
+      "headerColor": "#2563eb",
+      "backgroundColor": "#f8fafc",
+      "fontHeader": "Inter",
+      "fontBody": "Inter",
+      "headerBannerUrl": "",
+      "cardRoundness": "rounded-2xl",
+      "buttonStyle": "rounded-xl"
+    },
+    "questions": [
+      {
+        "id": "q-1",
+        "title": "How was your experience?",
+        "type": "paragraph",
+        "voiceEnabled": true
+      }
+    ],
+    "settings": {
+      "allowMultipleSubmissions": true,
+      "showProgressBar": true,
+      "confirmationMessage": "Your response has been recorded."
+    },
+    "createdAt": "2026-10-12T01:55:38.751Z",
+    "updatedAt": "2026-10-12T01:55:38.922Z",
+    "customSlug": "cx-test-1791770138813"
+  },
+  {
+    "id": "441a0544-8653-4ee4-9f4a-8b9f130fa840",
+    "title": "My First Spoken Survey",
+    "description": "Voice testing",
+    "creatorId": "cb1e1038-a17b-40b5-9e77-9e1655a8aeaf",
+    "creatorName": "Clean Creator",
+    "creatorEmail": "clean.creator.1791768940127@test.com",
+    "theme": {
+      "themeId": "modern-minimalist",
+      "accentColor": "#3b82f6",
+      "headerColor": "#2563eb",
+      "backgroundColor": "#f8fafc",
+      "fontHeader": "Inter",
+      "fontBody": "Inter",
+      "headerBannerUrl": "",
+      "cardRoundness": "rounded-2xl",
+      "buttonStyle": "rounded-xl"
+    },
+    "questions": [
+      {
+        "id": "q-1",
+        "title": "Your feedback?",
+        "type": "paragraph",
+        "voiceEnabled": true
+      }
+    ],
+    "settings": {
+      "allowMultipleSubmissions": true,
+      "showProgressBar": true,
+      "confirmationMessage": "Your response has been recorded."
+    },
+    "createdAt": "2026-10-12T01:35:40.363Z",
+    "updatedAt": "2026-10-12T01:35:40.365Z"
+  },
+  {
+    "id": "a5efb6f2-b383-4aad-830b-570d5aa656d0",
+    "title": "Product Feedback & Feature Request",
+    "description": "",
+    "creatorId": "18ba5cc7-8f1b-4a1a-97e2-69cbf9da4819",
+    "creatorName": "Habeeb Ajibola",
+    "creatorEmail": "hbeebulah@gmail.com",
+    "theme": {
+      "themeId": "modern-minimalist",
+      "accentColor": "#3b82f6",
+      "headerColor": "#2563eb",
+      "backgroundColor": "#f8fafc",
+      "fontHeader": "Inter",
+      "fontBody": "Inter",
+      "headerBannerUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK698vDb9aQ2pyHFXOXO2e_qIWUuzAA-pDrg1nhArEI3vA3kM7l6FugPQiVmvrfH4y4xAALZfakn6blQdEyFCZVsu4Ta5xhTD3pZ4gBDsEVKeSm4egNnFbuER7NRD_X35sD8KamiAvyuwwdRbGBs_ECUiub2cClbrLNSHG42y1aHz8DgH7OpVKrU2w0Yek3sGQlIy-pmwpH8vF8n42hw0KUKRA0W0lFhpwsddS7KR0ynNHUfZ8xl8sQQ",
+      "cardRoundness": "rounded-2xl",
+      "buttonStyle": "rounded-xl"
+    },
+    "questions": [
+      {
+        "id": "ab15c519-fa1d-47aa-a4c3-9302a6a2cb4f",
+        "title": "Untitled Question",
+        "description": "",
+        "type": "short_answer",
+        "required": false,
+        "voiceEnabled": true,
+        "placeholder": ""
+      }
+    ],
+    "settings": {
+      "allowMultipleSubmissions": true,
+      "showProgressBar": true,
+      "confirmationMessage": "Your response has been recorded."
+    },
+    "createdAt": "2026-10-11T23:31:44.483Z",
+    "updatedAt": "2026-10-12T08:12:30.653Z",
+    "customSlug": "form-a656d0",
+    "headerBannerUrl": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK698vDb9aQ2pyHFXOXO2e_qIWUuzAA-pDrg1nhArEI3vA3kM7l6FugPQiVmvrfH4y4xAALZfakn6blQdEyFCZVsu4Ta5xhTD3pZ4gBDsEVKeSm4egNnFbuER7NRD_X35sD8KamiAvyuwwdRbGBs_ECUiub2cClbrLNSHG42y1aHz8DgH7OpVKrU2w0Yek3sGQlIy-pmwpH8vF8n42hw0KUKRA0W0lFhpwsddS7KR0ynNHUfZ8xl8sQQ",
+    "headerImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuDK698vDb9aQ2pyHFXOXO2e_qIWUuzAA-pDrg1nhArEI3vA3kM7l6FugPQiVmvrfH4y4xAALZfakn6blQdEyFCZVsu4Ta5xhTD3pZ4gBDsEVKeSm4egNnFbuER7NRD_X35sD8KamiAvyuwwdRbGBs_ECUiub2cClbrLNSHG42y1aHz8DgH7OpVKrU2w0Yek3sGQlIy-pmwpH8vF8n42hw0KUKRA0W0lFhpwsddS7KR0ynNHUfZ8xl8sQQ"
+  },
+  {
+    "id": "9cc3c428-37b2-48e9-8c47-41b985aee181",
+    "title": "Untitled Form",
+    "description": "",
+    "creatorId": null,
+    "creatorName": null,
+    "creatorEmail": null,
+    "theme": {
+      "themeId": "modern-minimalist",
+      "accentColor": "#3b82f6",
+      "headerColor": "#2563eb",
+      "backgroundColor": "#f8fafc",
+      "fontHeader": "Inter",
+      "fontBody": "Inter",
+      "headerBannerUrl": "",
+      "cardRoundness": "rounded-2xl",
+      "buttonStyle": "rounded-xl"
+    },
+    "questions": [
+      {
+        "id": "455f439a-5536-4608-a079-be2216ab7a92",
+        "title": "Untitled Question",
+        "description": "",
+        "type": "short_answer",
+        "required": false,
+        "voiceEnabled": true,
+        "placeholder": ""
+      }
+    ],
+    "settings": {
+      "allowMultipleSubmissions": true,
+      "showProgressBar": true,
+      "confirmationMessage": "Your response has been recorded."
+    },
+    "createdAt": "2026-10-11T22:52:15.504Z",
+    "updatedAt": "2026-10-11T23:13:37.330Z",
+    "headerBannerUrl": "",
+    "headerImage": ""
+  },
+  {
     "id": "8ab0408f-96e3-486b-8a8c-d90bd80bcc0f",
     "title": "",
     "description": "Start from scratch with a single question",
@@ -331,6 +514,10 @@
       "confirmationMessage": "Thank you! Your response has been recorded successfully. Our team has received your feedback."
     },
     "createdAt": "2026-09-24T12:58:44.255Z",
-    "updatedAt": "2026-09-24T13:11:27.446Z"
+    "updatedAt": "2026-10-12T00:43:41.266Z",
+    "customSlug": "feedback-demo",
+    "creatorId": null,
+    "creatorName": null,
+    "creatorEmail": null
   }
 ]

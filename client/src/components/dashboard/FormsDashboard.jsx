@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   FileText,
@@ -6,12 +6,16 @@ import {
   Trash2,
   Eye,
   BarChart3,
-  Sparkles,
   Calendar,
   MessageSquare,
   ArrowRight,
-  ExternalLink,
-  X
+  ArrowLeft,
+  Home,
+  Search,
+  X,
+  Mic,
+  Sparkles,
+  Share2
 } from 'lucide-react';
 import UserProfileMenu from '../auth/UserProfileMenu';
 import { getAssetUrl } from '../../services/api';
@@ -23,25 +27,40 @@ export default function FormsDashboard({
   onDuplicateForm,
   onDeleteForm,
   onOpenResponder,
+  onOpenShare,
   user = null,
   onOpenAuth,
   onUserLoggedOut,
+  onUserUpdated,
+  onGoToMainPage,
   onOpenApiKey,
   hasApiKey = false
 }) {
+  const [searchQuery, setSearchQuery] = useState('');
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+
+  // Keyboard shortcut: Cmd/Ctrl + N to create form
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        onCreateForm();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onCreateForm]);
 
   const templates = [
     {
       title: 'Blank Form',
       description: 'Start from scratch with a single question',
-      themeId: 'modern-minimalist',
-      accentColor: '#2563eb',
+      accentColor: '#8083ff',
       questions: [
         {
           id: `q-${Date.now()}-1`,
           title: 'What would you like to share today?',
-          description: 'Type or click the microphone to speak',
+          description: 'Type or tap the microphone to speak your answer',
           type: 'paragraph',
           required: false,
           voiceEnabled: true
@@ -49,10 +68,9 @@ export default function FormsDashboard({
       ]
     },
     {
-      title: 'Customer Audio Feedback Survey',
+      title: 'Customer Audio Feedback',
       description: 'Collect detailed spoken opinions, feature ratings, and satisfaction scores',
-      themeId: 'vibrant-gradient',
-      accentColor: '#6366f1',
+      accentColor: '#4edea3',
       questions: [
         {
           id: `q-${Date.now()}-1`,
@@ -71,7 +89,7 @@ export default function FormsDashboard({
         {
           id: `q-${Date.now()}-3`,
           title: 'What did you like most or what could we improve?',
-          description: 'Feel free to speak your thoughts with AI voice dictation',
+          description: 'Feel free to speak your thoughts with voice dictation',
           type: 'paragraph',
           required: true,
           voiceEnabled: true
@@ -79,10 +97,9 @@ export default function FormsDashboard({
       ]
     },
     {
-      title: 'Daily Voice Journal & Standup',
+      title: 'Daily Voice Standup',
       description: 'Frictionless daily reflection powered by speech-to-text dictation',
-      themeId: 'warm-pastel',
-      accentColor: '#f43f5e',
+      accentColor: '#ff80bf',
       questions: [
         {
           id: `q-${Date.now()}-1`,
@@ -108,10 +125,9 @@ export default function FormsDashboard({
       ]
     },
     {
-      title: 'Executive Conference Registration',
-      description: 'Sleek dark theme event signup with role selection and dietary preferences',
-      themeId: 'dark-executive',
-      accentColor: '#10b981',
+      title: 'Event Registration & RSVP',
+      description: 'Event signup with attendee details and attendance options',
+      accentColor: '#ffd166',
       questions: [
         {
           id: `q-${Date.now()}-1`,
@@ -122,349 +138,394 @@ export default function FormsDashboard({
         },
         {
           id: `q-${Date.now()}-2`,
-          title: 'Which breakout tracks will you attend?',
-          type: 'checkboxes',
+          title: 'Will you be attending in person or remotely?',
+          type: 'multiple_choice',
           required: true,
-          options: ['AI & Machine Learning', 'Cloud Architecture', 'Product Strategy', 'Design Systems']
+          options: ['In Person', 'Remote via Livestream', 'Unable to Attend']
         },
         {
           id: `q-${Date.now()}-3`,
-          title: 'Any dietary restrictions or accessibility needs?',
-          type: 'short_answer',
+          title: 'Any dietary restrictions or questions for the speakers?',
+          type: 'paragraph',
           required: false,
           voiceEnabled: true
-        }
-      ]
-    },
-    {
-      title: 'Project Proposal & Document Submission',
-      description: 'Collect project briefs, executive summaries, and attached documents or resumes',
-      themeId: 'modern-minimalist',
-      accentColor: '#2563eb',
-      questions: [
-        {
-          id: `q-${Date.now()}-1`,
-          title: 'Project Title & Lead Contact',
-          type: 'short_answer',
-          required: true,
-          voiceEnabled: true
-        },
-        {
-          id: `q-${Date.now()}-2`,
-          title: 'Executive Summary',
-          description: 'Type or click dictate to summarize your proposal',
-          type: 'paragraph',
-          required: true,
-          voiceEnabled: true
-        },
-        {
-          id: `q-${Date.now()}-3`,
-          title: 'Attach Proposal Document or Brief',
-          description: 'Upload your PDF, Word doc, or project file (up to 10 MB)',
-          type: 'file_upload',
-          required: true,
-          fileConfig: {
-            buttonLabel: 'Attach File',
-            allowedTypes: 'documents',
-            maxSizeMB: 10
-          }
         }
       ]
     }
   ];
 
-  const handleCreateWithTemplate = (template) => {
+  const handleCreateWithTemplate = (tpl) => {
     onCreateForm({
-      title: template.title === 'Blank Form' ? 'Untitled Form' : template.title,
-      description: template.description,
-      theme: {
-        themeId: template.themeId,
-        accentColor: template.accentColor
-      },
-      questions: template.questions
+      title: tpl.title,
+      description: tpl.description,
+      questions: tpl.questions,
+      theme: { accentColor: tpl.accentColor }
     });
     setTemplateModalOpen(false);
   };
 
+  // Filter forms
+  const filteredForms = forms.filter((f) =>
+    (f.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (f.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalResponses = forms.reduce((sum, f) => sum + (f.responseCount || 0), 0);
+  const activeFormsCount = forms.filter((f) => f.settings?.acceptingResponses !== false).length;
+
   return (
-    <div className="min-h-screen bg-slate-50 py-5 sm:py-8 px-3 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
-        {/* Dashboard Top Navigation / Header Bar */}
-        <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200 shrink-0">
-              <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
+    <div className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container pb-24">
+      {/* Top Header / Greeting Bar */}
+      <header className="sticky top-0 z-30 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onGoToMainPage}
+            className="flex items-center gap-2.5 hover:opacity-85 transition-opacity cursor-pointer text-left"
+            title="Return to Main Landing Page"
+          >
+            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-on-primary font-bold shadow-md">
+              <Mic className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">VoxForm AI Studio</h2>
-              <p className="text-[10px] sm:text-[11px] text-slate-500">Voice-to-Text Intelligent Form Studio</p>
+              <span className="font-bold text-sm tracking-tight text-on-surface block">
+                VoxForm Studio
+              </span>
             </div>
-          </div>
+          </button>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {onOpenApiKey && (
-              <button
-                type="button"
-                onClick={onOpenApiKey}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-indigo-50/70 hover:border-indigo-200 hover:text-indigo-600 text-xs font-medium transition-all cursor-pointer"
-                title="Configure Voice AI Speech Engine"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Voice AI</span>
-                <span className={`w-2 h-2 rounded-full ${hasApiKey ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'}`} />
-              </button>
-            )}
-
-            <UserProfileMenu
-              user={user}
-              onOpenAuth={onOpenAuth}
-              onUserLoggedOut={onUserLoggedOut}
-            />
-          </div>
-        </div>
-
-        {/* Top Hero / Header Section */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-900 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
-          <div className="relative z-10 max-w-2xl space-y-2.5 sm:space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-[11px] sm:text-xs font-semibold border border-white/20">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-              <span>Voice-First AI Forms + Multimodal Dictation</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-              {user ? `Welcome, ${user.name || 'John Doe'}` : 'Welcome, John Doe'}
-            </h1>
-
-            <p className="text-xs sm:text-base text-indigo-100/90 leading-relaxed">
-              Design bespoke, intelligent forms with curated visual themes and empower respondents with seamless voice dictation. Frictionless conversational input meets powerful analytics.
-            </p>
-
-            <div className="pt-2 sm:pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => onCreateForm({})}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-white text-indigo-700 font-bold text-xs shadow-md hover:bg-indigo-50 transition-all hover:scale-102 cursor-pointer"
-              >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Create your form now</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTemplateModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 backdrop-blur-xs transition-all cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Choose Template</span>
-              </button>
-
-              {!user && (
-                <button
-                  type="button"
-                  onClick={() => onOpenAuth('login')}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-semibold text-xs border border-white/30 backdrop-blur-xs transition-all cursor-pointer shadow-xs"
-                >
-                  <span>Sign In</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Templates Picker Row */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-              Start with a Curated Template
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {templates.map((tpl, i) => (
-              <button
-                key={i}
-                onClick={() => handleCreateWithTemplate(tpl)}
-                className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md text-left transition-all group flex flex-col justify-between"
-              >
-                <div>
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white mb-3 shadow-xs"
-                    style={{ backgroundColor: tpl.accentColor }}
-                  >
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
-                    {tpl.title}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                    {tpl.description}
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-semibold">
-                  <span>Use template</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Existing Forms Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-              Your Forms ({forms.length})
-            </h2>
+          {onGoToMainPage && (
             <button
               type="button"
-              onClick={() => onCreateForm({})}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition-colors cursor-pointer"
+              onClick={onGoToMainPage}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer group"
+              title="Return to Main Landing Page"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>New Form</span>
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+              <span>Back to Main Page</span>
             </button>
+          )}
+        </div>
+
+        {/* User Profile & Actions */}
+        <div className="flex items-center gap-3">
+          {user ? (
+            <UserProfileMenu
+              user={user}
+              onUserUpdated={onUserUpdated}
+              onGoToMainPage={onGoToMainPage}
+              onUserLoggedOut={onUserLoggedOut}
+              onLogout={onUserLoggedOut}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => onOpenAuth('login')}
+              className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+            >
+              Sign In
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 flex flex-col gap-8">
+        {/* Workspace Greeting & Actions */}
+        <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
+          <div className="flex flex-col gap-1">
+            <h1 className="font-bold text-2xl sm:text-3xl text-on-surface tracking-tight">
+              {user ? `Welcome back, ${user.name}` : 'Welcome to VoxForm'}
+            </h1>
+            <p className="text-xs sm:text-sm text-on-surface-variant">
+              Manage your forms, track voice responses, and share short links.
+            </p>
           </div>
 
-          {forms.length === 0 ? (
-            <div className="p-12 bg-white rounded-3xl border border-slate-200 text-center space-y-4">
-              <FileText className="w-12 h-12 text-slate-300 mx-auto" />
-              <div>
-                <h3 className="font-bold text-slate-800 text-base">No forms created yet</h3>
-                <p className="text-xs text-slate-500 mt-1">Pick a template above or create your first voice form from scratch!</p>
-              </div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setTemplateModalOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs sm:text-sm font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span>Templates</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onCreateForm()}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary text-xs sm:text-sm font-bold shadow-lg transition-all hover:scale-102 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create New Form</span>
+            </button>
+          </div>
+        </section>
+
+        {/* Real Summary Metrics Strip */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
+            <span className="text-xs text-on-surface-variant font-medium">Total Forms</span>
+            <span className="font-bold text-2xl text-on-surface">{forms.length}</span>
+            <span className="text-[11px] text-on-surface-variant/70 font-mono">Created in workspace</span>
+          </div>
+
+          <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
+            <span className="text-xs text-on-surface-variant font-medium">Total Responses</span>
+            <span className="font-bold text-2xl text-primary">{totalResponses}</span>
+            <span className="text-[11px] text-on-surface-variant/70 font-mono">Submissions recorded</span>
+          </div>
+
+          <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
+            <span className="text-xs text-on-surface-variant font-medium">Active Forms</span>
+            <span className="font-bold text-2xl text-tertiary">{activeFormsCount}</span>
+            <span className="text-[11px] text-on-surface-variant/70 font-mono">Open for responders</span>
+          </div>
+        </section>
+
+        {/* Search Bar */}
+        <section className="flex items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-outline absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search forms by title or description..."
+              className="w-full pl-10 pr-4 py-2.5 bg-surface-container-low text-on-surface text-xs sm:text-sm rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary placeholder:text-outline transition-colors"
+            />
+            {searchQuery && (
               <button
                 type="button"
-                onClick={() => onCreateForm({})}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md transition-colors cursor-pointer"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
               >
-                <Plus className="w-4 h-4 stroke-[2.5]" />
-                <span>Create New Form</span>
+                <X className="w-3.5 h-3.5" />
               </button>
+            )}
+          </div>
+        </section>
+
+        {/* Forms Grid or Empty State */}
+        <section>
+          {filteredForms.length === 0 ? (
+            <div className="bg-surface-container-low rounded-3xl p-8 sm:p-12 text-center border border-outline-variant/20 flex flex-col items-center gap-6 shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-sm">
+                <FileText className="w-8 h-8" />
+              </div>
+              <div className="max-w-md">
+                <h3 className="font-bold text-lg sm:text-xl text-on-surface">
+                  {searchQuery ? 'No forms match your search' : 'No forms yet in your workspace'}
+                </h3>
+                <p className="text-xs sm:text-sm text-on-surface-variant mt-1.5 leading-relaxed">
+                  {searchQuery
+                    ? 'Try searching with another keyword or clear the search query filter.'
+                    : 'Get started by creating a new form. Set up voice-to-text dictation questions, generate your short link and QR code to share, and start seeing responses in real-time.'}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3 flex-wrap justify-center">
+                <button
+                  type="button"
+                  onClick={() => onCreateForm()}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-bold shadow-lg cursor-pointer hover:bg-primary-container transition-all hover:scale-102"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create New Form</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTemplateModalOpen(true)}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs sm:text-sm font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span>Start from Template</span>
+                </button>
+              </div>
+
+              {/* 3-Step Quick Guide Strip */}
+              {!searchQuery && (
+                <div className="w-full max-w-2xl mt-4 pt-6 border-t border-outline-variant/15 grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-left">
+                  <div className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/20 flex flex-col gap-1.5">
+                    <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary text-xs font-bold flex items-center justify-center font-mono">
+                      1
+                    </div>
+                    <span className="text-xs font-bold text-on-surface">1. Create Form</span>
+                    <p className="text-[11px] text-on-surface-variant leading-normal">
+                      Build questions and toggle voice dictation for spoken answers.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/20 flex flex-col gap-1.5">
+                    <div className="w-6 h-6 rounded-lg bg-secondary/15 text-secondary text-xs font-bold flex items-center justify-center font-mono">
+                      2
+                    </div>
+                    <span className="text-xs font-bold text-on-surface">2. Share Link & QR</span>
+                    <p className="text-[11px] text-on-surface-variant leading-normal">
+                      Send your short link or download the QR code for respondents.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/20 flex flex-col gap-1.5">
+                    <div className="w-6 h-6 rounded-lg bg-tertiary/15 text-tertiary text-xs font-bold flex items-center justify-center font-mono">
+                      3
+                    </div>
+                    <span className="text-xs font-bold text-on-surface">3. See Responses</span>
+                    <p className="text-[11px] text-on-surface-variant leading-normal">
+                      Review voice-to-text transcripts and live analytics instantly.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {forms.map((form) => (
-                <div
-                  key={form.id}
-                  className="bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
-                >
-                  {(form.theme?.headerBannerUrl || form.headerBannerUrl) ? (
-                    <div className="h-14 w-full overflow-hidden bg-slate-100 relative">
-                      <img
-                        src={getAssetUrl(form.theme?.headerBannerUrl || form.headerBannerUrl)}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className="h-2 w-full"
-                      style={{ backgroundColor: form.theme?.accentColor || '#6366f1' }}
-                    />
-                  )}
+              {filteredForms.map((form) => {
+                const headerUrl = form.theme?.headerBannerUrl || form.headerBannerUrl || form.headerImage;
+                const accent = form.theme?.accentColor || '#8083ff';
 
-                  <div className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3
-                          onClick={() => onSelectForm(form.id, 'builder')}
-                          className="font-bold text-slate-900 text-base hover:text-indigo-600 cursor-pointer transition-colors line-clamp-1"
+                return (
+                  <div
+                    key={form.id}
+                    className="bg-surface-container-low rounded-2xl border border-outline-variant/20 hover:border-outline-variant/50 hover:shadow-xl transition-all flex flex-col justify-between overflow-hidden group"
+                  >
+                    {/* Header Banner Preview or Color Bar */}
+                    {headerUrl ? (
+                      <div className="h-20 w-full overflow-hidden bg-surface-container-high relative">
+                        <img
+                          src={getAssetUrl(headerUrl)}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-2 w-full" style={{ backgroundColor: accent }} />
+                    )}
+
+                    {/* Card Content */}
+                    <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <h3
+                            onClick={() => onSelectForm(form.id, 'builder')}
+                            className="font-bold text-on-surface text-base hover:text-primary cursor-pointer transition-colors line-clamp-1"
+                          >
+                            {form.title || 'Untitled Form'}
+                          </h3>
+
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-surface-container text-on-surface-variant border border-outline-variant/20 shrink-0">
+                            <MessageSquare className="w-3 h-3 text-primary" />
+                            <span>{form.responseCount || 0}</span>
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
+                          {form.description || 'No description provided.'}
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-outline-variant/20 flex items-center justify-between text-xs text-on-surface-variant/70 font-mono">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>
+                            {new Date(form.updatedAt || form.createdAt || Date.now()).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        <span>{(form.questions || []).length || form.questionCount || 0} questions</span>
+                      </div>
+                    </div>
+
+                    {/* Card Actions Footer */}
+                    <div className="px-5 py-3 bg-surface-container/40 border-t border-outline-variant/20 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onSelectForm(form.id, 'builder')}
+                        className="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-semibold text-xs transition-colors cursor-pointer"
+                      >
+                        Edit Form
+                      </button>
+
+                      <div className="flex items-center gap-1 text-on-surface-variant">
+                        <button
+                          type="button"
+                          onClick={() => onOpenResponder(form.id)}
+                          className="p-1.5 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                          title="Open Form Responder"
                         >
-                          {form.title || 'Untitled Form'}
-                        </h3>
+                          <Eye className="w-4 h-4" />
+                        </button>
 
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 shrink-0">
-                          <MessageSquare className="w-3 h-3 text-indigo-500" />
-                          <span>{form.responseCount || 0}</span>
-                        </span>
+                        {onOpenShare && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenShare(form)}
+                            className="p-1.5 hover:text-primary hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                            title="Share Link & Real QR Code"
+                          >
+                            <Share2 className="w-4 h-4 text-primary" />
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => onSelectForm(form.id, 'analytics')}
+                          className="p-1.5 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                          title="View Responses & Analytics"
+                        >
+                          <BarChart3 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onDuplicateForm(form.id)}
+                          className="p-1.5 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                          title="Duplicate Form"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onDeleteForm(form.id)}
+                          className="p-1.5 hover:text-error hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                          title="Delete Form"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-
-                      <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">
-                        {form.description || 'No description provided.'}
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>
-                          {new Date(form.updatedAt || form.createdAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                      <span>{form.questionCount || 0} questions</span>
                     </div>
                   </div>
-
-                  {/* Card Action Buttons */}
-                  <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-1">
-                    <button
-                      onClick={() => onSelectForm(form.id, 'builder')}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-2xs transition-colors"
-                    >
-                      Edit Form
-                    </button>
-
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => onOpenResponder(form.id)}
-                        className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors"
-                        title="Open Responder Form"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={() => onSelectForm(form.id, 'analytics')}
-                        className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg transition-colors"
-                        title="View Responses & Analytics"
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={() => onDuplicateForm(form.id)}
-                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white rounded-lg transition-colors"
-                        title="Duplicate Form"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={() => onDeleteForm(form.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Form"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
       </div>
 
       {/* Template Selection Modal */}
       {templateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto space-y-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-container-lowest/80 backdrop-blur-md">
+          <div className="bg-surface-container-low rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-outline-variant/30 max-h-[90vh] overflow-y-auto flex flex-col gap-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">Choose a Template</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Start with a pre-configured template or build from scratch</p>
+                <h3 className="text-xl font-bold text-on-surface">Choose a Template</h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Pick a pre-configured template or customize it
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setTemplateModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                className="p-2 text-outline hover:text-on-surface rounded-xl hover:bg-surface-container transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -476,24 +537,24 @@ export default function FormsDashboard({
                   key={idx}
                   type="button"
                   onClick={() => handleCreateWithTemplate(tpl)}
-                  className="p-4 rounded-2xl border-2 border-slate-100 hover:border-indigo-500 hover:shadow-md text-left transition-all group flex flex-col justify-between cursor-pointer"
+                  className="p-5 rounded-2xl border border-outline-variant/30 hover:border-primary/60 bg-surface-container/40 hover:bg-surface-container text-left transition-all flex flex-col justify-between cursor-pointer group"
                 >
                   <div>
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white mb-3 shadow-xs"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white mb-3 shadow-md"
                       style={{ backgroundColor: tpl.accentColor }}
                     >
                       <FileText className="w-5 h-5" />
                     </div>
-                    <h4 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+                    <h4 className="font-bold text-on-surface text-sm group-hover:text-primary transition-colors">
                       {tpl.title}
                     </h4>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                    <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
                       {tpl.description}
                     </p>
                   </div>
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-semibold">
-                    <span>Use this template</span>
+                  <div className="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-xs text-primary font-semibold">
+                    <span>Use template</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </button>

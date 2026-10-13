@@ -1,28 +1,4 @@
-import React, { useState, useRef } from 'react';
-import {
-  X,
-  Palette,
-  Check,
-  Type,
-  Layout,
-  Sparkles,
-  RotateCcw,
-  Sliders,
-  Image as ImageIcon,
-  UploadCloud,
-  Trash2,
-  Link as LinkIcon,
-  Loader2
-} from 'lucide-react';
-import {
-  CURATED_THEMES,
-  ACCENT_PALETTES,
-  BACKGROUND_STYLES,
-  HEADER_FONTS,
-  BODY_FONTS,
-  HEADER_BANNER_PRESETS
-} from '../../constants/themes';
-import { uploadFile, getAssetUrl } from '../../services/api';
+import React, { useState } from 'react';
 
 export default function ThemeCustomizer({
   theme = {},
@@ -30,509 +6,505 @@ export default function ThemeCustomizer({
   onClose,
   isOpen = true
 }) {
-  const currentThemeId = theme.themeId || 'vibrant-gradient';
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
-  const [customUrl, setCustomUrl] = useState('');
-  const [showUrlInput, setShowUrlInput] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleBannerSelect = (url) => {
-    onUpdateTheme({
-      headerBannerUrl: url
-    });
-  };
-
-  const handleBannerRemove = () => {
-    onUpdateTheme({
-      headerBannerUrl: ''
-    });
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Please select a valid image file.');
-      return;
-    }
-
-    try {
-      setIsUploading(true);
-      setUploadError('');
-      const data = await uploadFile(file);
-      if (data?.fileUrl) {
-        onUpdateTheme({
-          headerBannerUrl: data.fileUrl
-        });
-      }
-    } catch (err) {
-      console.error('Failed to upload banner:', err);
-      setUploadError(err.message || 'Upload failed');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const applyCuratedTheme = (curated) => {
-    onUpdateTheme({
-      themeId: curated.id,
-      accentColor: curated.accentColor,
-      headerColor: curated.headerColor,
-      backgroundColor: curated.backgroundColor,
-      cardBackground: curated.cardBackground || '#ffffff',
-      textColor: curated.textColor || '#0f172a',
-      fontHeader: curated.fontHeader,
-      fontBody: curated.fontBody,
-      cardRoundness: curated.cardRoundness,
-      buttonStyle: curated.buttonStyle,
-      bannerGradient: curated.bannerGradient
-    });
-  };
-
-  const handleAccentChange = (hex, headerHex) => {
-    onUpdateTheme({
-      accentColor: hex,
-      headerColor: headerHex || hex,
-      themeId: 'custom'
-    });
-  };
-
-  const handleBackgroundChange = (bgStyle) => {
-    onUpdateTheme({
-      backgroundColor: bgStyle.color,
-      themeId: 'custom'
-    });
-  };
-
-  const handleHeaderFontChange = (fontId) => {
-    onUpdateTheme({
-      fontHeader: fontId
-    });
-  };
-
-  const handleBodyFontChange = (fontId) => {
-    onUpdateTheme({
-      fontBody: fontId
-    });
-  };
+  const [accentColor, setAccentColor] = useState(theme.accentColor || '#8083ff');
+  const [backgroundColor, setBackgroundColor] = useState(theme.backgroundColor || '#0f131c');
+  const [voiceGlow, setVoiceGlow] = useState(theme.voiceGlow || '#4edea3');
+  const [selectedPreset, setSelectedPreset] = useState(theme.themeId || 'obsidian');
+  const [selectedPairing, setSelectedPairing] = useState(theme.fontPairing || 'jakarta-inter');
+  const [radius, setRadius] = useState(theme.cardRoundness || '16px');
+  const [shaderOrbs, setShaderOrbs] = useState(theme.shaderOrbs !== false);
+  const [gridTexture, setGridTexture] = useState(theme.gridTexture !== false);
+  const [sonicWaveOverlay, setSonicWaveOverlay] = useState(theme.sonicWaveOverlay !== false);
+  const [isLiveActive, setIsLiveActive] = useState(true);
 
   if (!isOpen) return null;
 
+  const presets = [
+    {
+      id: 'obsidian',
+      name: 'Obsidian Studio',
+      accent: '#8083ff',
+      bg: '#0f131c',
+      glow: '#4edea3',
+      colors: ['#0a0e17', '#8083ff', '#571bc1'],
+      badge: 'v1.2'
+    },
+    {
+      id: 'emerald',
+      name: 'Emerald Neural',
+      accent: '#4edea3',
+      bg: '#121b16',
+      glow: '#00885d',
+      colors: ['#121b16', '#4edea3', '#00885d'],
+      badge: '#4edea3'
+    },
+    {
+      id: 'violet',
+      name: 'Violet Horizon',
+      accent: '#d0bcff',
+      bg: '#181126',
+      glow: '#e9ddff',
+      colors: ['#181126', '#d0bcff', '#e9ddff'],
+      badge: '#d0bcff'
+    },
+    {
+      id: 'monochrome',
+      name: 'Monochrome',
+      accent: '#dfe2ef',
+      bg: '#0a0e17',
+      glow: '#353943',
+      colors: ['#0a0e17', '#353943', '#dfe2ef'],
+      badge: '#dfe2ef'
+    }
+  ];
+
+  const applyPreset = (preset) => {
+    setSelectedPreset(preset.id);
+    setAccentColor(preset.accent);
+    setBackgroundColor(preset.bg);
+    setVoiceGlow(preset.glow);
+    if (isLiveActive) {
+      onUpdateTheme({
+        themeId: preset.id,
+        accentColor: preset.accent,
+        backgroundColor: preset.bg,
+        voiceGlow: preset.glow
+      });
+    }
+  };
+
+  const handleApply = () => {
+    onUpdateTheme({
+      themeId: selectedPreset,
+      accentColor,
+      backgroundColor,
+      voiceGlow,
+      fontPairing: selectedPairing,
+      cardRoundness: radius,
+      shaderOrbs,
+      gridTexture,
+      sonicWaveOverlay
+    });
+    if (onClose) onClose();
+  };
+
+  const handleReset = () => {
+    const defaultPreset = presets[0];
+    applyPreset(defaultPreset);
+    setRadius('16px');
+    setShaderOrbs(true);
+    setGridTexture(true);
+    setSonicWaveOverlay(true);
+  };
+
   return (
-    <div className="w-full max-w-md bg-white border-l border-slate-200 shadow-xl flex flex-col h-full overflow-hidden animate-fadeIn">
-      {/* Panel Header */}
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
-        <div className="flex items-center gap-2">
-          <Palette className="w-5 h-5 text-indigo-600" />
-          <h3 className="font-bold text-slate-800 text-sm">Theme & Design Customizer</h3>
+    <aside className="fixed right-0 top-0 bottom-0 h-full w-full max-w-[440px] bg-surface-container-low/95 backdrop-blur-2xl shadow-2xl flex flex-col z-50 overflow-hidden border-l border-outline-variant/30 select-none animate-fadeIn">
+      {/* Drawer Header (Stitch Exact Header) */}
+      <div className="px-5 py-4 bg-surface-container-low shadow-sm flex items-center justify-between shrink-0 border-b border-outline-variant/20">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-primary-container/20 flex items-center justify-center text-primary">
+            <span className="material-symbols-outlined text-[20px]">palette</span>
+          </div>
+          <div>
+            <h2 className="font-headline-sm text-base font-semibold text-on-surface tracking-tight">
+              Theme & Design Studio
+            </h2>
+            <span className="font-mono text-[11px] text-outline">Interactive Token Customizer</span>
+          </div>
         </div>
-        {onClose && (
+
+        <div className="flex items-center gap-1.5">
+          {/* Live Preview Toggle */}
+          <label className="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors">
+            <input
+              type="checkbox"
+              checked={isLiveActive}
+              onChange={(e) => setIsLiveActive(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-8 h-4 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-tertiary relative" />
+            <span className="font-mono text-[10px] text-tertiary font-bold pr-1">LIVE</span>
+          </label>
+
+          {/* Reset Ghost Button */}
           <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+            type="button"
+            onClick={handleReset}
+            className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors"
+            title="Reset all tokens to default"
           >
-            <X className="w-5 h-5" />
+            <span className="material-symbols-outlined text-[18px]">refresh</span>
           </button>
-        )}
+
+          {/* Close Button */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container-high transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">close</span>
+          </button>
+        </div>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-6">
-        {/* Form Header Image & Banner Section */}
-        <section className="space-y-3 pb-5 border-b border-slate-200">
+      {/* Drawer Scrollable Body */}
+      <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-6">
+        {/* Section 1: Curated Themes */}
+        <section className="flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Form Header Image</span>
-            </label>
-            {theme.headerBannerUrl && (
-              <button
-                type="button"
-                onClick={handleBannerRemove}
-                className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
-              >
-                Remove
-              </button>
-            )}
-          </div>
-
-          {/* Current Banner Preview or Placeholder */}
-          {theme.headerBannerUrl ? (
-            <div className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 group">
-              <img
-                src={getAssetUrl(theme.headerBannerUrl)}
-                alt="Form Header Banner"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-2.5 py-1 bg-white text-slate-800 text-[11px] font-semibold rounded-lg shadow-xs hover:bg-slate-100 cursor-pointer"
-                >
-                  Change
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBannerRemove}
-                  className="p-1 bg-white text-rose-600 text-[11px] font-semibold rounded-lg shadow-xs hover:bg-rose-50 cursor-pointer"
-                  title="Remove Image"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
+            <div className="flex items-center gap-1.5 font-mono text-xs">
+              <span className="uppercase tracking-wider text-outline font-semibold">Curated Themes</span>
+              <span className="text-outline">({presets.length} Presets)</span>
             </div>
-          ) : (
-            <div className="p-3 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center">
-              <p className="text-xs text-slate-500">
-                No header image set. Choose a preset or upload your company banner below.
-              </p>
-            </div>
-          )}
-
-          {/* Upload and URL Action Buttons */}
-          <div className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <button
-              type="button"
-              disabled={isUploading}
-              onClick={() => fileInputRef.current?.click()}
-              className="flex-1 py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-            >
-              {isUploading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-              ) : (
-                <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
-              )}
-              <span>{isUploading ? 'Uploading...' : 'Upload Image'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowUrlInput(!showUrlInput)}
-              className="py-2 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-            >
-              <LinkIcon className="w-3.5 h-3.5 text-indigo-600" />
-              <span>URL</span>
-            </button>
-          </div>
-
-          {uploadError && (
-            <p className="text-[11px] text-rose-600">{uploadError}</p>
-          )}
-
-          {/* URL Input Form */}
-          {showUrlInput && (
-            <div className="flex gap-1.5 animate-fadeIn">
-              <input
-                type="url"
-                value={customUrl}
-                onChange={(e) => setCustomUrl(e.target.value)}
-                placeholder="https://example.com/banner.jpg"
-                className="flex-1 px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (customUrl.trim()) {
-                    handleBannerSelect(customUrl.trim());
-                    setShowUrlInput(false);
-                    setCustomUrl('');
-                  }
-                }}
-                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-2xs cursor-pointer"
-              >
-                Apply
-              </button>
-            </div>
-          )}
-
-          {/* Preset Banners Quick Grid */}
-          <div>
-            <span className="block text-[11px] font-semibold text-slate-600 mb-2">
-              Curated Stock Headers
-            </span>
-            <div className="grid grid-cols-4 gap-2">
-              {HEADER_BANNER_PRESETS.map((preset) => {
-                const isSelected = theme.headerBannerUrl === preset.url;
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => handleBannerSelect(preset.url)}
-                    className={`relative rounded-lg overflow-hidden border aspect-video transition-all group cursor-pointer ${
-                      isSelected
-                        ? 'border-indigo-600 ring-2 ring-indigo-500/40 shadow-xs'
-                        : 'border-slate-200 hover:border-slate-400'
-                    }`}
-                    title={preset.title}
-                  >
-                    <img
-                      src={preset.url}
-                      alt={preset.title}
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                    />
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-indigo-600/30 flex items-center justify-center">
-                        <Check className="w-3.5 h-3.5 text-white drop-shadow-md stroke-[3]" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Curated Visual Themes */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Curated Visual Themes
-            </label>
-            <span className="text-[11px] text-indigo-600 font-medium">1-Click Presets</span>
+            <span className="font-mono text-xs text-primary cursor-pointer hover:underline">Explore Store</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
-            {CURATED_THEMES.map((item) => {
-              const isSelected = currentThemeId === item.id;
+            {presets.map((preset) => {
+              const isActive = selectedPreset === preset.id;
               return (
-                <button
-                  key={item.id}
-                  onClick={() => applyCuratedTheme(item)}
-                  className={`p-3 text-left rounded-xl border text-xs transition-all relative group flex flex-col justify-between ${
-                    isSelected
-                      ? 'border-indigo-600 bg-indigo-50/50 shadow-sm ring-1 ring-indigo-500'
-                      : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
+                <div
+                  key={preset.id}
+                  onClick={() => applyPreset(preset)}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-surface-container-high border-primary-container shadow-md'
+                      : 'bg-surface-container/60 hover:bg-surface-container border-outline-variant/20'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="font-bold text-slate-800 truncate">{item.name}</span>
-                      {isSelected && (
-                        <span className="w-4 h-4 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0">
-                          <Check className="w-2.5 h-2.5" />
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-slate-500 line-clamp-2 leading-tight">
-                      {item.description}
-                    </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-on-surface">{preset.name}</span>
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: preset.accent }}
+                    />
                   </div>
 
-                  {/* Visual theme mini swatch preview */}
-                  <div className="mt-2.5 h-4 w-full rounded-md flex overflow-hidden border border-slate-200/80">
-                    <div className="w-1/2 h-full" style={{ backgroundColor: item.backgroundColor }} />
-                    <div className="w-1/2 h-full" style={{ backgroundColor: item.accentColor }} />
+                  <div className="flex items-center gap-1.5 mb-2">
+                    {preset.colors.map((c, i) => (
+                      <div
+                        key={i}
+                        className="w-4 h-4 rounded-full border border-white/10 shadow-xs"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
                   </div>
-                </button>
+
+                  <div className="flex items-center justify-between">
+                    <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded font-medium ${
+                      isActive ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container-highest text-on-surface-variant'
+                    }`}>
+                      {isActive ? 'Selected' : 'Preset'}
+                    </span>
+                    <span className="font-mono text-[10px] text-outline">{preset.badge}</span>
+                  </div>
+                </div>
               );
             })}
           </div>
         </section>
 
-        {/* Accent Color Palette */}
-        <section>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
-            Primary Accent Color
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {ACCENT_PALETTES.map((color) => {
-              const isSelected = (theme.accentColor || '').toLowerCase() === color.value.toLowerCase();
-              return (
-                <button
-                  key={color.value}
-                  onClick={() => handleAccentChange(color.value, color.header)}
-                  className={`h-10 rounded-xl flex items-center justify-center border transition-all ${
-                    isSelected
-                      ? 'ring-2 ring-offset-2 ring-slate-800 border-transparent shadow-sm'
-                      : 'border-slate-200 hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                >
-                  {isSelected && <Check className="w-4 h-4 text-white drop-shadow-sm" />}
-                </button>
-              );
-            })}
+        {/* Section 2: Color Token Mapping */}
+        <section className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs uppercase tracking-wider text-outline font-semibold">
+              Color Token Mapping
+            </span>
+            <span className="font-mono text-xs text-tertiary">3 Custom Overrides</span>
           </div>
 
-          {/* Custom Hex input */}
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs text-slate-500 font-medium">Custom Hex:</span>
-            <input
-              type="text"
-              value={theme.accentColor || '#6366f1'}
-              onChange={(e) => handleAccentChange(e.target.value)}
-              className="w-28 px-2 py-1 text-xs font-mono border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 uppercase"
-            />
-            <input
-              type="color"
-              value={theme.accentColor || '#6366f1'}
-              onChange={(e) => handleAccentChange(e.target.value)}
-              className="w-7 h-7 rounded-lg border border-slate-300 p-0.5 cursor-pointer"
-            />
-          </div>
-        </section>
-
-        {/* Background Styling */}
-        <section>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">
-            Background Styling
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {BACKGROUND_STYLES.map((bg) => {
-              const isSelected = (theme.backgroundColor || '').toLowerCase() === bg.color.toLowerCase();
-              return (
-                <button
-                  key={bg.id}
-                  onClick={() => handleBackgroundChange(bg)}
-                  className={`p-2.5 rounded-xl border text-xs text-left transition-all ${
-                    isSelected
-                      ? 'border-indigo-600 bg-indigo-50/40 ring-1 ring-indigo-500 font-bold'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
-                  }`}
+          <div className="flex flex-col gap-1.5 bg-surface-container/70 rounded-xl p-2 border border-outline-variant/20">
+            {/* Token 1: Primary Accent */}
+            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors">
+              <div className="flex items-center gap-2.5">
+                <label
+                  className="w-8 h-8 rounded-full shadow-md flex items-center justify-center relative cursor-pointer border border-white/20"
+                  style={{ backgroundColor: accentColor }}
                 >
-                  <div
-                    className="w-full h-5 rounded-md border border-slate-200 mb-1.5"
-                    style={{ backgroundColor: bg.color }}
+                  <input
+                    type="color"
+                    value={accentColor}
+                    onChange={(e) => {
+                      setAccentColor(e.target.value);
+                      if (isLiveActive) onUpdateTheme({ accentColor: e.target.value });
+                    }}
+                    className="opacity-0 absolute inset-0 cursor-pointer"
                   />
-                  <span className="text-[11px] text-slate-700 truncate block">{bg.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+                  <span className="material-symbols-outlined text-[14px] text-white">colorize</span>
+                </label>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-on-surface">Primary Accent</span>
+                  <span className="font-mono text-[10px] text-outline">var(--token-primary)</span>
+                </div>
+              </div>
 
-        {/* Font Pairings */}
-        <section className="space-y-4">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-            Font Pairings & Typography
-          </label>
-
-          {/* Header Font */}
-          <div>
-            <span className="block text-[11px] font-semibold text-slate-600 mb-1">
-              Header Font
-            </span>
-            <select
-              value={theme.fontHeader || 'Inter'}
-              onChange={(e) => handleHeaderFontChange(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
-            >
-              {HEADER_FONTS.map((font) => (
-                <option key={font.id} value={font.id}>
-                  {font.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Body Font */}
-          <div>
-            <span className="block text-[11px] font-semibold text-slate-600 mb-1">
-              Body / Question Font
-            </span>
-            <select
-              value={theme.fontBody || 'Inter'}
-              onChange={(e) => handleBodyFontChange(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
-            >
-              {BODY_FONTS.map((font) => (
-                <option key={font.id} value={font.id}>
-                  {font.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </section>
-
-        {/* Interactive Live Preview Box */}
-        <section className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-2">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-indigo-500" />
-            Live Preview Snippet
-          </span>
-          <div
-            className="rounded-xl border shadow-xs overflow-hidden"
-            style={{
-              backgroundColor: theme.cardBackground || '#ffffff',
-              borderColor: theme.borderColor || '#e2e8f0',
-              fontFamily: theme.fontBody || 'Inter'
-            }}
-          >
-            {theme.headerBannerUrl ? (
-              <div className="h-20 w-full overflow-hidden bg-slate-100 relative">
-                <img
-                  src={getAssetUrl(theme.headerBannerUrl)}
-                  alt="Preview Header"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={accentColor}
+                  onChange={(e) => {
+                    setAccentColor(e.target.value);
+                    if (isLiveActive) onUpdateTheme({ accentColor: e.target.value });
                   }}
+                  className="w-24 px-2 py-1 rounded bg-surface-container-highest text-on-surface font-mono text-xs text-center uppercase focus:outline-none focus:ring-1 focus:ring-primary-container"
                 />
               </div>
-            ) : (
-              <div
-                className="h-2 w-full"
-                style={{
-                  background: theme.bannerGradient || theme.accentColor || '#6366f1'
-                }}
-              />
-            )}
-            <div className="p-4">
-              <h4
-                className="text-sm font-bold mb-1"
-                style={{
-                  color: theme.textColor || '#0f172a',
-                  fontFamily: theme.fontHeader || 'Inter'
-                }}
-              >
-                How would you rate your experience?
-              </h4>
-              <p className="text-xs text-slate-500 mb-3">
-                Use voice or select options below
-              </p>
-              <button
-                type="button"
-                className="px-3 py-1.5 text-xs text-white font-medium rounded-lg shadow-xs"
-                style={{ backgroundColor: theme.accentColor || '#6366f1' }}
-              >
-                Sample Button
-              </button>
+            </div>
+
+            {/* Token 2: Background Tint */}
+            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors">
+              <div className="flex items-center gap-2.5">
+                <label
+                  className="w-8 h-8 rounded-full shadow-md flex items-center justify-center relative cursor-pointer border border-white/20"
+                  style={{ backgroundColor: backgroundColor }}
+                >
+                  <input
+                    type="color"
+                    value={backgroundColor}
+                    onChange={(e) => {
+                      setBackgroundColor(e.target.value);
+                      if (isLiveActive) onUpdateTheme({ backgroundColor: e.target.value });
+                    }}
+                    className="opacity-0 absolute inset-0 cursor-pointer"
+                  />
+                  <span className="material-symbols-outlined text-[14px] text-white">colorize</span>
+                </label>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-on-surface">Background Tint</span>
+                  <span className="font-mono text-[10px] text-outline">var(--token-bg)</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={backgroundColor}
+                  onChange={(e) => {
+                    setBackgroundColor(e.target.value);
+                    if (isLiveActive) onUpdateTheme({ backgroundColor: e.target.value });
+                  }}
+                  className="w-24 px-2 py-1 rounded bg-surface-container-highest text-on-surface font-mono text-xs text-center uppercase focus:outline-none focus:ring-1 focus:ring-primary-container"
+                />
+              </div>
+            </div>
+
+            {/* Token 3: Voice Glow */}
+            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-surface-container-high transition-colors">
+              <div className="flex items-center gap-2.5">
+                <label
+                  className="w-8 h-8 rounded-full shadow-md flex items-center justify-center relative cursor-pointer border border-white/20"
+                  style={{ backgroundColor: voiceGlow }}
+                >
+                  <input
+                    type="color"
+                    value={voiceGlow}
+                    onChange={(e) => {
+                      setVoiceGlow(e.target.value);
+                      if (isLiveActive) onUpdateTheme({ voiceGlow: e.target.value });
+                    }}
+                    className="opacity-0 absolute inset-0 cursor-pointer"
+                  />
+                  <span className="material-symbols-outlined text-[14px] text-white">colorize</span>
+                </label>
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-on-surface">Voice Glow</span>
+                  <span className="font-mono text-[10px] text-outline">var(--token-glow)</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={voiceGlow}
+                  onChange={(e) => {
+                    setVoiceGlow(e.target.value);
+                    if (isLiveActive) onUpdateTheme({ voiceGlow: e.target.value });
+                  }}
+                  className="w-24 px-2 py-1 rounded bg-surface-container-highest text-on-surface font-mono text-xs text-center uppercase focus:outline-none focus:ring-1 focus:ring-primary-container"
+                />
+              </div>
             </div>
           </div>
         </section>
+
+        {/* Section 3: Typography Pairings */}
+        <section className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs uppercase tracking-wider text-outline font-semibold">
+              Typography Pairing
+            </span>
+            <span className="font-mono text-[11px] text-outline">Fluid Scale (8px Grid)</span>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            {[
+              { id: 'jakarta-inter', title: 'Plus Jakarta Sans + Inter', desc: 'Modern Editorial Hierarchy', glyph: 'Aa' },
+              { id: 'syne-space', title: 'Syne + Space Grotesk', desc: 'Avant-Garde Tech Expression', glyph: 'Ag' },
+              { id: 'mono-inter', title: 'JetBrains Mono + Inter', desc: 'Engineering & Data Rigor', glyph: '>_' }
+            ].map((pair) => {
+              const isSelected = selectedPairing === pair.id;
+              return (
+                <div
+                  key={pair.id}
+                  onClick={() => setSelectedPairing(pair.id)}
+                  className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                    isSelected
+                      ? 'bg-surface-container-high border-primary-container shadow-sm'
+                      : 'bg-surface-container/60 hover:bg-surface-container border-outline-variant/20'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded bg-primary-container/20 text-primary flex items-center justify-center font-bold text-xs">
+                      {pair.glyph}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-on-surface">{pair.title}</span>
+                      <span className="text-[11px] text-outline">{pair.desc}</span>
+                    </div>
+                  </div>
+                  <span className={`material-symbols-outlined text-[18px] ${isSelected ? 'text-primary' : 'text-outline-variant'}`}>
+                    {isSelected ? 'check_circle' : 'radio_button_unchecked'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Section 4: Container Curvature */}
+        <section className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs uppercase tracking-wider text-outline font-semibold">
+              Container Curvature (Radius)
+            </span>
+            <span className="font-mono text-xs text-primary">--radius: {radius}</span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-surface-container border border-outline-variant/20">
+            {[
+              { label: 'Flat (0px)', val: '0px' },
+              { label: 'Subtle (8px)', val: '8px' },
+              { label: 'Modern (16px)', val: '16px' },
+              { label: 'Squircle (24px)', val: '24px' }
+            ].map((rad) => {
+              const isSelected = radius === rad.val;
+              return (
+                <button
+                  key={rad.val}
+                  type="button"
+                  onClick={() => setRadius(rad.val)}
+                  className={`py-2 px-1 rounded-lg text-center font-mono text-[11px] transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-primary-container text-on-primary-container font-semibold shadow-sm'
+                      : 'text-outline hover:text-on-surface'
+                  }`}
+                >
+                  {rad.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Section 5: Atmospheric Shader Effects */}
+        <section className="flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs uppercase tracking-wider text-outline font-semibold">
+              Atmospheric Shader Effects
+            </span>
+            <span className="font-mono text-xs text-tertiary">3 ACTIVE</span>
+          </div>
+
+          <div className="flex flex-col gap-1 bg-surface-container/70 rounded-xl p-2.5 border border-outline-variant/20">
+            {/* Orbs */}
+            <div className="flex items-center justify-between p-1.5">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[20px]">blur_on</span>
+                <div className="flex flex-col">
+                  <span className="text-xs text-on-surface font-medium">Ambient Glow Orbs</span>
+                  <span className="text-[11px] text-outline">Volumetric radial mesh gradients</span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={shaderOrbs}
+                onChange={(e) => setShaderOrbs(e.target.checked)}
+                className="w-4 h-4 accent-primary cursor-pointer"
+              />
+            </div>
+
+            {/* Grid Texture */}
+            <div className="flex items-center justify-between p-1.5">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary text-[20px]">grid_4x4</span>
+                <div className="flex flex-col">
+                  <span className="text-xs text-on-surface font-medium">Editorial Grid Texture</span>
+                  <span className="text-[11px] text-outline">Subtle 24px micro-dot underlay</span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={gridTexture}
+                onChange={(e) => setGridTexture(e.target.checked)}
+                className="w-4 h-4 accent-primary cursor-pointer"
+              />
+            </div>
+
+            {/* Sonic Wave */}
+            <div className="flex items-center justify-between p-1.5">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-tertiary text-[20px]">graphic_eq</span>
+                <div className="flex flex-col">
+                  <span className="text-xs text-on-surface font-medium">Sonic Waveform Overlay</span>
+                  <span className="text-[11px] text-outline">Dynamic audio reactive loops</span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={sonicWaveOverlay}
+                onChange={(e) => setSonicWaveOverlay(e.target.checked)}
+                className="w-4 h-4 accent-primary cursor-pointer"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Compiled Tokens Snapshot */}
+        <div className="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/20 shadow-inner flex flex-col gap-1">
+          <div className="flex items-center justify-between text-outline font-mono text-[10px]">
+            <span>COMPILED TOKENS JSON</span>
+            <span className="text-tertiary">SYNTAX VALID</span>
+          </div>
+          <pre className="font-mono text-[11px] text-on-surface-variant p-2 bg-surface-container/40 rounded overflow-x-auto leading-relaxed">
+{JSON.stringify({
+  "--vox-accent": accentColor,
+  "--vox-surface": backgroundColor,
+  "--vox-glow": voiceGlow,
+  "--vox-radius-base": radius,
+  "--vox-shader-orbs": shaderOrbs
+}, null, 2)}
+          </pre>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-slate-200 bg-slate-50/70 flex items-center justify-between">
+      {/* Drawer Sticky Footer */}
+      <div className="px-5 py-4 bg-surface-container-low border-t border-outline-variant/20 shadow-xl flex items-center justify-between gap-3 shrink-0">
         <button
-          onClick={() => applyCuratedTheme(CURATED_THEMES[0])}
-          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 font-medium"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Reset Theme</span>
-        </button>
-
-        <button
+          type="button"
           onClick={onClose}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
+          className="flex-1 py-2.5 px-4 rounded-xl bg-surface-container-high text-on-surface text-xs font-semibold hover:bg-surface-bright transition-colors text-center cursor-pointer"
         >
-          Done
+          Discard Changes
+        </button>
+        <button
+          type="button"
+          onClick={handleApply}
+          className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-primary-container to-secondary-container text-on-primary-container text-xs font-semibold hover:opacity-95 shadow-lg shadow-primary-container/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-[18px]">publish</span>
+          <span>Apply & Publish</span>
         </button>
       </div>
-    </div>
+    </aside>
   );
 }

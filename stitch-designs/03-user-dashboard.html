@@ -1,0 +1,669 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-secondary-container": "#c4abff", "secondary": "#d0bcff", "inverse-on-surface": "#2c303a", "tertiary-fixed": "#6ffbbe", "on-surface-variant": "#c7c4d7", "primary-fixed": "#e1e0ff", "primary": "#c0c1ff", "inverse-primary": "#494bd6", "primary-fixed-dim": "#c0c1ff", "surface-dim": "#0f131c", "surface-bright": "#353943", "secondary-fixed-dim": "#d0bcff", "surface": "#0f131c", "background": "#0f131c", "tertiary-fixed-dim": "#4edea3", "on-error": "#690005", "on-primary-container": "#0d0096", "secondary-container": "#571bc1", "surface-container-high": "#262a34", "primary-container": "#8083ff", "surface-container-low": "#181b25", "on-surface": "#dfe2ef", "error-container": "#93000a", "outline-variant": "#464554", "on-secondary": "#3c0091", "surface-container-lowest": "#0a0e17", "secondary-fixed": "#e9ddff", "on-tertiary-container": "#000703", "on-primary-fixed-variant": "#2f2ebe", "on-tertiary": "#003824", "on-primary-fixed": "#07006c", "on-tertiary-fixed": "#002113", "on-primary": "#1000a9", "on-secondary-fixed": "#23005c", "on-background": "#dfe2ef", "error": "#ffb4ab", "inverse-surface": "#dfe2ef", "surface-variant": "#31353f", "surface-tint": "#c0c1ff", "on-secondary-fixed-variant": "#5516be", "on-error-container": "#ffdad6", "outline": "#908fa0", "on-tertiary-fixed-variant": "#005236", "tertiary-container": "#00885d", "surface-container": "#1c1f29", "tertiary": "#4edea3", "surface-container-highest": "#31353f" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "2rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "space-xl": "2.5rem", "space-lg": "1.5rem", "space-md": "1rem", "gutter-mobile": "1rem", "margin-desktop": "3rem", "gutter": "1.5rem", "margin-mobile": "1rem" }, "fontFamily": { "label-badge": [ "Inter" ], "label-code": [ "JetBrains Mono" ], "display-hero-mobile": [ "Plus Jakarta Sans" ], "headline-md": [ "Plus Jakarta Sans" ], "body-lg": [ "Inter" ], "display-hero": [ "Plus Jakarta Sans" ], "label-kbd": [ "JetBrains Mono" ], "headline-lg": [ "Plus Jakarta Sans" ], "headline-sm": [ "Plus Jakarta Sans" ], "body-md": [ "Inter" ], "body-sm": [ "Inter" ], "headline-lg-mobile": [ "Plus Jakarta Sans" ] }, "fontSize": { "label-badge": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.03em", "fontWeight": "600" } ], "label-code": [ "12px", { "lineHeight": "16px", "letterSpacing": "-0.01em", "fontWeight": "500" } ], "display-hero-mobile": [ "36px", { "lineHeight": "44px", "letterSpacing": "-0.025em", "fontWeight": "700" } ], "headline-md": [ "24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" } ], "body-lg": [ "16px", { "lineHeight": "26px", "letterSpacing": "-0.005em", "fontWeight": "400" } ], "display-hero": [ "56px", { "lineHeight": "64px", "letterSpacing": "-0.03em", "fontWeight": "700" } ], "label-kbd": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" } ], "headline-lg": [ "36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "600" } ], "headline-sm": [ "18px", { "lineHeight": "26px", "letterSpacing": "-0.01em", "fontWeight": "600" } ], "body-md": [ "14px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" } ], "body-sm": [ "12px", { "lineHeight": "18px", "letterSpacing": "0.005em", "fontWeight": "400" } ], "headline-lg-mobile": [ "28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "600" } ] } } } };</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary-container"><header class="fixed top-0 left-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-16 w-full px-gutter flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md min-w-0 flex-shrink-0"><div class="flex items-center gap-space-sm"><img alt="VoxForm Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1W7KNl8d7IwZ7sOUPLacn5HRBDquJLa5e2Odz5f-Doi95dLpqnHkPgCGdUtk_8o3Jxy_kLISNr_Wz0JffZ6JLAqWMfbycbFTq-OTIuvjIVpPIjc_bagmGpzeJqEVcwbPwoPMR1uVQmn-5tsu4PWHFNGixh8MqiC2PVBs1pFHXN1OifN6oQMGuHs7PAmeZQmpK8-B6o8iy1zEubZpxpXQFQJ-0Q7a0ss7OU-Iz34L-vY99jSi2KUqMbhZ08"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight hidden lg:inline-block">VoxForm</span></div><div class="hidden xl:flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-surface-container-high/80 text-on-surface"><span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span><span class="font-label-code text-label-code text-on-surface-variant">v2.4 Neural Speech: Live</span></div><div class="h-4 w-px bg-outline-variant/40 hidden md:block"></div><div class="flex items-center gap-space-xs text-on-surface-variant min-w-0"><span class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface cursor-pointer truncate max-w-[140px]">VoxForm Cloud</span><span class="font-body-sm text-body-sm text-outline">/</span><div class="flex items-center gap-space-xs group cursor-pointer"><span class="font-body-md text-body-md text-on-surface font-medium truncate max-w-[220px] group-hover:text-primary transition-colors">Design Systems &amp; User Feedback 2025</span><span class="material-symbols-outlined text-[16px] text-outline group-hover:text-on-surface transition-colors">edit</span></div></div></div><div class="flex-1 flex justify-center"><nav class="flex items-center bg-surface-container-low p-space-xs rounded-full shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]" data-active-classes="bg-surface-container-highest text-on-surface shadow-sm font-semibold"><a class="px-space-md py-space-xs rounded-full font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all flex items-center gap-space-xs" data-path="questions" href="#">Questions</a><a class="px-space-md py-space-xs rounded-full font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all flex items-center gap-space-xs" data-path="responses" href="#"><span class="">Responses</span><span class="px-1.5 py-0.5 rounded-full bg-surface-container-high font-label-badge text-label-badge text-primary">128</span></a><a class="px-space-md py-space-xs rounded-full font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="theme-and-style" href="#">Theme &amp; Style</a><a class="px-space-md py-space-xs rounded-full font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="voice-ai-config" href="#">Voice AI Config</a></nav></div><div class="flex items-center gap-space-sm flex-shrink-0"><div class="hidden lg:flex items-center gap-space-xs px-space-sm py-space-xs rounded-full bg-surface-container-low text-tertiary font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px] text-tertiary">cloud_done</span><span class="text-on-surface-variant">Saved</span></div><button class="hidden sm:flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-high hover:bg-surface-variant text-on-surface transition-all shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]" type="button"><span class="material-symbols-outlined text-[18px] text-tertiary animate-pulse">graphic_eq</span><span class="font-body-sm text-body-sm">Test Voice</span></button><button class="flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-gradient-to-r from-primary-container to-secondary-container hover:opacity-95 text-on-primary font-body-sm text-body-sm font-semibold transition-all shadow-[0_0_0_1px_rgba(99,102,241,0.3),0_4px_16px_-2px_rgba(79,70,229,0.35)]" type="button"><span class="material-symbols-outlined text-[16px]">share</span><span class="">Share</span><span class="px-1 py-0.5 rounded bg-surface-container-lowest/40 font-label-kbd text-label-kbd text-on-primary-fixed">⌘K</span></button><div class="flex items-center gap-space-xs pl-space-xs cursor-pointer group"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-surface text-[18px] transition-colors">expand_more</span></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest/80 backdrop-blur-xl z-40 flex flex-col justify-between py-space-md shadow-[0_4px_20px_-2px_rgba(0,0,0,0.5)]"><div class="flex flex-col gap-space-md px-space-sm"><div class="px-space-sm py-space-xs"><span class="font-label-code text-label-code text-on-surface-variant uppercase tracking-wider">Workspace Outline</span></div><nav class="flex flex-col gap-space-xs" data-active-classes="bg-surface-container-high text-primary font-semibold"><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="questions" href="#"><span class="material-symbols-outlined text-[20px]">splitscreen</span><span class="font-body-md text-body-md">Form Canvas</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="responses" href="#"><span class="material-symbols-outlined text-[20px]">analytics</span><span class="font-body-md text-body-md">Analytics &amp; Insights</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="theme-and-style" href="#"><span class="material-symbols-outlined text-[20px]">palette</span><span class="font-body-md text-body-md">Styling Studio</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="voice-ai-config" href="#"><span class="material-symbols-outlined text-[20px]">settings_voice</span><span class="font-body-md text-body-md">AI Speech Prompts</span></a><a class="flex items-center gap-space-sm px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">tune</span><span class="font-body-md text-body-md">Engine Settings</span></a></nav></div><div class="px-space-md pt-space-md bg-surface-container-lowest/50"><div class="p-space-sm rounded-xl bg-surface-container-low shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] flex flex-col gap-space-xs"><div class="flex items-center justify-between"><span class="font-label-code text-label-code text-tertiary">VOICE DOCK READY</span><span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span></div><p class="font-body-sm text-body-sm text-on-surface-variant">Voice telepathy mode primed for dictation</p></div></div></aside><div class="pl-64"><main class="relative w-full pt-16 bg-surface min-h-[calc(100vh-4rem)]"><div class="flex flex-col w-full">
+<!-- Subtle Ambient Glow Orbs (Contained) -->
+<div class="relative w-full overflow-hidden">
+<div class="absolute -top-32 left-1/4 w-96 h-96 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute top-20 right-10 w-80 h-80 bg-secondary-container/15 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute top-96 left-10 w-72 h-72 bg-tertiary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<!-- Main Workspace Container -->
+<div class="w-full max-w-7xl mx-auto px-gutter py-space-lg flex flex-col gap-space-xl relative z-10">
+<!-- 1. Header / Greeting Bar -->
+<section class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-lg pb-space-sm">
+<div class="flex flex-col gap-space-xs">
+<!-- Live Engine Status Badge & Workspace Switcher -->
+<div class="flex flex-wrap items-center gap-space-sm text-body-sm">
+<div class="flex items-center gap-space-xs px-space-sm py-0.5 rounded-full bg-surface-container-high/90 text-on-surface shadow-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-ping"></span>
+<span class="font-label-code text-label-code text-tertiary">Whisper v3 Turbo</span>
+<span class="text-outline">·</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">99.98% Latency &lt;140ms</span>
+</div>
+<div class="h-3 w-px bg-surface-variant"></div>
+<button class="flex items-center gap-space-xs px-space-sm py-0.5 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">domain</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Acme Design Systems</span>
+
+<span class="material-symbols-outlined text-[16px]">unfold_more</span>
+</button>
+</div>
+<!-- Hero Greeting with Editorial Typography & Micro Overline -->
+<div class="flex items-center gap-space-md mt-1">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover ring-2 ring-primary/40 shadow-lg" data-alt="Close up photographic portrait of a modern Taiwanese product leader Alex Chen wearing matte black frames and minimalist slate turtleneck, studio dark lighting with soft indigo rim highlights, cinematic realism." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD93djI17kGmkTPhFBNJ8O9Vav3HKcd2rRwc6DSMoRvmqNhUrM6AoVqQoUHKxrLzVLcymwNl17PMEvPdRWvHrEXDCms76pAGLdqrBfWjuddzQdzM5WAT6Vf7ITgrOUf-TukOYeVHFbVFPothR4wXts1RaUKETPb9FK_VCc7tEQ7V_u2NihInHeiT3m76RG1v7zsQrrHgCf9bqqo7rFsdZZBd3KfIx_P1ptSyEw474nKoMx4k1WwZ6mBHg">
+<span class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary ring-2 ring-surface"></span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code text-label-code text-primary uppercase tracking-wider font-semibold">Workspace Hub</span>
+<span class="text-outline">/</span>
+<span class="font-label-code text-label-code text-on-surface-variant">San Francisco HQ</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Good morning, Alex Chen</h1>
+</div>
+</div>
+</div>
+<!-- Action Rail (Create / Import) -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface transition-all shadow-sm group" type="button">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-primary transition-colors">file_download</span>
+<span class="font-body-md text-body-md font-medium">Import from Notion / Typeform</span>
+</button>
+<button class="flex items-center gap-space-sm px-space-lg py-2.5 rounded-full bg-gradient-to-r from-primary-container via-inverse-primary to-secondary-container hover:opacity-95 text-on-primary font-body-md text-body-md font-semibold transition-all shadow-[0_0_24px_rgba(128,131,255,0.45)] group" type="button">
+<span class="material-symbols-outlined text-[20px] transition-transform group-hover:rotate-90">add</span>
+<span class="">Create New Form</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-lowest/50 font-label-kbd text-label-kbd text-on-primary-fixed">⌘N</span>
+</button>
+</div>
+</section>
+<!-- 2. Overview Metrics Row (Quick Pulse with Rich Sparklines) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Metric 1 -->
+<div class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-body-sm text-body-sm font-medium">Active Forms</span>
+<span class="material-symbols-outlined text-[20px] text-primary">dynamic_feed</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<div class="font-display-hero-mobile text-display-hero-mobile text-on-surface font-bold">12</div>
+<span class="font-label-badge text-label-badge px-2 py-0.5 rounded-full bg-surface-container-high text-tertiary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> +2 this wk
+            </span>
+</div>
+<!-- Sparkline SVG -->
+<div class="mt-space-md h-8 w-full">
+<svg class="w-full h-full overflow-visible text-primary" fill="none" viewBox="0 0 160 32">
+<path d="M0 24 Q 25 28 50 18 T 100 12 T 130 6 L 160 2" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
+<path d="M0 24 Q 25 28 50 18 T 100 12 T 130 6 L 160 2 L 160 32 L 0 32 Z" fill="currentColor" fill-opacity="0.08"></path>
+</svg>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-body-sm text-body-sm font-medium">Voice Submissions</span>
+<span class="material-symbols-outlined text-[20px] text-tertiary">mic</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<div class="font-display-hero-mobile text-display-hero-mobile text-on-surface font-bold">3,842</div>
+<span class="font-label-badge text-label-badge px-2 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">trending_up</span> +18.4%
+            </span>
+</div>
+<!-- Sparkline SVG -->
+<div class="mt-space-md h-8 w-full">
+<svg class="w-full h-full overflow-visible text-tertiary" fill="none" viewBox="0 0 160 32">
+<path d="M0 26 Q 30 20 60 22 T 110 8 T 140 12 L 160 4" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
+<path d="M0 26 Q 30 20 60 22 T 110 8 T 140 12 L 160 4 L 160 32 L 0 32 Z" fill="currentColor" fill-opacity="0.1"></path>
+</svg>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-body-sm text-body-sm font-medium">Voice Dictation Rate</span>
+<span class="material-symbols-outlined text-[20px] text-secondary">record_voice_over</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<div class="font-display-hero-mobile text-display-hero-mobile text-on-surface font-bold">74.2%</div>
+<span class="font-label-badge text-label-badge px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary-fixed flex items-center gap-0.5">
+              Prefers speech
+            </span>
+</div>
+<!-- Progress Bar & Soundwave micro -->
+<div class="mt-space-md flex items-center gap-space-xs">
+<div class="w-full bg-surface-container-high rounded-full h-2 overflow-hidden flex">
+<div class="bg-gradient-to-r from-primary to-secondary h-2 rounded-full" style="width: 74.2%"></div>
+</div>
+<span class="font-label-code text-label-code text-on-surface-variant">3:1</span>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface-container-low/80 backdrop-blur-xl rounded-xl p-space-lg shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-body-sm text-body-sm font-medium">Saved via Neural Engine</span>
+<span class="material-symbols-outlined text-[20px] text-tertiary">bolt</span>
+</div>
+<div class="mt-space-md flex items-baseline justify-between">
+<div class="font-display-hero-mobile text-display-hero-mobile text-on-surface font-bold">142 <span class="font-headline-sm text-headline-sm font-normal text-on-surface-variant">hrs</span></div>
+<span class="font-label-badge text-label-badge px-2 py-0.5 rounded-full bg-surface-container-high text-tertiary flex items-center gap-0.5">
+              4.6x faster
+            </span>
+</div>
+<!-- Sparkline SVG -->
+<div class="mt-space-md h-8 w-full">
+<svg class="w-full h-full overflow-visible text-secondary" fill="none" viewBox="0 0 160 32">
+<path d="M0 28 C 30 25, 40 12, 80 16 C 110 20, 130 6, 160 3" stroke="currentColor" stroke-linecap="round" stroke-width="2.5"></path>
+<path d="M0 28 C 30 25, 40 12, 80 16 C 110 20, 130 6, 160 3 L 160 32 L 0 32 Z" fill="currentColor" fill-opacity="0.08"></path>
+</svg>
+</div>
+</div>
+</section>
+<!-- 3. Template Quick-Start Row -->
+<section class="flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Start with a curated template</h2>
+</div>
+<a class="font-body-sm text-body-sm text-primary hover:text-primary-fixed flex items-center gap-0.5 transition-colors group" href="#">
+<span class="">View all 24 templates</span>
+<span class="material-symbols-outlined text-[16px] transition-transform group-hover:translate-x-1">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Template Card 1 -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-200 rounded-xl overflow-hidden shadow-sm flex flex-col group cursor-pointer">
+<div class="h-28 relative overflow-hidden bg-surface-container-highest">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="High-contrast dark editorial workspace with subtle violet aura and minimalist microphone arm on matte black slate desk, moody ambient lighting with soft cyan edge glows." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHeslQu_VWH0vOvleH5wM3_uif7DJ8eX6Krs3qzXUWR1oQdn__WDV9sMNj77uUCaIM8HlPX4tHzeQOHCIfkHnx5ZoeUQpY9M1SFzkWStg3GozCfiy-IHZlJuh6o_THldjC1HHmDyNcbjggcpCtxoXIYHHFeEdq2u4obsshFla-PiKOniNfri-Uak_0aqlsmh186kq2JKDSEe0p4OkZaYqutJBMNv6ORubEEaP_daVzgZbsVnuHsju0xQ')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/40 to-transparent"></div>
+<span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-primary-container text-on-primary-container font-label-badge text-label-badge font-semibold shadow">POPULAR</span>
+</div>
+<div class="p-space-md flex flex-col justify-between flex-1 gap-space-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-code text-label-code">
+<span class="material-symbols-outlined text-[14px] text-tertiary">graphic_eq</span>
+<span class="">Voice-First Interview</span>
+</div>
+<h3 class="font-headline-sm text-[16px] leading-[22px] text-on-surface font-semibold group-hover:text-primary transition-colors">Design Candidate Voice Interview</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Live conversational prompts for senior and staff designer portfolios.</p>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="">4 questions</span>
+<span class="flex items-center gap-1 text-outline font-label-code text-label-code">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 4–6 min
+                </span>
+</div>
+</div>
+</div>
+<!-- Template Card 2 -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-200 rounded-xl overflow-hidden shadow-sm flex flex-col group cursor-pointer">
+<div class="h-28 relative overflow-hidden bg-surface-container-highest">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Abstract 3D iridescent metallic forms and geometric audio ripples floating in dark obsidian atmosphere with electric indigo reflections." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDyEcUv9Ww22jTPv_1b8TCaLmr21MIqcNyl1Fsvc71ymBOkviIZbi8roKsG8F2vs_TUyG7JVlIm4AmsaNzbM8YJEbH85E1uPmRkirC0KWejh_zjBkH6erKZ9_WjhoHg2c1lQtAHrZNnLDaouL8DsRFNo8OFEpB_ZFt4pTkQ8IotWxyM6XZEfVuD-PFZxUMwdM89uyAgkugJTDYVHCWFRY6APloTwcJuMlKoQZ2vkwHBwqBe7IV0c4cp6A')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/40 to-transparent"></div>
+<span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-badge text-label-badge">FEEDBACK</span>
+</div>
+<div class="p-space-md flex flex-col justify-between flex-1 gap-space-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-code text-label-code">
+<span class="material-symbols-outlined text-[14px] text-primary">attachment</span>
+<span class="">Voice + Attachments</span>
+</div>
+<h3 class="font-headline-sm text-[16px] leading-[22px] text-on-surface font-semibold group-hover:text-primary transition-colors">Product Feedback &amp; Feature Request</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Collect spoken bug details and file screenshots without typing friction.</p>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="">3 questions</span>
+<span class="flex items-center gap-1 text-outline font-label-code text-label-code">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 2 min
+                </span>
+</div>
+</div>
+</div>
+<!-- Template Card 3 -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-200 rounded-xl overflow-hidden shadow-sm flex flex-col group cursor-pointer">
+<div class="h-28 relative overflow-hidden bg-surface-container-highest">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="Minimalist architectural glass and dark graphite prism scattering muted emerald laser beams in shadowy fog, sophisticated tech elegance." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBFU8SdGNfIRcF7l5d2Es43BejdWKR7JqH8aDj0KQiCnpHpaGtmeRWSUt_ApDZN5IM5L8TQltrNNWkYHyncf8UFktBGtvXDrfscs-6lkYImFxkSxJXAOg8Dvqqjm13CbOLgw6UXjsM2DCsJivGM9x5usLR9QUekkqMtQWW0fpvMw7U2RYWLQUweUueWpWHmhnOn0o2oiPxp3sDu4jw7ygHF2CqMsPANlin8_tN-KTPSJPh-Zrs8kEtnTw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/40 to-transparent"></div>
+<span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-surface-container-high text-tertiary font-label-badge text-label-badge">CONFIDENTIAL</span>
+</div>
+<div class="p-space-md flex flex-col justify-between flex-1 gap-space-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-code text-label-code">
+<span class="material-symbols-outlined text-[14px] text-tertiary">lock</span>
+<span class="">Encrypted Speech</span>
+</div>
+<h3 class="font-headline-sm text-[16px] leading-[22px] text-on-surface font-semibold group-hover:text-primary transition-colors">Executive Leadership 360 Review</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Nuanced peer feedback with voice emotion redaction and auto-summaries.</p>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="">5 questions</span>
+<span class="flex items-center gap-1 text-outline font-label-code text-label-code">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 8 min
+                </span>
+</div>
+</div>
+</div>
+<!-- Template Card 4 -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-200 rounded-xl overflow-hidden shadow-sm flex flex-col group cursor-pointer">
+<div class="h-28 relative overflow-hidden bg-surface-container-highest">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-105" data-alt="High-tech glowing digital audio oscilloscopes with cyan green waveform lines in a dark cybernetic command room screen mockup." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBQfZoWvLC94QWAEU55dEgwUPZ4zLIBljUqECtPRVMCkmCTDP0joDjpQMLOcrz2jhfKbmqFPkJddgbHEdw-gpw4erOCrzrrRj-XPQooAGiarqfZXNV4sFMU0W1dIPpBIfGqCICMB6gLR_P1nFUBQn0go3FcP9ec00iAulMVn7ZYV4NJnDNakv_VKSMuxUxp8ekv7BaFIgrFYJQRhTwW4vL4EGBDTLqxNOrfDXzER0WdiFVnOzArE7gwAw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/40 to-transparent"></div>
+<span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full bg-surface-container-high text-secondary font-label-badge text-label-badge">DEV TOOLS</span>
+</div>
+<div class="p-space-md flex flex-col justify-between flex-1 gap-space-sm">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-code text-label-code">
+<span class="material-symbols-outlined text-[14px] text-secondary">screen_record</span>
+<span class="">Screen + Voice Log</span>
+</div>
+<h3 class="font-headline-sm text-[16px] leading-[22px] text-on-surface font-semibold group-hover:text-primary transition-colors">AI Beta Tester Bug &amp; Voice Log</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">Direct reproduction steps captured via synchronous voice narration.</p>
+</div>
+<div class="flex items-center justify-between pt-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="">3 questions</span>
+<span class="flex items-center gap-1 text-outline font-label-code text-label-code">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 3 min
+                </span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 4. Forms Management Section -->
+<section class="flex flex-col gap-space-md">
+<!-- Filter & Search Toolbar -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md p-space-sm rounded-xl bg-surface-container-low shadow-sm">
+<!-- Left: Search Box + Category Filter Pills -->
+<div class="flex flex-wrap items-center gap-space-sm flex-1">
+<!-- Search Input -->
+<div class="relative w-full sm:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full bg-surface-container-high/90 focus:bg-surface-container text-on-surface placeholder:text-outline pl-9 pr-8 py-1.5 rounded-full font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all" placeholder="Search forms or tags..." type="text">
+<span class="absolute right-3 top-1/2 -translate-y-1/2 font-label-kbd text-label-kbd text-outline bg-surface-container-lowest/60 px-1 py-0.5 rounded">/</span>
+</div>
+<!-- Segmented Filter Pills -->
+<div class="flex items-center bg-surface-container-high/70 p-0.5 rounded-full">
+<button class="px-space-sm py-1 rounded-full font-body-sm text-body-sm font-semibold bg-surface-container-lowest text-on-surface shadow-xs" type="button">
+                All Forms <span class="text-primary font-label-badge text-label-badge ml-1">12</span>
+</button>
+<button class="px-space-sm py-1 rounded-full font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+                Active <span class="text-outline font-label-badge text-label-badge ml-1">9</span>
+</button>
+<button class="px-space-sm py-1 rounded-full font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+                Drafts <span class="text-outline font-label-badge text-label-badge ml-1">2</span>
+</button>
+<button class="px-space-sm py-1 rounded-full font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+                Closed <span class="text-outline font-label-badge text-label-badge ml-1">1</span>
+</button>
+</div>
+</div>
+<!-- Right: Sort & Layout Switcher -->
+<div class="flex items-center gap-space-sm justify-between lg:justify-end">
+<!-- Sort dropdown -->
+<div class="relative">
+<button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface font-body-sm text-body-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">sort</span>
+<span class="">Sort: Last Modified</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+</div>
+<!-- View Mode Switch -->
+<div class="flex items-center bg-surface-container-high/70 p-0.5 rounded-full">
+<button class="p-1 rounded-full bg-surface-container-lowest text-primary shadow-xs" title="Grid View" type="button">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+</button>
+<button class="p-1 rounded-full text-on-surface-variant hover:text-on-surface transition-colors" title="Table View" type="button">
+<span class="material-symbols-outlined text-[18px]">view_list</span>
+</button>
+</div>
+</div>
+</div>
+<!-- 6 Modern Form Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
+<!-- Card 1: Flagship Form (Candidate Interview) -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-300 rounded-xl overflow-hidden shadow-sm hover:shadow-xl flex flex-col group relative">
+<!-- Top Gradient Visual Banner -->
+<div class="h-32 relative bg-surface-container-highest overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Dark violet and indigo geometric abstract background with glowing sonic waves and sleek UI elements in dark studio space." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA7hVD1cuNxgjCeksiwFmxEs3t8uQh4Olth_VBMAeCqD-MglvRwdk_rCda8zDrPeeqLXh_3MrEOBbwp0pPzww-bIO-snYuXQbYzFPwd_2fT8_Kq_-e3rRnEqQxObnHSBXGcaH6xnaUNYc5k6B6pmAt86jSmKIV6Uc1e4GfnCyN04DxLahd0A21vRt_2j9nC7ytRwD4LF6oEIiQTCHuulo8UV23ZJjsba6qjJl3K9OjulEQBxybt1Vt3Pw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/20 to-transparent"></div>
+<!-- Badges floating over banner -->
+<div class="absolute top-3 left-3 flex items-center gap-space-xs">
+<span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md font-label-badge text-label-badge text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span> ACTIVE
+                </span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md font-label-code text-label-code text-primary-fixed">
+                  FLAGSHIP
+                </span>
+</div>
+<div class="absolute top-3 right-3">
+<button class="w-7 h-7 rounded-full bg-surface-container-lowest/70 hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors shadow" type="button">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Body Details -->
+<div class="p-space-lg flex flex-col justify-between flex-1 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-code text-label-code">
+<span class="">VOX-8821</span>
+<span class="">Updated 12m ago</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">
+                  Senior Product Designer Candidate Interview
+                </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                  Async voice screen gauging portfolio rationale, typography depth, and systems orchestration.
+                </p>
+</div>
+<!-- Audio Metrics Pill -->
+<div class="p-space-sm rounded-lg bg-surface-container-high/60 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">graphic_eq</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">128 responses</span>
+</div>
+<div class="flex items-center gap-1 font-label-badge text-label-badge text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-full">
+<span class="">82% Voice Dictated</span>
+</div>
+</div>
+<!-- Author & Action Footer -->
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Alex Chen avatar in small circle thumbnail, sharp dark minimalist portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuByGiJGOplRSG72UEE4wOwx13zBgDsmvyTWKcb3l2-z0H9R3-0TV8loxZZSoZryU__yf-9JmlmDdlX_eRfi1Qz-4csmzj5vFzAHsTIgwTczY9_o8iXrvxZsiy4LNyC5wR-xV_iL_aKIJuFsAedXQ5zcsFzlXV_f-5WgSMXEsElhY8TLRFuZ5PvqbREN6Mrr1u1TE0RM_qrvYMxXoMpvgHth7rXWa9cX4Miuq2c74m5xMfihfqvFLeDzTg">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Alex Chen</span>
+</div>
+<!-- Hover Quick Actions (Slide / Fade in) -->
+<div class="flex items-center gap-1">
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant transition-colors" href="#" title="Edit Studio">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</a>
+<button class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" title="Copy Responder Link" type="button">
+<span class="material-symbols-outlined text-[18px]">link</span>
+</button>
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" href="#" title="View Analytics">
+<span class="material-symbols-outlined text-[18px]">insights</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Q3 Customer Churn -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-300 rounded-xl overflow-hidden shadow-sm hover:shadow-xl flex flex-col group relative">
+<div class="h-32 relative bg-surface-container-highest overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Dark obsidian slate visual with deep orange and amber gradient sound waves reflecting over glassy terrain." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDYQd4puulPaXKep6sP5mkDTrSdNcnu1xl89imy1apF_CY0cBgWQ0UoYMonVjXqGGrI_XkLBabDh7g3K2CPVnECE8uYMAcr3nclS7q2EeW1L0ZyYWtOhtdtowWavmh-NzBGQBLL4U9-Dw5vsLv88n5QJrGp7TEhrZw0nOGT_EIFL6NR7ybuhm2bU4a9LZyik0pLVZikEekeeikGWk7UtgnBvsXU7z5dBB5mmzgGlMzzxkjn1HVpB5TiWw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/20 to-transparent"></div>
+<div class="absolute top-3 left-3">
+<span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md font-label-badge text-label-badge text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> ACTIVE
+                </span>
+</div>
+<div class="absolute top-3 right-3">
+<button class="w-7 h-7 rounded-full bg-surface-container-lowest/70 hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<div class="p-space-lg flex flex-col justify-between flex-1 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-code text-label-code">
+<span class="">VOX-4109</span>
+<span class="">Updated 2h ago</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">
+                  Q3 Customer Churn &amp; Voice Exit Interview
+                </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                  Unfiltered audio feedback from departing accounts with automatic sentiment tagging.
+                </p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-high/60 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">graphic_eq</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">342 responses</span>
+</div>
+<div class="flex items-center gap-1 font-label-badge text-label-badge text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-full">
+<span class="">91% Voice</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<div class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center font-label-badge text-label-badge text-primary">MS</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Maya Sato</span>
+</div>
+<div class="flex items-center gap-1">
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</a>
+<button class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">link</span>
+</button>
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">insights</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3: Staff Design Systems Architect -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-300 rounded-xl overflow-hidden shadow-sm hover:shadow-xl flex flex-col group relative">
+<div class="h-32 relative bg-surface-container-highest overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Technical blueprint grid with dark blue and cyan neon geometric lines against pure deep space background." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAGlGn3oFGyHG3SOFv9yv-QKRL6W-7I8Sbdr6Fm0SuayUOXDhLJ35HOa_Zff0iJmY0NaSLqfMCL6UQorgdfSy-EpPLFXNGsvE4_nNEabhb1ESUnOn9pfNoiDWg8zGmUBmj0CDuckcnnvzfCDkFQjbtnURhM3ozaTQnrn-dVEeWBcy-L8wTA0MX3QvLw0IU4FfN5_bFF2cNO22GUihc6UKa4TIKcCcxtaLYtSIwCLD9iT0o4ZhQ8LEH5Bw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/20 to-transparent"></div>
+<div class="absolute top-3 left-3">
+<span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md font-label-badge text-label-badge text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> ACTIVE
+                </span>
+</div>
+<div class="absolute top-3 right-3">
+<button class="w-7 h-7 rounded-full bg-surface-container-lowest/70 hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<div class="p-space-lg flex flex-col justify-between flex-1 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-code text-label-code">
+<span class="">VOX-9014</span>
+<span class="">Updated yesterday</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">
+                  Staff Design Systems Architect Screening
+                </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                  Deep-dive audio prompts on token architecture, multi-brand theming, and engine governance.
+                </p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-high/60 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">graphic_eq</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">64 responses</span>
+</div>
+<div class="flex items-center gap-1 font-label-badge text-label-badge text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-full">
+<span class="">78% Voice</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Alex Chen avatar in small circle thumbnail, sharp dark minimalist portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzWrF6fpirBTa9o99D_K_mF4g16JC03bo4D6qT6Be9nRDaUxmSRwwbbb3wzn3l44G2Xaj17Va5JVcfOiGJsN2SBfDAuAoBzamAtjHCeUSuXg5X9fHEt0u05A60WYNOrjmlUd1Iv6gOYKMQFv22Q4mo5gwyVw1TdyMcSfz-jxREBloXe_1gAY6q6BId9DyMyCRYVg_HJgk4cyrk0BnwpJR53j4cptKvd5tcAkbnEcfoIzIddWfmxPV94g">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Alex Chen</span>
+</div>
+<div class="flex items-center gap-1">
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</a>
+<button class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">link</span>
+</button>
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">insights</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: Mobile App Beta Feedback -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-300 rounded-xl overflow-hidden shadow-sm hover:shadow-xl flex flex-col group relative">
+<div class="h-32 relative bg-surface-container-highest overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Futuristic phone interface mock glowing with emerald and teal telemetry graphs in dark room." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB0SbsPekIc3gB5d9qCPSoZjpvvv0Q0Bg62HAJ5IR4jRCmWzbJPrjjJKKaPRpO-4pRVxyo2OomZ_9sx0fv3zfS-L6LZpodDthu1A-ueGCLWgtUb12me7SvqUcfnlghrOqFO2OWX406RSUOyoEVdtUIgoO7Ei7Zmc4XBJV96GLg19UJ1vUcX2Bl2t5HgI23BhrX2vUz1xwW7QYtAAgxBpQzB9oG3Mjwu-GI27KWuwqT8pfZt7nfcqp0iYA')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/20 to-transparent"></div>
+<div class="absolute top-3 left-3">
+<span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md font-label-badge text-label-badge text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> ACTIVE
+                </span>
+</div>
+<div class="absolute top-3 right-3">
+<button class="w-7 h-7 rounded-full bg-surface-container-lowest/70 hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<div class="p-space-lg flex flex-col justify-between flex-1 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-code text-label-code">
+<span class="">VOX-3301</span>
+<span class="">Updated 3d ago</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">
+                  Mobile App Beta Feedback &amp; Audio Bug Report
+                </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                  Crowdsourced test logs with acoustic background noise filter enabled.
+                </p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-high/60 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">graphic_eq</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">891 responses</span>
+</div>
+<div class="flex items-center gap-1 font-label-badge text-label-badge text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-full">
+<span class="">65% Voice</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<div class="w-6 h-6 rounded-full bg-tertiary-container text-on-tertiary flex items-center justify-center font-label-badge text-label-badge">ER</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Evan Reyes</span>
+</div>
+<div class="flex items-center gap-1">
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</a>
+<button class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">link</span>
+</button>
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">insights</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 5: Quarterly Team Pulse (Closed) -->
+<div class="bg-surface-container-low/70 hover:bg-surface-container transition-all duration-300 rounded-xl overflow-hidden shadow-sm hover:shadow-xl flex flex-col group relative opacity-90 hover:opacity-100">
+<div class="h-32 relative bg-surface-container-highest overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105 filter grayscale" data-alt="Muted charcoal landscape with geometric sound towers and faint twilight purple glow." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCYXCaN9cBWJJRWLvZGeAM5QuZt4A9v02CgUZZ2oozofOHNt6qB0MAKwQD29oAHpnDJkb9jgT1jUy2ECab56-xBdKOSovLeq8y7w3dplqTF_sI_g1zwetfN6D-uP0JfV5WakCDjUXFbUwFRWNkqak4OwQSj-tk11JDDUDrLchycbo9mWzFn2MufW433vzkqybECxIYNRpHhpKYWdYuCQ7o-MccbBQ8InXdSIMdoBTgNrhFCjl0KZDbuDg')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/50 to-transparent"></div>
+<div class="absolute top-3 left-3">
+<span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md font-label-badge text-label-badge text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span> CLOSED
+                </span>
+</div>
+<div class="absolute top-3 right-3">
+<button class="w-7 h-7 rounded-full bg-surface-container-lowest/70 hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<div class="p-space-lg flex flex-col justify-between flex-1 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-code text-label-code">
+<span class="">VOX-1120</span>
+<span class="">Closed Jun 30</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">
+                  Quarterly Team Pulse &amp; Anonymous Audio Drop
+                </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                  Voice pitch modulation enabled for 100% anonymized organizational wellness feedback.
+                </p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-high/40 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">graphic_eq</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">52 responses</span>
+</div>
+<div class="flex items-center gap-1 font-label-badge text-label-badge text-on-surface-variant bg-surface-container-highest px-2 py-0.5 rounded-full">
+<span class="">94% Voice</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Alex Chen avatar in small circle thumbnail, sharp dark minimalist portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKPbXeualLTchOjtCSYYs-O-pIbDPZwub051xTKUqx-DCG6juIhYuK8zYmkkzsXfNPvvPNuNxEOHsYU7dYpoUV0fHBxpSS_snZwQTObOgrU6_zv2f1-3F8XJO8iI-Roo_5R5hmb7xES0LRyoUeMnOw4kXbASwFkI-V-gmVMIhUxz-WxeLVkgzN-bM2BYVoV4rbsjCIkUZm4UfCRbpP8JDvtu_a61nBLcbLBUdpuM_GK92tRuUXzp36NA">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Alex Chen</span>
+</div>
+<div class="flex items-center gap-1">
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors" href="#" title="View Results">
+<span class="material-symbols-outlined text-[18px]">insights</span>
+</a>
+<button class="p-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant transition-colors" title="Duplicate" type="button">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 6: Enterprise Sales Discovery (Draft) -->
+<div class="bg-surface-container-low hover:bg-surface-container transition-all duration-300 rounded-xl overflow-hidden shadow-sm hover:shadow-xl flex flex-col group relative">
+<div class="h-32 relative bg-surface-container-highest overflow-hidden">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Architectural obsidian glass building facade illuminated by ambient neon violet streaks under evening sky." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBtWjKth9BG7HCgfiZanOWVQqsy-nVtvTMHGPxS8SNWN0ws3OCfUAIX0Sl8ZPK3_jnbBZYKVeYFsUHX1mX1Jl97tdKAqLP8r8ozvGqXEWb4OfAQsXybzXPYN5qqg4LBOCnzOrPgU8kjvYgiTGqkAJWmucsAt5Aexzkx5b5aTruUpgjfiA5_Vk1Pkfk128aNcsii3arasTbx-A6u8TWpqiZQJfBRApk__fSzl2DpS-UjOXkoF2vJVA5VZw')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-low via-surface-container-low/20 to-transparent"></div>
+<div class="absolute top-3 left-3">
+<span class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/80 backdrop-blur-md font-label-badge text-label-badge text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> DRAFT
+                </span>
+</div>
+<div class="absolute top-3 right-3">
+<button class="w-7 h-7 rounded-full bg-surface-container-lowest/70 hover:bg-surface-container-highest text-on-surface flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">more_horiz</span>
+</button>
+</div>
+</div>
+<div class="p-space-lg flex flex-col justify-between flex-1 gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between text-outline font-label-code text-label-code">
+<span class="">VOX-0056</span>
+<span class="">Updated 5d ago</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">
+                  Enterprise Sales Discovery Questionnaire
+                </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                  Prospect qualification with automated pain-point extraction and CRM sync.
+                </p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container-high/60 flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">draft</span>
+<span class="font-body-md text-body-md text-outline">0 responses</span>
+</div>
+<div class="flex items-center gap-1 font-label-badge text-label-badge text-outline bg-surface-container-highest px-2 py-0.5 rounded-full">
+<span class="">Drafting logic</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<img class="w-6 h-6 rounded-full object-cover" data-alt="Alex Chen avatar in small circle thumbnail, sharp dark minimalist portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsxsEbGptgjKzCWTjXNsXD0cU5sGELsnTAnGb8eJVtArEVX1tBnT7HOCg7aHhJZpSk0pFaoxOjohO1HvMjHxUZ8sxYI_5uu1qoY3Q_wRi9Psl_Gg4Yf4R8EkGcyvnwLvHlkK-9gMOYEG7dCAEsvnbDYdknSQFqWICJFbUrbSmaY4Mg_8-LZmhjrEusBvKDrotYK5WIQ1TUK7iXckV1H1A9_5j-D67UFInizQYShxe6TukCVNS-ajyrAQ">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Alex Chen</span>
+</div>
+<div class="flex items-center gap-1">
+<a class="p-1.5 rounded-lg bg-surface-container-high hover:bg-primary-container hover:text-on-primary-container text-on-surface-variant transition-colors" href="#" title="Continue Editing">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</a>
+<button class="p-1.5 rounded-lg bg-surface-container-high hover:bg-error-container hover:text-error text-on-surface-variant transition-colors" title="Delete Draft" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Status Pill & Voice Telepathy Indicator -->
+<footer class="pt-space-md pb-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-md text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-space-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="">VoxForm Engine Cluster: US-WEST (Silicon Valley)</span>
+<span class="text-outline">·</span>
+<span class="font-label-code text-label-code text-outline">Latency: 112ms</span>
+</div>
+<div class="flex items-center gap-space-md font-body-sm text-body-sm">
+<a class="hover:text-on-surface transition-colors" href="#">API Documentation</a>
+<a class="hover:text-on-surface transition-colors" href="#">Voice Benchmark Lab</a>
+
+</div>
+</footer>
+</div>
+</div>
+</div></main></div>
+
+</body></html>

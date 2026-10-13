@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   X,
   Copy,
@@ -9,18 +9,21 @@ import {
   Link2,
   Sparkles,
   Shuffle,
-  Edit2,
   AlertCircle,
   CheckCircle2,
-  Trash2
+  QrCode,
+  Printer,
+  Download,
+  Loader2
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { saveFormSlug } from '../../services/api';
 
 export default function ShareModal({
   isOpen,
   onClose,
   formId,
-  formTitle,
+  formTitle = 'Form',
   customSlug = '',
   onSlugUpdated
 }) {
@@ -31,369 +34,622 @@ export default function ShareModal({
   // Short link management states
   const [activeSlug, setActiveSlug] = useState(customSlug || '');
   const [slugInput, setSlugInput] = useState(customSlug || '');
-  const [isEditingSlug, setIsEditingSlug] = useState(!customSlug);
   const [isSavingSlug, setIsSavingSlug] = useState(false);
   const [slugError, setSlugError] = useState('');
   const [slugSuccess, setSlugSuccess] = useState('');
 
+  // QR Code generator states
+  const [qrTarget, setQrTarget] = useState('short'); // 'short' | 'canonical'
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+
+  const randomAliases = [
+    'feedback',
+    'voice-form',
+    'intake',
+    'survey',
+    'rsvp',
+    'interview',
+    'connect',
+    'audio-review',
+    'insights'
+  ];
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const currentSlug = slugInput || activeSlug;
+  const shortUrl = `${origin}/#s/${currentSlug}`;
+  const canonicalUrl = `${origin}/#form/${formId}`;
+  const embedCode = `<iframe src="${shortUrl}" width="100%" height="680" allow="microphone" frameborder="0"></iframe>`;
+
+  // Initialize slugs when modal opens
   useEffect(() => {
     if (isOpen) {
-      setActiveSlug(customSlug || '');
-      setSlugInput(customSlug || '');
-      setIsEditingSlug(!customSlug);
+      const initial = customSlug || `form-${formId ? String(formId).slice(-6) : 'vox'}`;
+      setActiveSlug(customSlug || initial);
+      setSlugInput(customSlug || initial);
       setSlugError('');
       setSlugSuccess('');
       setCopied(false);
       setShortCopied(false);
       setEmbedCopied(false);
+
+      // If form doesn't have a saved slug yet, automatically save default slug so link works immediately
+      if (!customSlug && formId) {
+        saveFormSlug(formId, initial)
+          .then(() => {
+            setActiveSlug(initial);
+            if (onSlugUpdated) onSlugUpdated(initial);
+          })
+          .catch(() => {
+            // Silently fall back to ID routing
+          });
+      }
     }
-  }, [isOpen, customSlug]);
+  }, [isOpen, customSlug, formId, onSlugUpdated]);
+
+  // Generate real, scannable QR Code whenever URL changes
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let isMounted = true;
+    const targetUrl = qrTarget === 'short' ? shortUrl : canonicalUrl;
+
+    setIsGeneratingQr(true);
+    QRCode.toDataURL(targetUrl, {
+      width: 480,
+      margin: 2,
+      errorCorrectionLevel: 'M',
+      color: {
+        dark: '#0f172a',
+        light: '#ffffff'
+      }
+    })
+      .then((dataUrl) => {
+        if (isMounted) {
+          setQrDataUrl(dataUrl);
+          setIsGeneratingQr(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to generate real QR code:', err);
+        if (isMounted) setIsGeneratingQr(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, qrTarget, shortUrl, canonicalUrl]);
 
   if (!isOpen) return null;
 
-  const origin = window.location.origin;
-  const longUrl = `${origin}/#form/${formId}`;
-  const shortBaseUrl = `${origin}/s/`;
-  const shortUrl = `${origin}/s/${activeSlug}`;
-  const embedCode = `<iframe src="${activeSlug ? shortUrl : longUrl}" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>`;
+  const handleShuffle = () => {
+    const prefix = randomAliases[Math.floor(Math.random() * randomAliases.length)];
+    const suffix = Math.floor(100 + Math.random() * 900);
+    const next = `${prefix}-${suffix}`;
+    setSlugInput(next);
+  };
 
-  const copyToClipboard = (text, type = 'long') => {
-    navigator.clipboard.writeText(text);
-    if (type === 'long') {
+  const handleSaveSlug = async (targetSlug = slugInput) => {
+    const raw = targetSlug || slugInput;
+    if (!raw.trim()) {
+      setSlugError('Please enter a valid slug.');
+      return false;
+    }
+    const sanitized = raw.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+    setIsSavingSlug(true);
+    setSlugError('');
+    try {
+      await saveFormSlug(formId, sanitized);
+      setActiveSlug(sanitized);
+      setSlugInput(sanitized);
+      setSlugSuccess('Short link updated and live!');
+      if (onSlugUpdated) onSlugUpdated(sanitized);
+      setTimeout(() => setSlugSuccess(''), 3000);
+      return true;
+    } catch (err) {
+      setSlugError(err.message || 'Failed to update short link');
+      return false;
+    } finally {
+      setIsSavingSlug(false);
+    }
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (err) {
+      console.warn('Clipboard API error, trying fallback:', err);
+    }
+
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return success;
+    } catch {
+      return false;
+    }
+  };
+
+  const copyShortLink = async () => {
+    // If slug input changed and not saved yet, save it so the link works for responders
+    if (slugInput && slugInput !== activeSlug) {
+      await handleSaveSlug(slugInput);
+    }
+    const ok = await copyToClipboard(shortUrl);
+    if (ok) {
+      setShortCopied(true);
+      setTimeout(() => setShortCopied(false), 2200);
+    }
+  };
+
+  const copyCanonical = async () => {
+    const ok = await copyToClipboard(canonicalUrl);
+    if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } else if (type === 'short') {
-      setShortCopied(true);
-      setTimeout(() => setShortCopied(false), 2000);
-    } else {
+    }
+  };
+
+  const copyEmbed = async () => {
+    const ok = await copyToClipboard(embedCode);
+    if (ok) {
       setEmbedCopied(true);
       setTimeout(() => setEmbedCopied(false), 2000);
     }
   };
 
-  const handleSlugChange = (val) => {
-    // Sanitize: lowercase, spaces to dashes, only valid characters
-    const sanitized = val.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '');
-    setSlugInput(sanitized);
-    setSlugError('');
-    setSlugSuccess('');
+  const handleDownloadQr = () => {
+    if (!qrDataUrl) return;
+    const a = document.createElement('a');
+    a.href = qrDataUrl;
+    a.download = `voxform-${currentSlug || formId}-qr.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
-  const handleRandomize = () => {
-    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
-    let result = '';
-    for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setSlugInput(result);
-    setSlugError('');
-    setSlugSuccess('');
-  };
-
-  const handleSaveSlug = async () => {
-    const cleanSlug = slugInput.trim();
-    if (!cleanSlug) {
-      setSlugError('Please enter a unique name for your short link.');
+  const handlePrintQr = () => {
+    if (!qrDataUrl) return;
+    const activeUrl = qrTarget === 'short' ? shortUrl : canonicalUrl;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to print the QR code.');
       return;
     }
 
-    if (cleanSlug.length < 2 || cleanSlug.length > 60) {
-      setSlugError('Short link must be between 2 and 60 characters.');
-      return;
-    }
-
-    setIsSavingSlug(true);
-    setSlugError('');
-    setSlugSuccess('');
-
-    try {
-      const res = await saveFormSlug(formId, cleanSlug);
-      setActiveSlug(res.customSlug);
-      setIsEditingSlug(false);
-      setSlugSuccess('Custom short link saved successfully!');
-      if (onSlugUpdated) onSlugUpdated(res.customSlug);
-    } catch (err) {
-      setSlugError(err.message || 'Failed to save short link.');
-    } finally {
-      setIsSavingSlug(false);
-    }
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Scan to Respond - ${formTitle}</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 90vh;
+              margin: 0;
+              padding: 24px;
+              color: #0f172a;
+              text-align: center;
+            }
+            .card {
+              border: 2px solid #e2e8f0;
+              border-radius: 24px;
+              padding: 36px 32px;
+              max-width: 420px;
+              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+              font-size: 22px;
+              font-weight: 800;
+              margin: 0 0 8px 0;
+              color: #1e1b4b;
+            }
+            p {
+              font-size: 13px;
+              color: #64748b;
+              margin: 0 0 24px 0;
+              line-height: 1.4;
+            }
+            .qr-wrapper {
+              background: #ffffff;
+              padding: 16px;
+              border-radius: 16px;
+              border: 1px solid #cbd5e1;
+              display: inline-block;
+            }
+            img {
+              width: 260px;
+              height: 260px;
+              display: block;
+            }
+            .badge {
+              margin-top: 20px;
+              display: inline-block;
+              background: #e0e7ff;
+              color: #4338ca;
+              font-size: 12px;
+              font-weight: 700;
+              padding: 4px 14px;
+              border-radius: 9999px;
+            }
+            .url {
+              margin-top: 12px;
+              font-family: monospace;
+              font-size: 12px;
+              color: #6366f1;
+              word-break: break-all;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1>${formTitle}</h1>
+            <p>Scan with your smartphone camera to dictate or write your response instantly.</p>
+            <div class="qr-wrapper">
+              <img src="${qrDataUrl}" alt="Form QR Code" />
+            </div>
+            <div>
+              <span class="badge">🎙️ Voice Dictation Enabled</span>
+            </div>
+            <div class="url">${activeUrl}</div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 800);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
-  const handleRemoveSlug = async () => {
-    if (!window.confirm('Remove this custom short link? The long link will still work.')) return;
-    setIsSavingSlug(true);
-    try {
-      await saveFormSlug(formId, '');
-      setActiveSlug('');
-      setSlugInput('');
-      setIsEditingSlug(true);
-      setSlugSuccess('');
-      if (onSlugUpdated) onSlugUpdated('');
-    } catch (err) {
-      setSlugError(err.message || 'Failed to remove short link.');
-    } finally {
-      setIsSavingSlug(false);
-    }
+  const handleSocialShare = (platform) => {
+    const shareText = encodeURIComponent(`Fill out: ${formTitle}`);
+    const url = encodeURIComponent(shortUrl);
+    let targetUrl = '';
+    if (platform === 'twitter') targetUrl = `https://twitter.com/intent/tweet?text=${shareText}&url=${url}`;
+    if (platform === 'linkedin') targetUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+    if (platform === 'whatsapp') targetUrl = `https://api.whatsapp.com/send?text=${shareText}%20${url}`;
+    if (platform === 'slack') targetUrl = `https://slack.com/share?text=${shareText}%20${url}`;
+    if (targetUrl) window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Modal Header */}
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-xs">
-            <Share2 className="w-5 h-5" />
-          </div>
-          <div className="min-w-0 pr-8">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">Share Form with Responders</h3>
-            <p className="text-xs text-slate-500 truncate">{formTitle || 'Untitled Form'}</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          {/* SECTION 1: Standard Public Link (Long Link) */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <span>Standard Public Link</span>
-                <span className="text-[10px] font-normal text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                  Full URL
-                </span>
-              </label>
-              <span className="text-[11px] text-slate-400">Direct ID link</span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={longUrl}
-                className="w-full px-3 py-2 text-xs font-mono bg-white border border-slate-300 rounded-xl text-slate-700 select-all focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => copyToClipboard(longUrl, 'long')}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
-              </button>
-            </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-surface-container-lowest/80 backdrop-blur-xl animate-fadeIn overflow-y-auto">
+      <div className="w-full max-w-2xl bg-surface-container-low rounded-3xl p-5 sm:p-7 relative flex flex-col gap-5 sm:gap-6 my-auto border border-outline-variant/30 text-on-surface shadow-2xl max-h-[92vh] overflow-y-auto">
+        {/* Header Row */}
+        <div className="flex items-start justify-between gap-3 border-b border-outline-variant/20 pb-4">
+          <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-primary font-semibold flex items-center gap-1.5">
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Share & Distribute Form</span>
+            </span>
+            <h2 className="font-bold text-lg sm:text-2xl text-on-surface truncate tracking-tight">
+              {formTitle || 'Untitled Form'}
+            </h2>
           </div>
 
-          {/* SECTION 2: Custom Short Link Section */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-slate-50 border border-indigo-100 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
-                  <Link2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">Short Link Generator</h4>
-                  <p className="text-[11px] text-slate-500">Create a personalized, easy-to-share short URL</p>
-                </div>
-              </div>
-
-              {activeSlug && !isEditingSlug && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  Active
-                </span>
-              )}
-            </div>
-
-            {/* Display Active Short Link if already created and not currently editing */}
-            {activeSlug && !isEditingSlug ? (
-              <div className="space-y-2 pt-1">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={shortUrl}
-                    className="w-full px-3 py-2 text-xs font-mono font-semibold bg-white border border-indigo-200 rounded-xl text-indigo-900 select-all focus:outline-none"
-                  />
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(shortUrl, 'short')}
-                      className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      {shortCopied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                      <span>{shortCopied ? 'Copied!' : 'Copy Short Link'}</span>
-                    </button>
-                    <a
-                      href={shortUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors flex items-center justify-center"
-                      title="Open Short Link in new tab"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] pt-1 text-slate-500">
-                  <span className="text-emerald-700 font-medium">✓ Ready to share with respondents</span>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSlugInput(activeSlug);
-                        setIsEditingSlug(true);
-                      }}
-                      className="text-indigo-600 hover:text-indigo-800 font-semibold underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <Edit2 className="w-3 h-3" />
-                      <span>Edit Name</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveSlug}
-                      className="text-red-500 hover:text-red-700 font-semibold underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span>Remove</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Create or Edit Short Link Editor */
-              <div className="space-y-3 pt-1">
-                <p className="text-[11px] text-slate-600">
-                  Type your desired custom name below. The short link will be:
-                </p>
-
-                {/* Website domain + custom unique name input */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center rounded-xl bg-white border border-slate-300 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 overflow-hidden shadow-2xs">
-                  <span className="px-3 py-2 bg-slate-100 text-slate-500 font-mono text-xs border-b sm:border-b-0 sm:border-r border-slate-200 select-none whitespace-nowrap">
-                    {shortBaseUrl}
-                  </span>
-                  <input
-                    type="text"
-                    value={slugInput}
-                    onChange={(e) => handleSlugChange(e.target.value)}
-                    placeholder="e.g. feedback-survey"
-                    className="flex-1 px-3 py-2 text-xs font-mono text-indigo-950 font-bold placeholder:text-slate-400 focus:outline-none bg-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRandomize}
-                    className="px-2.5 py-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 text-xs transition-colors border-t sm:border-t-0 sm:border-l border-slate-200 flex items-center justify-center gap-1 shrink-0 cursor-pointer"
-                    title="Generate a random short code"
-                  >
-                    <Shuffle className="w-3.5 h-3.5" />
-                    <span className="text-[11px]">Random</span>
-                  </button>
-                </div>
-
-                {/* Validation and Feedback Message */}
-                {slugError && (
-                  <div className="flex items-center gap-1.5 text-xs text-red-600 animate-fadeIn">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>{slugError}</span>
-                  </div>
-                )}
-                {slugSuccess && (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 animate-fadeIn">
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                    <span>{slugSuccess}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-1">
-                  {isEditingSlug && activeSlug ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsEditingSlug(false);
-                        setSlugInput(activeSlug);
-                        setSlugError('');
-                      }}
-                      className="text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  ) : (
-                    <span className="text-[11px] text-slate-400">Letters, numbers, and dashes allowed</span>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleSaveSlug}
-                    disabled={isSavingSlug || !slugInput.trim()}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer ml-auto"
-                  >
-                    {isSavingSlug ? (
-                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Sparkles className="w-3.5 h-3.5" />
-                    )}
-                    <span>{activeSlug ? 'Update Short Link' : 'Create Short Link'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Test Link Button */}
-          <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
-            <div className="text-xs text-indigo-900">
-              <span className="font-semibold">Test Responder View:</span>
-              <p className="text-[11px] text-indigo-700">Open the public responder form in a fresh tab to test it</p>
-            </div>
-            <a
-              href={activeSlug ? shortUrl : longUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white text-indigo-600 border border-indigo-200 hover:bg-indigo-50 shadow-xs shrink-0 w-full sm:w-auto"
-            >
-              <span>Open Form</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-
-          {/* SECTION 3: Embed HTML */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <Code className="w-3.5 h-3.5 text-slate-500" />
-              <span>Embed HTML Code</span>
-            </label>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={embedCode}
-                className="w-full px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl text-slate-600 select-all focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => copyToClipboard(embedCode, 'embed')}
-                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 transition-colors flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
-              >
-                {embedCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                <span>{embedCopied ? 'Copied!' : 'Copy Code'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+            aria-label="Close"
+            className="w-8 h-8 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all flex items-center justify-center border border-outline-variant/30 cursor-pointer shrink-0"
           >
-            Close
+            <X className="w-4 h-4" />
           </button>
+        </div>
+
+        {/* 1. Responsive Custom Short Link Section */}
+        <div className="bg-surface-container/70 border border-outline-variant/30 rounded-2xl p-4 sm:p-5 flex flex-col gap-3 shadow-sm">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <label className="font-semibold text-xs sm:text-sm text-on-surface flex items-center gap-1.5" htmlFor="vanity-alias">
+              <Link2 className="w-4 h-4 text-primary" />
+              <span>Custom Short Link</span>
+            </label>
+            <span className="text-[11px] font-mono text-tertiary flex items-center gap-1 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
+              Live Respondent Link
+            </span>
+          </div>
+
+          {/* Fully Responsive Input & Action Buttons Layout */}
+          <div className="flex flex-col gap-2.5">
+            {/* Input with Origin Prefix */}
+            <div className="w-full flex items-center rounded-xl bg-surface-container-lowest px-3 py-2.5 border border-outline-variant/30 shadow-inner overflow-hidden focus-within:border-primary transition-colors">
+              <span className="font-mono text-xs text-outline select-none shrink-0 truncate max-w-[140px] sm:max-w-none">
+                {origin}/#s/
+              </span>
+              <input
+                id="vanity-alias"
+                type="text"
+                value={slugInput}
+                onChange={(e) => setSlugInput(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '-'))}
+                className="flex-1 min-w-0 bg-transparent text-on-surface font-mono text-xs sm:text-sm focus:outline-none px-1"
+                placeholder="custom-slug"
+              />
+            </div>
+
+            {/* Responsive Actions Strip (Wrap on mobile, clean inline on desktop) */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleShuffle}
+                className="px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-all text-xs border border-outline-variant/30 cursor-pointer"
+                title="Generate a random short alias"
+              >
+                <Shuffle className="w-3.5 h-3.5" />
+                <span>Shuffle</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSaveSlug(slugInput)}
+                disabled={isSavingSlug || slugInput === activeSlug}
+                className="px-3.5 py-2 rounded-xl bg-surface-container-high hover:bg-surface-container-highest disabled:opacity-50 text-primary font-semibold flex items-center gap-1.5 transition-all text-xs border border-outline-variant/30 cursor-pointer"
+                title="Save this custom name"
+              >
+                {isSavingSlug ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                <span>{isSavingSlug ? 'Saving...' : 'Save Slug'}</span>
+              </button>
+
+              {/* Primary Responsive Copy Link Button */}
+              <button
+                type="button"
+                onClick={copyShortLink}
+                className={`flex-1 min-w-[140px] sm:flex-initial px-5 py-2.5 rounded-xl text-on-primary flex items-center justify-center gap-2 shadow-md transition-all text-xs sm:text-sm font-bold cursor-pointer ${
+                  shortCopied
+                    ? 'bg-tertiary text-surface ring-2 ring-tertiary/40'
+                    : 'bg-primary hover:bg-primary-container hover:scale-101 active:scale-99'
+                }`}
+              >
+                {shortCopied ? (
+                  <>
+                    <Check className="w-4 h-4 stroke-[3]" />
+                    <span>Copied Link!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    <span>Copy Link</span>
+                  </>
+                )}
+              </button>
+
+              <a
+                href={shortUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-all text-xs border border-outline-variant/30 flex items-center gap-1"
+                title="Open short link in new tab"
+              >
+                <span className="hidden sm:inline">Test</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {slugError && (
+            <p className="text-xs text-error font-medium flex items-center gap-1 animate-fadeIn">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{slugError}</span>
+            </p>
+          )}
+          {slugSuccess && (
+            <p className="text-xs text-tertiary font-medium flex items-center gap-1 animate-fadeIn">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <span>{slugSuccess}</span>
+            </p>
+          )}
+        </div>
+
+        {/* 2. REAL SCANNABLE QR CODE & CANONICAL LINK GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {/* Real QR Code Card */}
+          <div className="md:col-span-5 flex flex-col items-center justify-between bg-surface-container/60 border border-outline-variant/30 rounded-2xl p-4 sm:p-5 gap-3.5 shadow-sm text-center">
+            <div className="flex items-center justify-between w-full text-xs font-mono text-on-surface">
+              <span className="font-semibold flex items-center gap-1.5">
+                <QrCode className="w-4 h-4 text-tertiary" />
+                <span>Real Scannable QR</span>
+              </span>
+
+              {/* Target Link Selector */}
+              <div className="flex items-center gap-1 text-[10px] bg-surface-container rounded-lg p-0.5 border border-outline-variant/20">
+                <button
+                  type="button"
+                  onClick={() => setQrTarget('short')}
+                  className={`px-1.5 py-0.5 rounded transition-all cursor-pointer font-medium ${
+                    qrTarget === 'short'
+                      ? 'bg-primary text-on-primary font-bold shadow-xs'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                  title="Encode Short Link in QR"
+                >
+                  Short
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQrTarget('canonical')}
+                  className={`px-1.5 py-0.5 rounded transition-all cursor-pointer font-medium ${
+                    qrTarget === 'canonical'
+                      ? 'bg-primary text-on-primary font-bold shadow-xs'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                  title="Encode Direct Canonical Link in QR"
+                >
+                  Direct
+                </button>
+              </div>
+            </div>
+
+            {/* High-Contrast Genuine QR Code Canvas */}
+            <div className="relative w-36 h-36 sm:w-40 sm:h-40 bg-white rounded-2xl p-2.5 flex items-center justify-center border-2 border-outline-variant/40 shadow-md overflow-hidden">
+              {isGeneratingQr || !qrDataUrl ? (
+                <div className="flex flex-col items-center gap-2 text-outline">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <span className="text-[10px] font-mono">Generating QR...</span>
+                </div>
+              ) : (
+                <img
+                  src={qrDataUrl}
+                  alt={`QR Code for ${formTitle}`}
+                  className="w-full h-full object-contain"
+                />
+              )}
+            </div>
+
+            <p className="text-[11px] text-on-surface-variant leading-tight max-w-[200px]">
+              Scan with any smartphone camera to open form instantly
+            </p>
+
+            {/* QR Download & Print Actions */}
+            <div className="flex items-center gap-2 w-full pt-1">
+              <button
+                type="button"
+                onClick={handleDownloadQr}
+                disabled={!qrDataUrl}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer disabled:opacity-50"
+                title="Download QR as PNG image"
+              >
+                <Download className="w-3.5 h-3.5 text-tertiary" />
+                <span>Download PNG</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrintQr}
+                disabled={!qrDataUrl}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer disabled:opacity-50"
+                title="Print ready-to-display poster"
+              >
+                <Printer className="w-3.5 h-3.5 text-primary" />
+                <span>Print QR</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Full Canonical URL & Direct Responder Card */}
+          <div className="md:col-span-7 flex flex-col justify-between gap-3.5 bg-surface-container/50 border border-outline-variant/20 rounded-2xl p-4 sm:p-5">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-on-surface-variant font-semibold">
+                  Direct Canonical Form Link
+                </span>
+                <span className="text-[10px] font-mono text-outline">Permanent URL</span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-2 sm:p-1.5 sm:pl-3">
+                <span className="font-mono text-xs text-on-surface-variant truncate select-all flex-1 min-w-0">
+                  {canonicalUrl}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={copyCanonical}
+                  className={`shrink-0 px-3.5 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1 text-xs font-semibold cursor-pointer ${
+                    copied
+                      ? 'bg-tertiary text-surface font-bold'
+                      : 'bg-surface-container hover:bg-surface-container-high text-primary hover:text-on-surface'
+                  }`}
+                >
+                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied ? 'Copied!' : 'Copy Direct Link'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 bg-surface-container-low rounded-xl border border-outline-variant/20 text-xs text-on-surface-variant flex items-center justify-between">
+              <span className="leading-tight">Direct link with voice-to-text enabled</span>
+              <a
+                href={canonicalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline flex items-center gap-1 font-semibold shrink-0 ml-2"
+              >
+                <span>Test Direct</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Embed Code HTML */}
+            <div className="flex flex-col gap-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-xs text-on-surface flex items-center gap-1.5">
+                  <Code className="w-3.5 h-3.5 text-primary" />
+                  <span>Embed HTML iframe</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={copyEmbed}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border border-outline-variant/30 cursor-pointer ${
+                    embedCopied
+                      ? 'bg-tertiary text-surface font-bold'
+                      : 'bg-surface-container hover:bg-surface-container-high text-primary'
+                  }`}
+                >
+                  {embedCopied ? 'Copied!' : 'Copy Code'}
+                </button>
+              </div>
+              <pre className="bg-surface-container-lowest p-2 rounded-xl text-[11px] font-mono text-on-surface-variant overflow-x-auto border border-outline-variant/20 whitespace-pre">
+                <code>{embedCode}</code>
+              </pre>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Social Share Strip */}
+        <div className="pt-2 border-t border-outline-variant/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <span className="font-mono text-[11px] uppercase tracking-wider text-outline font-semibold">
+            Share on Networks:
+          </span>
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => handleSocialShare('twitter')}
+              className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface transition-all flex items-center justify-center gap-1 text-xs border border-outline-variant/30 cursor-pointer"
+            >
+              <span>X (Twitter)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSocialShare('linkedin')}
+              className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface transition-all flex items-center justify-center gap-1 text-xs border border-outline-variant/30 cursor-pointer"
+            >
+              <span>LinkedIn</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSocialShare('whatsapp')}
+              className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface transition-all flex items-center justify-center gap-1 text-xs border border-outline-variant/30 cursor-pointer"
+            >
+              <span>WhatsApp</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSocialShare('slack')}
+              className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface transition-all flex items-center justify-center gap-1 text-xs border border-outline-variant/30 cursor-pointer"
+            >
+              <span>Slack</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

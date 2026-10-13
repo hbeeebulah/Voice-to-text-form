@@ -319,7 +319,7 @@ class Database {
     }
 
     if (filter && filter.creatorId) {
-      return forms.filter(f => !f.creatorId || f.creatorId === filter.creatorId);
+      return forms.filter(f => f.creatorId === filter.creatorId);
     }
     return forms;
   }

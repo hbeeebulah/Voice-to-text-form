@@ -54,7 +54,12 @@ router.post('/upload', upload.single('file'), (req, res) => {
 // GET /api/forms - List forms (optionally filtered by creatorId)
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const creatorFilter = req.query.creatorId ? { creatorId: req.query.creatorId } : {};
+    let creatorFilter = {};
+    if (req.user && req.user.id) {
+      creatorFilter = { creatorId: req.user.id };
+    } else if (req.query.creatorId) {
+      creatorFilter = { creatorId: req.query.creatorId };
+    }
     const forms = await db.getAllForms(creatorFilter);
     // Return summary data for forms list
     const formSummaries = await Promise.all(
@@ -86,8 +91,15 @@ router.get('/', optionalAuth, async (req, res) => {
 // POST /api/forms - Create a new form
 router.post('/', optionalAuth, async (req, res) => {
   try {
+    const formId = uuidv4();
+    const cleanTitleSlug = req.body.title
+      ? req.body.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24)
+      : 'form';
+    const defaultSlug = `${cleanTitleSlug || 'form'}-${formId.slice(0, 6)}`;
+
     const newForm = {
-      id: uuidv4(),
+      id: formId,
+      customSlug: req.body.customSlug || defaultSlug,
       title: req.body.title || 'Untitled Form',
       description: req.body.description || '',
       creatorId: req.user ? req.user.id : (req.body.creatorId || null),
@@ -325,12 +337,24 @@ router.post('/:id/responses', async (req, res) => {
 
     const { answers, voiceFieldStats } = req.body;
 
+    // Normalize answers to map format whether client sends array or map
+    let answersMap = {};
+    if (Array.isArray(answers)) {
+      answers.forEach(item => {
+        if (item && item.questionId) {
+          answersMap[item.questionId] = item.value;
+        }
+      });
+    } else if (typeof answers === 'object' && answers !== null) {
+      answersMap = { ...answers };
+    }
+
     // Validate required fields
     const missingFields = [];
     if (form.questions) {
       for (const q of form.questions) {
         if (q.required) {
-          const ans = answers ? answers[q.id] : undefined;
+          const ans = answersMap[q.id];
           if (ans === undefined || ans === null || ans === '' || (Array.isArray(ans) && ans.length === 0)) {
             missingFields.push(q.title || `Question (${q.id})`);
           }
@@ -348,7 +372,7 @@ router.post('/:id/responses', async (req, res) => {
     const responseRecord = {
       id: uuidv4(),
       formId: req.params.id,
-      answers: answers || {},
+      answers: answersMap,
       voiceFieldStats: voiceFieldStats || {},
       submittedAt: new Date().toISOString()
     };

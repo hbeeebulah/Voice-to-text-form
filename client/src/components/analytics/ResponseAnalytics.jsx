@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
   Download,
-  FileSpreadsheet,
-  FileCode,
-  Users,
+  FileText,
   Mic,
-  Clock,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  BarChart3,
-  UserCheck,
-  RefreshCw,
-  Trash2,
+  Eye,
   CheckCircle2,
-  Paperclip,
-  FileText
+  Share2,
+  Calendar,
+  Layers,
+  ArrowLeft,
+  TrendingUp,
+  BarChart3,
+  Sparkles
 } from 'lucide-react';
 import {
   fetchAnalytics,
@@ -32,7 +30,12 @@ function formatFileSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-export default function ResponseAnalytics({ form, onOpenResponderPreview, onUpdateForm }) {
+export default function ResponseAnalytics({
+  form,
+  onOpenResponderPreview,
+  onUpdateForm,
+  onNavigateTab
+}) {
   const [analytics, setAnalytics] = useState(null);
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +54,7 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview, onUpda
         fetchResponses(form.id)
       ]);
       setAnalytics(analyticsData);
-      setResponses(responsesData);
+      setResponses(responsesData || []);
     } catch (err) {
       console.error('Failed to load analytics:', err);
     } finally {
@@ -59,408 +62,327 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview, onUpda
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-[500px] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
-          <span className="text-xs font-semibold text-slate-500">
-            Calculating response analytics...
-          </span>
-        </div>
-      </div>
-    );
-  }
+  const totalSubmissions = responses.length;
+  const voiceSubmissionsCount = responses.filter(r =>
+    r.voiceFieldStats && Object.values(r.voiceFieldStats).some(Boolean)
+  ).length;
 
-  const totalSubmissions = analytics?.totalSubmissions || 0;
-  const currentResponse = responses[currentResponseIndex];
+  const voiceRate = totalSubmissions > 0
+    ? Math.round((voiceSubmissionsCount / totalSubmissions) * 100)
+    : 0;
+
   const isAccepting = form.settings?.acceptingResponses !== false;
+  const currentResponse = responses[currentResponseIndex];
 
   return (
-    <div className="max-w-4xl mx-auto py-6 px-3 sm:py-8 sm:px-6 space-y-4 sm:space-y-6 animate-fadeIn pb-32">
-      {/* Top Header Card: Metric Highlights & Export Controls */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 sm:pb-6 border-b border-slate-100">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
-                Live Analytics
-              </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-                Responses Dashboard
-              </h2>
+    <div className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container pb-24">
+      {/* Centered Analytics Container */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 flex flex-col gap-6">
+        {/* Header Bar */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline-variant/20">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-xs font-mono text-on-surface-variant">
+              {onNavigateTab && (
+                <button
+                  type="button"
+                  onClick={() => onNavigateTab('questions')}
+                  className="flex items-center gap-1 hover:text-on-surface transition-colors cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Questions</span>
+                </button>
+              )}
+              <span>/</span>
+              <span>Analytics & Responses</span>
             </div>
-            <p className="text-xs text-slate-500">
-              Real-time insights and voice dictation engagement
-            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <h1 className="font-bold text-xl sm:text-2xl text-on-surface tracking-tight">
+                {form.title || 'Untitled Form'}
+              </h1>
+
+              {/* Accepting responses switch */}
+              <label className="flex items-center gap-2 cursor-pointer select-none px-3 py-1 rounded-full bg-surface-container border border-outline-variant/20">
+                <input
+                  type="checkbox"
+                  checked={isAccepting}
+                  onChange={(e) => onUpdateForm({
+                    settings: { ...(form.settings || {}), acceptingResponses: e.target.checked }
+                  })}
+                  className="sr-only peer"
+                />
+                <div className="w-7 h-3.5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-tertiary relative" />
+                <span className={`text-[11px] font-mono font-medium ${isAccepting ? 'text-tertiary' : 'text-outline'}`}>
+                  {isAccepting ? 'Accepting Responses' : 'Closed'}
+                </span>
+              </label>
+            </div>
           </div>
 
-          {/* Export Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Export CSV / JSON & Preview */}
+          <div className="flex items-center gap-2 flex-wrap">
             <a
               href={getExportCsvUrl(form.id)}
               download
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200"
-              title="Download CSV Spreadsheet"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              <Download className="w-3.5 h-3.5 text-on-surface-variant" />
               <span>Export CSV</span>
             </a>
 
             <a
               href={getExportJsonUrl(form.id)}
               download
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200"
-              title="Download JSON Payload"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
             >
-              <FileCode className="w-4 h-4 text-indigo-600" />
+              <Download className="w-3.5 h-3.5 text-on-surface-variant" />
               <span>Export JSON</span>
             </a>
 
-            <button
-              onClick={loadData}
-              className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-              title="Refresh Analytics"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
+            {onOpenResponderPreview && (
+              <button
+                type="button"
+                onClick={onOpenResponderPreview}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary text-xs font-semibold shadow-md transition-all cursor-pointer"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Test Form</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Accepting Responses Status & Toggle Banner */}
-        <div className={`p-4 rounded-2xl border transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-          isAccepting
-            ? 'bg-emerald-50/60 border-emerald-200'
-            : 'bg-rose-50/80 border-rose-200'
-        }`}>
-          <div className="flex items-center gap-3">
-            <span className={`w-3.5 h-3.5 rounded-full shrink-0 ${
-              isAccepting ? 'bg-emerald-500 ring-4 ring-emerald-100' : 'bg-rose-500 ring-4 ring-rose-100'
-            }`} />
-            <div>
-              <span className={`text-xs font-bold ${isAccepting ? 'text-emerald-950' : 'text-rose-950'}`}>
-                {isAccepting ? 'Accepting Responses' : 'Not Accepting Responses (Form Closed)'}
-              </span>
-              <p className={`text-[11px] ${isAccepting ? 'text-emerald-700' : 'text-rose-700'}`}>
-                {isAccepting
-                  ? 'Your form is currently open and accepting submissions from responders.'
-                  : 'Form is closed. Responders visiting the form will see the closed message.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 self-end sm:self-auto shrink-0">
-            <span className="text-xs font-bold text-slate-700">
-              {isAccepting ? 'Open' : 'Closed'}
-            </span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isAccepting}
-                onChange={(e) => {
-                  if (onUpdateForm) {
-                    onUpdateForm({
-                      settings: {
-                        ...(form.settings || {}),
-                        acceptingResponses: e.target.checked
-                      }
-                    });
-                  }
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-            </label>
-          </div>
-        </div>
-
-        {/* 3 Metric Highlight Cards */}
+        {/* Real Metrics Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Card 1: Total Submissions */}
-          <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shadow-indigo-200">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-2xl font-black text-slate-900">{totalSubmissions}</p>
-              <p className="text-xs font-medium text-slate-500">Total Submissions</p>
-            </div>
+          <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
+            <span className="text-xs text-on-surface-variant font-medium">Total Submissions</span>
+            <span className="font-bold text-2xl text-on-surface">{totalSubmissions}</span>
+            <span className="text-[11px] text-on-surface-variant/70 font-mono">Recorded responses</span>
           </div>
 
-          {/* Card 2: Voice Dictation Usage */}
-          <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-sm shadow-purple-200">
-              <Mic className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-2xl font-black text-slate-900">
-                  {analytics?.voiceUsagePercentage ?? 0}%
-                </span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700">
-                  Voice
-                </span>
-              </div>
-              <p className="text-xs font-medium text-slate-500">Voice Dictation Usage</p>
-            </div>
+          <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
+            <span className="text-xs text-on-surface-variant font-medium">Voice-Dictated Submissions</span>
+            <span className="font-bold text-2xl text-tertiary">{voiceSubmissionsCount}</span>
+            <span className="text-[11px] text-on-surface-variant/70 font-mono">
+              Used speech-to-text
+            </span>
           </div>
 
-          {/* Card 3: Latest Submission */}
-          <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-sm shadow-emerald-200">
-              <Clock className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-800">
-                {analytics?.lastSubmissionAt
-                  ? new Date(analytics.lastSubmissionAt).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-                  : 'No submissions'}
-              </p>
-              <p className="text-xs font-medium text-slate-500">Latest Activity</p>
-            </div>
+          <div className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/20 flex flex-col gap-1 shadow-sm">
+            <span className="text-xs text-on-surface-variant font-medium">Voice Usage Rate</span>
+            <span className="font-bold text-2xl text-primary">{voiceRate}%</span>
+            <span className="text-[11px] text-on-surface-variant/70 font-mono">
+              Of all respondents
+            </span>
           </div>
         </div>
 
-        {/* View Switcher: Summary vs Individual */}
-        <div className="flex items-center border-b border-slate-200 pt-2 gap-4 sm:gap-6 text-xs sm:text-sm overflow-x-auto">
+        {/* Tab Switcher: Summary vs Individual */}
+        <div className="flex items-center gap-2 border-b border-outline-variant/20 pb-1">
           <button
+            type="button"
             onClick={() => setActiveTab('summary')}
-            className={`pb-3 font-semibold transition-all relative flex items-center gap-1.5 sm:gap-2 shrink-0 ${
+            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'summary'
-                ? 'text-indigo-600'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-surface-container text-primary border border-outline-variant/30'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <BarChart3 className="w-4 h-4" />
-            <span>Summary Charts</span>
-            {activeTab === 'summary' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full" />
-            )}
+            Summary Insights
           </button>
-
           <button
+            type="button"
             onClick={() => setActiveTab('individual')}
-            className={`pb-3 font-semibold transition-all relative flex items-center gap-1.5 sm:gap-2 shrink-0 ${
+            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'individual'
-                ? 'text-indigo-600'
-                : 'text-slate-500 hover:text-slate-800'
+                ? 'bg-surface-container text-primary border border-outline-variant/30'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <UserCheck className="w-4 h-4" />
-            <span>Individual Responses ({totalSubmissions})</span>
-            {activeTab === 'individual' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 rounded-full" />
-            )}
+            Individual Responses ({totalSubmissions})
           </button>
         </div>
-      </div>
 
-      {/* Zero Submissions Empty State */}
-      {totalSubmissions === 0 && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-            <Users className="w-8 h-8" />
+        {/* Loading State */}
+        {loading && (
+          <div className="py-16 text-center text-on-surface-variant text-xs font-mono">
+            Loading response analytics...
           </div>
-          <h3 className="text-lg font-bold text-slate-800">Waiting for responses</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            This form has not received any submissions yet. Try opening the responder view to submit a test response with voice dictation!
-          </p>
-          {onOpenResponderPreview && (
-            <button
-              onClick={onOpenResponderPreview}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all"
-            >
-              <span>Open Form Responder to Test</span>
-            </button>
-          )}
-        </div>
-      )}
+        )}
 
-      {/* SUMMARY CHARTS TAB */}
-      {totalSubmissions > 0 && activeTab === 'summary' && (
-        <div className="space-y-4">
-          {(analytics?.questionAnalytics || []).map((qAnalytics, idx) => (
-            <div
-              key={qAnalytics.questionId || idx}
-              className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-6 space-y-4"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                    Question {idx + 1} • {qAnalytics.type.replace('_', ' ')}
-                  </span>
-                  <h3 className="text-base font-bold text-slate-900 mt-0.5">
-                    {qAnalytics.title}
-                  </h3>
-                </div>
-                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
-                  {qAnalytics.responseCount} answers
-                </span>
-              </div>
+        {/* Empty State */}
+        {!loading && totalSubmissions === 0 && (
+          <div className="bg-surface-container-low rounded-3xl p-12 text-center border border-outline-variant/20 flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center text-primary shadow-inner">
+              <BarChart3 className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base sm:text-lg text-on-surface">No responses yet</h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant mt-1 max-w-sm">
+                Share your form short link or QR code to collect spoken and written submissions.
+              </p>
+            </div>
+            {onOpenResponderPreview && (
+              <button
+                type="button"
+                onClick={onOpenResponderPreview}
+                className="mt-2 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-semibold shadow-md cursor-pointer hover:scale-102 transition-all"
+              >
+                <Eye className="w-4 h-4" />
+                <span>Submit a Test Response</span>
+              </button>
+            )}
+          </div>
+        )}
 
-              {/* Multiple Choice, Checkboxes, Dropdown Bar Charts */}
-              {['multiple_choice', 'checkboxes', 'dropdown'].includes(qAnalytics.type) && (
-                <div className="space-y-3 pt-2">
-                  {(qAnalytics.data || []).map((item, itemIdx) => {
-                    const colors = [
-                      'bg-indigo-600',
-                      'bg-purple-600',
-                      'bg-pink-500',
-                      'bg-amber-500',
-                      'bg-emerald-500',
-                      'bg-cyan-500'
-                    ];
-                    const barColor = colors[itemIdx % colors.length];
+        {/* TAB 1: SUMMARY INSIGHTS */}
+        {!loading && totalSubmissions > 0 && activeTab === 'summary' && (
+          <div className="flex flex-col gap-5">
+            {(form.questions || []).map((q, qIdx) => {
+              // Gather all answers for this question across responses
+              const questionAnswers = responses
+                .map((r) => ({
+                  val: r.answers?.[q.id],
+                  wasVoice: Boolean(r.voiceFieldStats?.[q.id]),
+                  submittedAt: r.submittedAt
+                }))
+                .filter((a) => a.val !== undefined && a.val !== null && a.val !== '');
 
-                    return (
-                      <div key={itemIdx} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-slate-800">{item.label}</span>
-                          <span className="font-semibold text-slate-600">
-                            {item.count} ({item.percentage}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${barColor} rounded-full transition-all duration-500`}
-                            style={{ width: `${item.percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Linear Scale Rating Analytics */}
-              {qAnalytics.type === 'linear_scale' && (
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="text-center px-4 border-r border-slate-200">
-                      <p className="text-3xl font-black text-indigo-600">
-                        {qAnalytics.average || '—'}
-                      </p>
-                      <p className="text-[11px] text-slate-500 font-semibold uppercase">
-                        Average Score
-                      </p>
+              return (
+                <div
+                  key={q.id}
+                  className="bg-surface-container-low rounded-2xl p-5 sm:p-6 shadow-md border border-outline-variant/20 flex flex-col gap-3"
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-outline-variant/10 pb-2.5">
+                    <div>
+                      <span className="font-mono text-xs text-primary font-bold mr-2">Q{qIdx + 1}</span>
+                      <span className="font-semibold text-sm sm:text-base text-on-surface">
+                        {q.title || 'Untitled Question'}
+                      </span>
                     </div>
-
-                    <div className="flex-1 flex items-center justify-between text-xs text-slate-500 px-2">
-                      <span>Min: {qAnalytics.scaleConfig?.minLabel || 'Lowest'}</span>
-                      <span>Max: {qAnalytics.scaleConfig?.maxLabel || 'Highest'}</span>
-                    </div>
-                  </div>
-
-                  {/* Distribution breakdown */}
-                  <div className="space-y-2">
-                    {(qAnalytics.distribution || []).map((scoreItem) => (
-                      <div key={scoreItem.score} className="flex items-center gap-3 text-xs">
-                        <span className="font-bold text-slate-700 w-5 text-center">
-                          {scoreItem.score}
-                        </span>
-                        <div className="flex-1 bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-indigo-600 rounded-full transition-all duration-500"
-                            style={{ width: `${scoreItem.percentage}%` }}
-                          />
-                        </div>
-                        <span className="text-slate-500 w-16 text-right">
-                          {scoreItem.count} ({scoreItem.percentage}%)
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Short Answer & Paragraph: List of responses with Voice Badge */}
-              {(qAnalytics.type === 'short_answer' || qAnalytics.type === 'paragraph') && (
-                <div className="space-y-3 pt-2">
-                  {/* Voice dictation percentage badge */}
-                  <div className="flex items-center justify-between px-3 py-2 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs text-indigo-900">
-                    <span className="font-medium flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                      Voice Dictation Adoption
-                    </span>
-                    <span className="font-bold px-2 py-0.5 rounded-md bg-white text-indigo-700 shadow-2xs border border-indigo-200">
-                      {qAnalytics.voiceRate}% ({qAnalytics.voiceCount} of {qAnalytics.responseCount})
+                    <span className="text-[11px] font-mono text-on-surface-variant">
+                      {questionAnswers.length} responses
                     </span>
                   </div>
 
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                    {(qAnalytics.responses || []).map((item, rIdx) => (
-                      <div
-                        key={item.id || rIdx}
-                        className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5 hover:bg-white transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(item.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          {item.usedVoice && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700">
-                              <Mic className="w-3 h-3 text-purple-600" />
-                              Dictated via Voice
+                  {/* 1. Multiple Choice / Checkboxes Breakdown */}
+                  {['multiple_choice', 'checkboxes', 'dropdown'].includes(q.type) && (
+                    <div className="flex flex-col gap-2 pt-1">
+                      {(q.options || []).map((opt, oIdx) => {
+                        const count = questionAnswers.filter((a) =>
+                          Array.isArray(a.val) ? a.val.includes(opt) : a.val === opt
+                        ).length;
+                        const pct = questionAnswers.length > 0
+                          ? Math.round((count / questionAnswers.length) * 100)
+                          : 0;
+
+                        return (
+                          <div key={oIdx} className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between text-xs text-on-surface">
+                              <span>{opt}</span>
+                              <span className="font-mono text-on-surface-variant">
+                                {count} ({pct}%)
+                              </span>
+                            </div>
+                            <div className="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all duration-300"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* 2. Text / Voice Answers List */}
+                  {['paragraph', 'short_answer'].includes(q.type) && (
+                    <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                      {questionAnswers.length > 0 ? (
+                        questionAnswers.map((a, aIdx) => (
+                          <div
+                            key={aIdx}
+                            className="p-3 rounded-xl bg-surface-container/60 border border-outline-variant/20 text-xs flex flex-col gap-1.5"
+                          >
+                            <p className="text-on-surface leading-relaxed whitespace-pre-line">
+                              {String(a.val)}
+                            </p>
+                            <div className="flex items-center justify-between text-[11px] text-on-surface-variant font-mono">
+                              <span>{new Date(a.submittedAt).toLocaleTimeString()}</span>
+                              {a.wasVoice && (
+                                <span className="inline-flex items-center gap-1 text-tertiary font-semibold">
+                                  <Mic className="w-3 h-3" />
+                                  Voice Dictated
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-outline italic py-2">No answers yet.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 3. Linear Scale Breakdown */}
+                  {q.type === 'linear_scale' && (
+                    <div className="flex flex-col gap-2 pt-1">
+                      {Array.from({
+                        length: (q.scaleConfig?.max || 5) - (q.scaleConfig?.min || 1) + 1
+                      }, (_, i) => (q.scaleConfig?.min || 1) + i).map((num) => {
+                        const count = questionAnswers.filter((a) => Number(a.val) === num).length;
+                        const pct = questionAnswers.length > 0
+                          ? Math.round((count / questionAnswers.length) * 100)
+                          : 0;
+
+                        return (
+                          <div key={num} className="flex items-center gap-3 text-xs">
+                            <span className="w-6 font-mono font-bold text-on-surface">{num}</span>
+                            <div className="flex-1 h-2 rounded-full bg-surface-container overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all duration-300"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="font-mono text-on-surface-variant text-[11px] w-12 text-right">
+                              {count} ({pct}%)
                             </span>
-                          )}
-                        </div>
-                        <p className="text-slate-800 leading-relaxed font-sans">{item.text}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
-              {/* File / Document Attachment Analytics */}
-              {qAnalytics.type === 'file_upload' && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between px-3 py-2 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs text-indigo-900">
-                    <span className="font-medium flex items-center gap-1.5">
-                      <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
-                      Attached Documents
-                    </span>
-                    <span className="font-bold px-2 py-0.5 rounded-md bg-white text-indigo-700 shadow-2xs border border-indigo-200">
-                      {qAnalytics.responseCount} {qAnalytics.responseCount === 1 ? 'file' : 'files'} uploaded
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                    {(qAnalytics.files || []).length > 0 ? (
-                      (qAnalytics.files || []).map((item, fIdx) => {
-                        const fileObj = item.file || {};
-                        const fileName = fileObj.fileName || fileObj.name || 'document';
-                        const fileUrl = fileObj.dataUrl || fileObj.fileUrl;
+                  {/* 4. File Upload List */}
+                  {q.type === 'file_upload' && (
+                    <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+                      {questionAnswers.map((a, aIdx) => {
+                        const file = a.val || {};
                         return (
                           <div
-                            key={item.id || fIdx}
-                            className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between gap-3 hover:bg-white transition-colors"
+                            key={aIdx}
+                            className="p-3 rounded-xl bg-surface-container/60 border border-outline-variant/20 text-xs flex items-center justify-between gap-3"
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                                <FileText className="w-4 h-4 text-indigo-600" />
-                              </div>
+                              <FileText className="w-4 h-4 text-primary shrink-0" />
                               <div className="min-w-0">
-                                <p className="font-semibold text-slate-800 truncate" title={fileName}>
-                                  {fileName}
+                                <p className="font-semibold text-on-surface truncate">
+                                  {file.fileName || 'Attached Document'}
                                 </p>
-                                <p className="text-[10px] text-slate-400">
-                                  {formatFileSize(fileObj.fileSize)} • {new Date(item.submittedAt).toLocaleString()}
+                                <p className="text-[10px] text-on-surface-variant font-mono">
+                                  {formatFileSize(file.fileSize)}
                                 </p>
                               </div>
                             </div>
 
-                            {fileUrl && (
+                            {file.fileUrl && (
                               <a
-                                href={fileUrl}
-                                download={fileName}
+                                href={file.fileUrl}
+                                download={file.fileName}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-colors shrink-0"
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-colors"
                               >
                                 <Download className="w-3.5 h-3.5" />
                                 <span>Download</span>
@@ -468,121 +390,111 @@ export default function ResponseAnalytics({ form, onOpenResponderPreview, onUpda
                             )}
                           </div>
                         );
-                      })
-                    ) : (
-                      <p className="text-xs italic text-slate-400 py-2">No documents attached yet.</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* INDIVIDUAL RESPONSES TAB */}
-      {totalSubmissions > 0 && activeTab === 'individual' && currentResponse && (
-        <div className="space-y-4">
-          {/* Navigation Bar between respondents */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-3.5 sm:p-4 flex flex-col xs:flex-row xs:items-center justify-between gap-2 shadow-2xs">
-            <div className="flex items-center justify-between xs:justify-start gap-2 w-full xs:w-auto">
-              <button
-                disabled={currentResponseIndex === 0}
-                onClick={() => setCurrentResponseIndex(prev => prev - 1)}
-                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <span className="text-xs font-semibold text-slate-800">
-                Response {currentResponseIndex + 1} of {totalSubmissions}
-              </span>
-
-              <button
-                disabled={currentResponseIndex >= totalSubmissions - 1}
-                onClick={() => setCurrentResponseIndex(prev => prev + 1)}
-                className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="text-[11px] sm:text-xs text-slate-500">
-              Submitted: {new Date(currentResponse.submittedAt).toLocaleString()}
-            </div>
-          </div>
-
-          {/* Render individual responses to all questions */}
-          <div className="space-y-3">
-            {(form.questions || []).map((q, qIdx) => {
-              const answer = currentResponse.answers?.[q.id];
-              const wasVoice = Boolean(currentResponse.voiceFieldStats?.[q.id]);
-
-              return (
-                <div
-                  key={q.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800">
-                      {qIdx + 1}. {q.title}
-                    </span>
-                    {wasVoice && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700">
-                        <Mic className="w-3 h-3 text-purple-600" />
-                        Voice Dictated
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-800">
-                    {Array.isArray(answer) ? (
-                      <ul className="list-disc list-inside space-y-0.5">
-                        {answer.map((item, i) => (
-                          <li key={i}>{item}</li>
-                        ))}
-                      </ul>
-                    ) : answer && typeof answer === 'object' && (answer.fileName || answer.name) ? (
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-1">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                            <FileText className="w-4 h-4 text-indigo-600" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-bold text-slate-800 truncate" title={answer.fileName || answer.name}>
-                              {answer.fileName || answer.name}
-                            </p>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              {formatFileSize(answer.fileSize)}
-                            </p>
-                          </div>
-                        </div>
-
-                        {(answer.dataUrl || answer.fileUrl) && (
-                          <a
-                            href={answer.dataUrl || answer.fileUrl}
-                            download={answer.fileName || answer.name}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 shadow-2xs transition-colors shrink-0"
-                          >
-                            <Download className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>Download File</span>
-                          </a>
-                        )}
-                      </div>
-                    ) : answer !== undefined && answer !== null && answer !== '' ? (
-                      <p className="whitespace-pre-line leading-relaxed">{String(answer)}</p>
-                    ) : (
-                      <span className="italic text-slate-400">No response provided</span>
-                    )}
-                  </div>
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+
+        {/* TAB 2: INDIVIDUAL RESPONSES */}
+        {!loading && totalSubmissions > 0 && activeTab === 'individual' && currentResponse && (
+          <div className="flex flex-col gap-4">
+            {/* Step through navigation */}
+            <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={currentResponseIndex === 0}
+                  onClick={() => setCurrentResponseIndex((p) => p - 1)}
+                  className="p-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high disabled:opacity-30 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="font-mono text-xs font-semibold text-on-surface">
+                  Response {currentResponseIndex + 1} of {totalSubmissions}
+                </span>
+                <button
+                  type="button"
+                  disabled={currentResponseIndex >= totalSubmissions - 1}
+                  onClick={() => setCurrentResponseIndex((p) => p + 1)}
+                  className="p-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high disabled:opacity-30 transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="text-[11px] text-on-surface-variant font-mono">
+                Submitted {new Date(currentResponse.submittedAt).toLocaleString()}
+              </div>
+            </div>
+
+            {/* Answers to all questions */}
+            <div className="flex flex-col gap-3">
+              {(form.questions || []).map((q, qIdx) => {
+                const answer = currentResponse.answers?.[q.id];
+                const wasVoice = Boolean(currentResponse.voiceFieldStats?.[q.id]);
+
+                return (
+                  <div
+                    key={q.id}
+                    className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/20 flex flex-col gap-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-xs sm:text-sm text-on-surface">
+                        {qIdx + 1}. {q.title}
+                      </span>
+                      {wasVoice && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-tertiary/15 text-tertiary">
+                          <Mic className="w-3 h-3" />
+                          Voice Dictated
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-3 bg-surface-container/60 rounded-xl border border-outline-variant/20 text-xs text-on-surface">
+                      {Array.isArray(answer) ? (
+                        <ul className="list-disc list-inside space-y-0.5">
+                          {answer.map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : answer && typeof answer === 'object' && answer.fileName ? (
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="w-4 h-4 text-primary shrink-0" />
+                            <span className="truncate">{answer.fileName}</span>
+                            <span className="text-[10px] text-on-surface-variant">
+                              ({formatFileSize(answer.fileSize)})
+                            </span>
+                          </div>
+                          {answer.fileUrl && (
+                            <a
+                              href={answer.fileUrl}
+                              download={answer.fileName}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary hover:underline font-mono text-[11px]"
+                            >
+                              Download
+                            </a>
+                          )}
+                        </div>
+                      ) : answer !== undefined && answer !== null && answer !== '' ? (
+                        <p className="whitespace-pre-line leading-relaxed">{String(answer)}</p>
+                      ) : (
+                        <span className="italic text-outline">No response provided</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

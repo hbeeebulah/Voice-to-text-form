@@ -38,15 +38,30 @@ export function getAuthHeaders() {
 
 // --- AUTH API METHODS ---
 
-export async function registerUser({ name, email, password }) {
+export async function registerUser({ name, email, password, avatarUrl }) {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password })
+    body: JSON.stringify({ name, email, password, avatarUrl })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Registration failed');
   if (data.token) setAuthToken(data.token);
+  if (data.user) setStoredUser(data.user);
+  return data;
+}
+
+export async function updateUserProfile({ name, avatarUrl }) {
+  const res = await fetch(`${API_BASE}/auth/profile`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify({ name, avatarUrl })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to update profile');
   if (data.user) setStoredUser(data.user);
   return data;
 }

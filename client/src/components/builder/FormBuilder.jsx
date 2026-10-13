@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Palette,
   Eye,
   Settings,
+  Share2,
+  Image as ImageIcon,
+  Trash2,
   Sparkles,
   CheckCircle,
   HelpCircle,
-  Share2,
-  Image as ImageIcon,
-  Trash2
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import QuestionCard from './QuestionCard';
 import HeaderImageModal from '../common/HeaderImageModal';
@@ -20,62 +22,65 @@ export default function FormBuilder({
   onUpdateForm,
   onOpenTheme,
   onOpenPreview,
-  onOpenShare
+  onOpenShare,
+  onOpenApiKey,
+  onNavigateTab
 }) {
   const [activeQuestionId, setActiveQuestionId] = useState(
     form.questions && form.questions.length > 0 ? form.questions[0].id : null
   );
-  const [draggedIndex, setDraggedIndex] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [isHeaderModalOpen, setIsHeaderModalOpen] = useState(false);
 
   const theme = form.theme || {};
-  const accentColor = theme.accentColor || '#6366f1';
+  const accentColor = theme.accentColor || '#8083ff';
   const headerBannerUrl = theme.headerBannerUrl || form.headerBannerUrl || form.headerImage || '';
 
-  const handleSaveHeader = (newUrl) => {
-    onUpdateForm({
-      theme: { ...theme, headerBannerUrl: newUrl },
-      headerBannerUrl: newUrl,
-      headerImage: newUrl
-    });
-  };
-
-  const handleRemoveHeader = () => {
-    onUpdateForm({
-      theme: { ...theme, headerBannerUrl: '' },
-      headerBannerUrl: '',
-      headerImage: ''
-    });
-  };
-
   // Add Question
-  const handleAddQuestion = () => {
+  const handleAddQuestion = (type = 'paragraph') => {
     const newId = `q-${Date.now()}`;
+    let initialOptions;
+    if (['multiple_choice', 'checkboxes', 'dropdown'].includes(type)) {
+      initialOptions = ['Option 1', 'Option 2', 'Option 3'];
+    }
+
     const newQuestion = {
       id: newId,
       title: '',
       description: '',
-      type: 'paragraph', // default to paragraph so voice dictation is ready right away!
+      type,
       required: false,
       voiceEnabled: true,
-      placeholder: ''
+      options: initialOptions
     };
 
-    const updatedQuestions = [...(form.questions || []), newQuestion];
-    onUpdateForm({ questions: updatedQuestions });
+    const updated = [...(form.questions || []), newQuestion];
+    onUpdateForm({ questions: updated });
     setActiveQuestionId(newId);
   };
 
+  // Keyboard shortcut listener for 'A' key to quick add question
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        handleAddQuestion('paragraph');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [form.questions]);
+
   // Update specific question
   const handleUpdateQuestion = (qId, updates) => {
-    const updatedQuestions = (form.questions || []).map((q) => {
+    const updated = (form.questions || []).map((q) => {
       if (q.id === qId) {
         return { ...q, ...updates };
       }
       return q;
     });
-    onUpdateForm({ questions: updatedQuestions });
+    onUpdateForm({ questions: updated });
   };
 
   // Delete question
@@ -85,7 +90,7 @@ export default function FormBuilder({
       alert('A form must have at least one question.');
       return;
     }
-    const updated = questions.filter(q => q.id !== qId);
+    const updated = questions.filter((q) => q.id !== qId);
     onUpdateForm({ questions: updated });
     if (activeQuestionId === qId && updated.length > 0) {
       setActiveQuestionId(updated[0].id);
@@ -95,14 +100,14 @@ export default function FormBuilder({
   // Duplicate question
   const handleDuplicateQuestion = (qId) => {
     const questions = form.questions || [];
-    const index = questions.findIndex(q => q.id === qId);
+    const index = questions.findIndex((q) => q.id === qId);
     if (index === -1) return;
 
     const original = questions[index];
     const duplicated = {
       ...JSON.parse(JSON.stringify(original)),
       id: `q-${Date.now()}`,
-      title: `${original.title || 'Untitled'} (Copy)`
+      title: original.title ? `${original.title} (Copy)` : 'Untitled (Copy)'
     };
 
     const updated = [...questions];
@@ -111,7 +116,7 @@ export default function FormBuilder({
     setActiveQuestionId(duplicated.id);
   };
 
-  // Move Question Up
+  // Move Question Up / Down
   const handleMoveUp = (index) => {
     if (index <= 0) return;
     const questions = [...(form.questions || [])];
@@ -121,7 +126,6 @@ export default function FormBuilder({
     onUpdateForm({ questions });
   };
 
-  // Move Question Down
   const handleMoveDown = (index) => {
     const questions = [...(form.questions || [])];
     if (index >= questions.length - 1) return;
@@ -131,41 +135,14 @@ export default function FormBuilder({
     onUpdateForm({ questions });
   };
 
-  // HTML5 Drag and Drop Handlers
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e, targetIndex) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === targetIndex) return;
-
-    const questions = [...(form.questions || [])];
-    const draggedItem = questions[draggedIndex];
-    questions.splice(draggedIndex, 1);
-    questions.splice(targetIndex, 0, draggedItem);
-
-    onUpdateForm({ questions });
-    setDraggedIndex(null);
-  };
-
   return (
-    <div
-      className="min-h-screen py-6 px-3 sm:py-8 sm:px-6 relative transition-colors duration-200"
-      style={{ backgroundColor: theme.backgroundColor || '#f8fafc' }}
-    >
-      <div className="max-w-3xl mx-auto space-y-4 sm:space-y-5 pb-32">
-        {/* Form Title & Header Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative">
-          {/* Top Decorative Accent Banner / Header Image */}
+    <div className="min-h-screen bg-surface text-on-surface antialiased relative pb-32">
+      {/* Centered Canvas Layout */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 flex flex-col gap-5">
+        {/* 1. FORM COVER BANNER */}
+        <div className="relative group rounded-2xl overflow-hidden shadow-xl bg-surface-container-low border border-outline-variant/20">
           {headerBannerUrl ? (
-            <div className="relative w-full h-36 sm:h-48 md:h-56 group overflow-hidden bg-slate-100">
+            <div className="h-48 sm:h-56 md:h-64 w-full relative overflow-hidden bg-surface-container-highest">
               <img
                 src={getAssetUrl(headerBannerUrl)}
                 alt="Form Header Banner"
@@ -174,101 +151,99 @@ export default function FormBuilder({
                   e.currentTarget.style.display = 'none';
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-
-              {/* Action Buttons on top of image */}
               <div className="absolute top-3 right-3 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsHeaderModalOpen(true)}
-                  className="px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-800 text-xs font-semibold shadow-md backdrop-blur-xs flex items-center gap-1.5 transition-all hover:scale-102 cursor-pointer"
-                  title="Change header image"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-lowest/80 hover:bg-surface-container-lowest backdrop-blur-md text-on-surface text-xs font-semibold shadow-md transition-all border border-outline-variant/30 cursor-pointer"
                 >
-                  <ImageIcon className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Change Header</span>
+                  <ImageIcon className="w-3.5 h-3.5 text-primary" />
+                  <span>Change Cover</span>
                 </button>
                 <button
                   type="button"
-                  onClick={handleRemoveHeader}
-                  className="p-1.5 rounded-xl bg-white/95 hover:bg-white text-rose-600 hover:text-rose-700 text-xs shadow-md backdrop-blur-xs transition-all hover:scale-102 cursor-pointer"
-                  title="Remove header image"
+                  onClick={() => {
+                    onUpdateForm({
+                      theme: { ...theme, headerBannerUrl: '' },
+                      headerBannerUrl: '',
+                      headerImage: ''
+                    });
+                  }}
+                  className="p-1.5 rounded-xl bg-surface-container-lowest/80 hover:bg-surface-container-lowest backdrop-blur-md text-outline hover:text-error shadow-md transition-all border border-outline-variant/30 cursor-pointer"
+                  title="Remove Cover"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
           ) : (
-            <div
-              className="h-3 w-full"
-              style={{
-                background: theme.bannerGradient || theme.accentColor || '#6366f1'
-              }}
-            />
-          )}
-
-          <div className="p-4 sm:p-6 md:p-8 space-y-3">
-            {/* If no header image is set, offer a clean button to add one */}
-            {!headerBannerUrl && (
-              <div className="flex items-center justify-between pb-1">
-                <button
-                  type="button"
-                  onClick={() => setIsHeaderModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-700 font-semibold px-2.5 py-1 rounded-lg hover:bg-indigo-50 border border-indigo-200/60 shadow-2xs transition-colors cursor-pointer"
-                >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>+ Add Header Image</span>
-                </button>
+            <div className="p-4 sm:p-5 flex items-center justify-between bg-surface-container-low border-b border-outline-variant/10">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
+                  <ImageIcon className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-on-surface">Add Cover Banner</p>
+                  <p className="text-[11px] text-on-surface-variant">Personalize your form with a custom header image</p>
+                </div>
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setIsHeaderModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-medium border border-outline-variant/30 transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-primary" />
+                <span>Add Banner</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 2. FORM TITLE & DESCRIPTION CARD */}
+        <div className="bg-surface-container-low rounded-2xl p-5 sm:p-7 shadow-xl border border-outline-variant/20 flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
             <input
               type="text"
               value={form.title || ''}
               onChange={(e) => onUpdateForm({ title: e.target.value })}
-              placeholder="Form Title"
-              className="w-full text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 placeholder:text-slate-300 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-indigo-600 focus:outline-none transition-colors"
-              style={{ fontFamily: theme.fontHeader || 'Inter' }}
+              placeholder="Untitled Form"
+              className="w-full bg-transparent font-bold text-xl sm:text-2xl md:text-3xl text-on-surface focus:outline-none focus:bg-surface-container/60 rounded-xl px-2.5 py-1.5 -ml-2.5 transition-colors placeholder:text-outline border border-transparent focus:border-outline-variant/30"
             />
+          </div>
 
+          <div className="flex flex-col gap-1">
             <textarea
               rows={2}
               value={form.description || ''}
               onChange={(e) => onUpdateForm({ description: e.target.value })}
-              placeholder="Form description or instructions for respondents..."
-              className="w-full text-sm text-slate-600 placeholder:text-slate-400 bg-transparent border-b border-transparent hover:border-slate-200 focus:border-indigo-500 focus:outline-none resize-none transition-colors"
-              style={{ fontFamily: theme.fontBody || 'Inter' }}
+              placeholder="Form description (e.g. Please fill out this form or use voice dictation to speak your answers)..."
+              className="w-full bg-surface-container-lowest/60 text-on-surface text-xs sm:text-sm rounded-xl p-3 focus:outline-none focus:bg-surface-container-lowest resize-none transition-all placeholder:text-outline border border-outline-variant/20"
             />
+          </div>
 
-            {/* Quick Banner Info */}
-            <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 text-xs text-slate-500">
-              <div className="flex items-center gap-1.5 text-indigo-600 font-medium">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>AI Voice-to-Text Dictation Enabled</span>
-              </div>
+          {/* Form Settings Accordion (From commit 52e2aa9) */}
+          <div className="pt-2 border-t border-outline-variant/20">
+            <button
+              type="button"
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center justify-between w-full text-xs font-mono text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer py-1"
+            >
+              <span className="flex items-center gap-1.5">
+                <Settings className="w-3.5 h-3.5 text-primary" />
+                <span>Form Submission & Responder Settings</span>
+              </span>
+              {showSettings ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setShowSettings(!showSettings)}
-                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 transition-colors"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span>{showSettings ? 'Hide Settings' : 'Form Settings'}</span>
-              </button>
-            </div>
-
-            {/* Collapsible Settings Panel */}
             {showSettings && (
-              <div className="mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-3 animate-fadeIn">
-                <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                  Submission & Confirmation Settings
-                </h4>
-
+              <div className="mt-3 p-4 bg-surface-container-lowest/70 rounded-xl border border-outline-variant/20 text-xs flex flex-col gap-3">
                 {/* Accepting Responses Toggle */}
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
                   <div>
-                    <span className="font-semibold text-slate-700 block">Accept Responses</span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="font-semibold text-on-surface block">Accept Responses</span>
+                    <span className="text-[11px] text-on-surface-variant">
                       {form.settings?.acceptingResponses !== false
-                        ? 'Form is open and accepting new responses'
+                        ? 'Form is active and open to responders'
                         : 'Form is closed to new responses'}
                     </span>
                   </div>
@@ -277,56 +252,58 @@ export default function FormBuilder({
                       type="checkbox"
                       checked={form.settings?.acceptingResponses !== false}
                       onChange={(e) => onUpdateForm({
-                        settings: { ...form.settings, acceptingResponses: e.target.checked }
+                        settings: { ...(form.settings || {}), acceptingResponses: e.target.checked }
                       })}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                    <div className="w-9 h-5 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-tertiary relative" />
                   </label>
                 </div>
 
                 {/* Message shown when closed */}
                 {form.settings?.acceptingResponses === false && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1.5 animate-fadeIn">
-                    <label className="block text-amber-900 font-semibold text-[11px]">
-                      Message shown to responders when form is closed:
+                  <div className="p-3 bg-surface-container rounded-xl flex flex-col gap-1 border border-outline-variant/30">
+                    <label className="block text-on-surface font-semibold text-[11px]">
+                      Message shown when form is closed:
                     </label>
                     <input
                       type="text"
                       value={form.settings?.closedMessage || ''}
                       onChange={(e) => onUpdateForm({
-                        settings: { ...form.settings, closedMessage: e.target.value }
+                        settings: { ...(form.settings || {}), closedMessage: e.target.value }
                       })}
                       placeholder="This form is no longer accepting responses."
-                      className="w-full px-3 py-1.5 bg-white border border-amber-300 rounded-lg text-xs"
+                      className="w-full px-3 py-1.5 bg-surface-container-lowest text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
                     />
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-slate-600 font-medium mb-1">
+                {/* Thank-You Confirmation Message */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-on-surface-variant font-medium text-[11px]">
                     Custom Thank-You Confirmation Message:
                   </label>
                   <input
                     type="text"
                     value={form.settings?.confirmationMessage || ''}
                     onChange={(e) => onUpdateForm({
-                      settings: { ...form.settings, confirmationMessage: e.target.value }
+                      settings: { ...(form.settings || {}), confirmationMessage: e.target.value }
                     })}
                     placeholder="Thank you! Your response has been recorded."
-                    className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg"
+                    className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
                   />
                 </div>
 
+                {/* Show Progress Bar */}
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-slate-600">Show Progress Bar on Form</span>
+                  <span className="text-on-surface">Show Progress Bar on Form</span>
                   <input
                     type="checkbox"
                     checked={form.settings?.showProgressBar !== false}
                     onChange={(e) => onUpdateForm({
-                      settings: { ...form.settings, showProgressBar: e.target.checked }
+                      settings: { ...(form.settings || {}), showProgressBar: e.target.checked }
                     })}
-                    className="rounded text-indigo-600"
+                    className="rounded text-primary bg-surface-container border-outline-variant"
                   />
                 </div>
               </div>
@@ -334,40 +311,32 @@ export default function FormBuilder({
           </div>
         </div>
 
-        {/* Questions List */}
-        <div className="space-y-4">
+        {/* 3. QUESTIONS STACK */}
+        <div className="flex flex-col gap-4">
           {(form.questions || []).map((question, index) => (
-            <div
+            <QuestionCard
               key={question.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={(e) => handleDrop(e, index)}
-              className="transition-transform duration-100"
-            >
-              <QuestionCard
-                question={question}
-                index={index}
-                totalQuestions={(form.questions || []).length}
-                isActive={activeQuestionId === question.id}
-                onSelect={() => setActiveQuestionId(question.id)}
-                onUpdate={(updates) => handleUpdateQuestion(question.id, updates)}
-                onDelete={() => handleDeleteQuestion(question.id)}
-                onDuplicate={() => handleDuplicateQuestion(question.id)}
-                onMoveUp={() => handleMoveUp(index)}
-                onMoveDown={() => handleMoveDown(index)}
-                accentColor={accentColor}
-              />
-            </div>
+              question={question}
+              index={index}
+              totalQuestions={(form.questions || []).length}
+              isActive={activeQuestionId === question.id}
+              onSelect={() => setActiveQuestionId(question.id)}
+              onUpdate={(updates) => handleUpdateQuestion(question.id, updates)}
+              onDelete={() => handleDeleteQuestion(question.id)}
+              onDuplicate={() => handleDuplicateQuestion(question.id)}
+              onMoveUp={() => handleMoveUp(index)}
+              onMoveDown={() => handleMoveDown(index)}
+              accentColor={accentColor}
+            />
           ))}
         </div>
 
-        {/* Add Question Button Banner at bottom of form */}
+        {/* 4. ADD QUESTION BUTTON BANNER */}
         <div className="flex justify-center pt-2">
           <button
             type="button"
-            onClick={handleAddQuestion}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-slate-50 text-indigo-600 font-semibold text-xs border border-indigo-200 shadow-sm hover:shadow transition-all group"
+            onClick={() => handleAddQuestion('paragraph')}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-primary font-semibold text-xs border border-primary/30 shadow-lg hover:shadow-primary/20 transition-all cursor-pointer group"
           >
             <Plus className="w-4 h-4 group-hover:scale-125 transition-transform" />
             <span>Add New Question</span>
@@ -376,11 +345,11 @@ export default function FormBuilder({
       </div>
 
       {/* Floating Action Toolbar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-8 md:bottom-auto md:top-36 z-30 flex md:flex-col items-center bg-white/95 backdrop-blur-md p-1 sm:p-1.5 rounded-full md:rounded-2xl border border-slate-200 shadow-xl gap-1 sm:gap-2">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-8 md:bottom-auto md:top-28 z-40 flex md:flex-col items-center bg-surface-container-lowest/90 backdrop-blur-xl p-1.5 rounded-full md:rounded-2xl border border-outline-variant/30 shadow-2xl gap-1 sm:gap-2">
         <button
           type="button"
-          onClick={handleAddQuestion}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition-all hover:scale-105"
+          onClick={() => handleAddQuestion('paragraph')}
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl bg-primary hover:bg-primary-container text-on-primary shadow-lg transition-all hover:scale-105 cursor-pointer"
           title="Add Question"
         >
           <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -389,7 +358,7 @@ export default function FormBuilder({
         <button
           type="button"
           onClick={() => setIsHeaderModalOpen(true)}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all cursor-pointer"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
           title="Form Header Image"
         >
           <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -398,8 +367,8 @@ export default function FormBuilder({
         <button
           type="button"
           onClick={onOpenTheme}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
-          title="Customize Theme"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+          title="Theme & Styling"
         >
           <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
@@ -407,8 +376,8 @@ export default function FormBuilder({
         <button
           type="button"
           onClick={onOpenPreview}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
-          title="Preview Responder Form"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+          title="Preview Form Responder"
         >
           <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
@@ -416,8 +385,8 @@ export default function FormBuilder({
         <button
           type="button"
           onClick={onOpenShare}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-slate-100 transition-all"
-          title="Share Form"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+          title="Share Form & QR Code"
         >
           <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
@@ -428,8 +397,20 @@ export default function FormBuilder({
         isOpen={isHeaderModalOpen}
         onClose={() => setIsHeaderModalOpen(false)}
         currentHeaderUrl={headerBannerUrl}
-        onSaveHeader={handleSaveHeader}
-        onRemoveHeader={handleRemoveHeader}
+        onSaveHeader={(url) => {
+          onUpdateForm({
+            theme: { ...theme, headerBannerUrl: url },
+            headerBannerUrl: url,
+            headerImage: url
+          });
+        }}
+        onRemoveHeader={() => {
+          onUpdateForm({
+            theme: { ...theme, headerBannerUrl: '' },
+            headerBannerUrl: '',
+            headerImage: ''
+          });
+        }}
         formTitle={form.title}
       />
     </div>
