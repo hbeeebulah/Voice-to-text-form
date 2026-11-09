@@ -33,7 +33,7 @@ class VoiceAiService {
     return false;
   }
 
-  formatRawSpeech(text) {
+  formatRawSpeech(text, fieldType = 'paragraph') {
     if (!text || !text.trim()) return '';
     let cleaned = text.trim();
     // Strip common speech disfluencies
@@ -41,7 +41,9 @@ class VoiceAiService {
     cleaned = cleaned.replace(/\s{2,}/g, ' ').trim();
     if (cleaned.length > 0) {
       cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-      if (!/[.?!]$/.test(cleaned)) {
+      const wordCount = cleaned.split(/\s+/).length;
+      const isShortField = fieldType === 'short_answer' || wordCount <= 4;
+      if (!isShortField && !/[.?!]$/.test(cleaned)) {
         cleaned += '.';
       }
     }
@@ -53,7 +55,7 @@ class VoiceAiService {
     const formData = new FormData();
     const isMp4 = mimeType && (mimeType.includes('mp4') || mimeType.includes('m4a') || mimeType.includes('aac'));
     const filename = isMp4 ? 'audio.m4a' : 'audio.webm';
-    const blobType = isMp4 ? 'audio/m4a' : (mimeType || 'audio/webm');
+    const blobType = isMp4 ? 'audio/m4a' : ((mimeType || 'audio/webm').split(';')[0].trim());
 
     const blob = new Blob([audioBuffer], { type: blobType });
     formData.append('file', blob, filename);
@@ -78,7 +80,7 @@ class VoiceAiService {
 
   async transcribeAudio({ audioBase64, mimeType = 'audio/webm', questionTitle, questionDescription, fieldType, existingText, apiKey, recognizedText }) {
     if (!audioBase64 && !recognizedText) {
-      throw new Error('Audio payload or speech transcript is required.');
+      throw new Error('No speech was detected. Please speak clearly into your microphone and try again.');
     }
 
     const effectiveKey = apiKey || this.apiKey;
@@ -86,13 +88,13 @@ class VoiceAiService {
       this.setApiKey(apiKey);
     }
 
-    // Clean base64 string if it contains data URI header
-    const cleanBase64 = audioBase64 ? audioBase64.replace(/^data:audio\/[a-zA-Z0-9.+_-]+;base64,/, '') : '';
+    // Clean base64 string if it contains data URI header (handles codecs parameters like data:audio/webm;codecs=opus;base64,...)
+    const cleanBase64 = audioBase64 ? audioBase64.replace(/^data:audio\/[^;]+(?:;[^;]+)*;base64,/, '') : '';
 
-    // If recognizedText is provided and audioBase64 is empty, immediately format and return the speech
+    // If recognizedText is provided and audioBase64 is empty, immediately format and return the real spoken words
     if (!cleanBase64 && recognizedText && recognizedText.trim().length > 0) {
       return {
-        text: this.formatRawSpeech(recognizedText),
+        text: this.formatRawSpeech(recognizedText, fieldType),
         isDemoFallback: false,
         model: 'browser-speech-engine'
       };
@@ -105,7 +107,7 @@ class VoiceAiService {
         const text = await this.transcribeWithOpenAI(effectiveKey, audioBuffer, mimeType);
         if (text && text.trim().length > 0) {
           return {
-            text: this.formatRawSpeech(text),
+            text: this.formatRawSpeech(text, fieldType),
             isDemoFallback: false,
             model: 'whisper-v3-turbo'
           };
@@ -114,29 +116,27 @@ class VoiceAiService {
         console.warn('[Voice AI] Whisper error, checking fallbacks:', whisperErr.message);
         if (recognizedText && recognizedText.trim().length > 0) {
           return {
-            text: this.formatRawSpeech(recognizedText),
-            isDemoFallback: true,
-            model: 'browser-speech-engine',
-            warning: `Whisper inference notice: ${whisperErr.message}. Real speech transcribed via browser audio engine.`
+            text: this.formatRawSpeech(recognizedText, fieldType),
+            isDemoFallback: false,
+            model: 'browser-speech-engine'
           };
         }
       }
     }
 
-    // If no API key configured, use the user's real spoken words if captured via speech recognition
+    // If no API key configured, use the user's real spoken words captured via speech recognition
     if (!effectiveKey) {
       if (recognizedText && recognizedText.trim().length > 0) {
         return {
-          text: this.formatRawSpeech(recognizedText),
-          isDemoFallback: true,
-          model: 'browser-speech-engine',
-          warning: 'Transcribed directly via browser speech recognition. Configure your AI API key for neural speech polishing.'
+          text: this.formatRawSpeech(recognizedText, fieldType),
+          isDemoFallback: false,
+          model: 'browser-speech-engine'
         };
       }
-      return this.simulateTranscription({ questionTitle, fieldType });
+      throw new Error('No speech was detected. Please speak clearly into your microphone and try again.');
     }
 
-    // Gemini Multimodal Engine
+    // Multimodal Audio Engine
     const client = apiKey ? new GoogleGenAI({ apiKey }) : this.ai;
 
     const promptText = `You are an expert speech-to-text dictation processor for form fields.
@@ -147,102 +147,73 @@ Transcribe the user's spoken audio directly, adhering strictly to these rules:
 4. If the user dictates bullet points or multiple paragraphs, separate sentences and paragraphs naturally.
 5. Contextual guidance:
    - Form Question Title: "${questionTitle || 'General Form Input'}"
-   - Question Type: "${fieldType || 'text'}" (if 'short_answer', keep response concise; if 'paragraph', preserve full narrative depth)
+   - Question Type: "${fieldType || 'text'}" (if 'short_answer', keep response concise without trailing period for names/short values; if 'paragraph', preserve full narrative depth)
    - Help / Instructions: "${questionDescription || 'None'}"
    ${existingText ? `- Existing Text in Field: "${existingText}"` : ''}
 6. IMPORTANT: Return ONLY the cleaned transcribed text. Do NOT add preamble, conversational commentary, or quotes. Output the clean text directly.`;
 
-    // Try candidate models in order of priority: gemini-2.5-flash -> gemini-2.0-flash -> gemini-1.5-flash
     const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     let lastError = null;
 
-    // Normalize iOS Safari audio/mp4 to audio/m4a which Gemini natively accepts
-    const normalizedMime = (mimeType && (mimeType.includes('mp4') || mimeType.includes('m4a')))
+    // Strip ';codecs=...' parameters and normalize iOS Safari audio/mp4 to audio/m4a
+    const baseMime = (mimeType || 'audio/webm').split(';')[0].trim().toLowerCase();
+    const normalizedMime = (baseMime.includes('mp4') || baseMime.includes('m4a'))
       ? 'audio/m4a'
-      : (mimeType || 'audio/webm');
+      : (baseMime || 'audio/webm');
 
-    for (const modelName of candidateModels) {
-      try {
-        const response = await client.models.generateContent({
-          model: modelName,
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  inlineData: {
-                    mimeType: normalizedMime,
-                    data: cleanBase64
+    if (cleanBase64) {
+      for (const modelName of candidateModels) {
+        try {
+          const response = await client.models.generateContent({
+            model: modelName,
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: normalizedMime,
+                      data: cleanBase64
+                    }
+                  },
+                  {
+                    text: promptText
                   }
-                },
-                {
-                  text: promptText
-                }
-              ]
-            }
-          ]
-        });
+                ]
+              }
+            ]
+          });
 
-        const transcribedText = response.text ? response.text.trim() : '';
-        if (transcribedText) {
-          return {
-            text: transcribedText,
-            isDemoFallback: false,
-            model: modelName
-          };
+          const transcribedText = response.text ? response.text.trim() : '';
+          if (transcribedText) {
+            return {
+              text: transcribedText,
+              isDemoFallback: false,
+              model: modelName
+            };
+          }
+        } catch (err) {
+          lastError = err;
+          const errStr = (err.message || '').toLowerCase();
+          if (errStr.includes('not found') || errStr.includes('404')) {
+            continue;
+          }
+          break;
         }
-      } catch (err) {
-        lastError = err;
-        // If error is 404 model not found, try next candidate model
-        const errStr = (err.message || '').toLowerCase();
-        if (errStr.includes('not found') || errStr.includes('404')) {
-          continue;
-        }
-        // If it's auth or rate limit, break early
-        break;
       }
     }
 
-    // If Google model failed, fallback to recognizedText if captured by browser
+    // Fallback to the user's actual spoken words captured by browser speech recognition
     if (recognizedText && recognizedText.trim().length > 0) {
       return {
-        text: this.formatRawSpeech(recognizedText),
-        isDemoFallback: true,
-        model: 'browser-speech-engine',
-        warning: `Neural model note: ${lastError?.message || 'Using browser engine fallback.'}`
+        text: this.formatRawSpeech(recognizedText, fieldType),
+        isDemoFallback: false,
+        model: 'browser-speech-engine'
       };
     }
 
-    console.warn('[VoiceAI] AI call failed, falling back to contextual simulation:', lastError?.message);
-    const sim = this.simulateTranscription({ questionTitle, fieldType });
-    return {
-      ...sim,
-      warning: `AI Quota/Auth notice: ${lastError?.message || 'Using contextual speech preview.'}`
-    };
-  }
-
-  simulateTranscription({ questionTitle = '', fieldType = 'paragraph' }) {
-    const qLower = questionTitle.toLowerCase();
-    let text = '';
-
-    if (qLower.includes('name') || qLower.includes('who')) {
-      text = 'Jordan Taylor';
-    } else if (qLower.includes('role') || qLower.includes('title') || qLower.includes('work')) {
-      text = 'Senior Product Designer and Accessibility Advocate';
-    } else if (qLower.includes('feedback') || qLower.includes('experience') || qLower.includes('challenge')) {
-      text = 'The multimodal audio dictation felt remarkably fluid and natural. It eliminated the friction of typing lengthy feedback on a mobile screen, and the auto-cleaning of filler words made my answer look polished immediately.';
-    } else if (fieldType === 'short_answer') {
-      text = 'Streamlined workflow and exceptional voice transcription speed.';
-    } else {
-      text = 'I found the interface intuitive and responsive. The seamless voice dictation helped me express my thoughts in complete sentences without second-guessing my typing speed. It made the entire survey feel conversational rather than tedious.';
-    }
-
-    return {
-      text,
-      isDemoFallback: true,
-      model: 'neural-simulated-preview',
-      warning: 'Voice AI key is not set. Using contextual speech recognition preview.'
-    };
+    console.warn('[VoiceAI] Transcription did not yield text:', lastError?.message);
+    throw new Error('No speech was detected. Please speak clearly into your microphone and try again.');
   }
 }
 

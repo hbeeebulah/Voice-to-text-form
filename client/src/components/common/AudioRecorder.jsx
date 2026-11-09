@@ -37,6 +37,11 @@ export default function AudioRecorder({
   const mimeTypeRef = useRef('audio/webm');
   const recognitionRef = useRef(null);
   const transcriptAccumulatorRef = useRef('');
+  const finalizedSegmentsRef = useRef([]);
+  const currentSessionTranscriptRef = useRef('');
+  const isRecordingRef = useRef(false);
+  const processingStartedRef = useRef(false);
+  const stopTimeoutRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -45,12 +50,18 @@ export default function AudioRecorder({
   }, []);
 
   const cleanupAudio = () => {
+    isRecordingRef.current = false;
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
     }
+    if (stopTimeoutRef.current) {
+      clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
     if (recognitionRef.current) {
       try {
+        recognitionRef.current.onend = null;
         recognitionRef.current.abort();
       } catch {}
       recognitionRef.current = null;
@@ -67,17 +78,118 @@ export default function AudioRecorder({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const startElapsedTimer = () => {
+    setElapsedTime(0);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = setInterval(() => {
+      setElapsedTime(prev => {
+        if (prev >= 120) {
+          stopRecording();
+          return 120;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+  };
+
   const startRecording = async () => {
     setErrorMessage('');
     setPermissionDenied(false);
     setLiveTranscript('');
     transcriptAccumulatorRef.current = '';
+    finalizedSegmentsRef.current = [];
+    currentSessionTranscriptRef.current = '';
+    processingStartedRef.current = false;
+    mediaRecorderRef.current = null;
 
-    // Mobile HTTPS warning: mobile browsers block getUserMedia on unsecure origins
+    // Mobile HTTPS warning: mobile browsers block microphone access on unsecure origins
     if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
       setErrorMessage('Microphone access on mobile devices requires a secure HTTPS connection. Please ensure your URL begins with https://');
       setStatus('error');
       return;
+    }
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    // On mobile browsers (especially Chrome on Android and Safari on iOS), calling getUserMedia()
+    // at the same time as SpeechRecognition locks the hardware microphone to MediaRecorder and
+    // causes SpeechRecognition to fail or capture silence. When SpeechRecognition is available on
+    // mobile, give it exclusive access to the microphone so real spoken words are transcribed accurately.
+    if (isMobile && SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        // Use continuous = false on mobile to prevent Android Chrome's duplicate-token bug,
+        // and seamlessly auto-restart on 'onend' until the user taps Done.
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+        recognition.lang = navigator.language || 'en-US';
+
+        recognition.onresult = (event) => {
+          let sessionText = '';
+          for (let i = 0; i < event.results.length; i++) {
+            sessionText += event.results[i][0].transcript + ' ';
+          }
+          currentSessionTranscriptRef.current = sessionText.trim();
+          const combined = [...finalizedSegmentsRef.current, currentSessionTranscriptRef.current]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+          setLiveTranscript(combined);
+          transcriptAccumulatorRef.current = combined;
+        };
+
+        recognition.onerror = (e) => {
+          console.warn('Mobile SpeechRecognition event:', e.error);
+          if (e.error === 'not-allowed' || e.error === 'permission-denied' || e.error === 'service-not-allowed') {
+            isRecordingRef.current = false;
+            setPermissionDenied(true);
+            setErrorMessage('Microphone access was denied. Please allow microphone permissions in your browser settings.');
+            setStatus('error');
+            cleanupAudio();
+          }
+        };
+
+        recognition.onend = () => {
+          if (currentSessionTranscriptRef.current) {
+            finalizedSegmentsRef.current.push(currentSessionTranscriptRef.current);
+            currentSessionTranscriptRef.current = '';
+            const combined = finalizedSegmentsRef.current.filter(Boolean).join(' ').trim();
+            setLiveTranscript(combined);
+            transcriptAccumulatorRef.current = combined;
+          }
+
+          if (isRecordingRef.current) {
+            // User is still in recording mode (just paused briefly) -> restart recognition seamlessly
+            try {
+              recognition.start();
+            } catch (restartErr) {
+              console.warn('SpeechRecognition restart note:', restartErr);
+            }
+          } else if (!processingStartedRef.current) {
+            // User tapped Done -> finalize transcription
+            processingStartedRef.current = true;
+            if (stopTimeoutRef.current) {
+              clearTimeout(stopTimeoutRef.current);
+              stopTimeoutRef.current = null;
+            }
+            handleAudioProcessing(null);
+          }
+        };
+
+        isRecordingRef.current = true;
+        recognitionRef.current = recognition;
+        recognition.start();
+
+        setStatus('recording');
+        startElapsedTimer();
+        return;
+      } catch (speechErr) {
+        console.warn('Mobile SpeechRecognition failed to start, falling back to MediaRecorder:', speechErr);
+        isRecordingRef.current = false;
+      }
     }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -85,8 +197,6 @@ export default function AudioRecorder({
       setStatus('error');
       return;
     }
-
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     try {
       let audioStream = null;
@@ -99,18 +209,15 @@ export default function AudioRecorder({
           }
         });
       } catch (constraintErr) {
-        // Fallback for mobile devices that reject strict audio constraints
-        console.warn('Advanced audio constraints not supported on this mobile device, using basic audio', constraintErr);
+        console.warn('Advanced audio constraints not supported on this device, using basic audio', constraintErr);
         audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       }
 
       setStream(audioStream);
+      isRecordingRef.current = true;
 
-      // 1. Initialize real-time browser SpeechRecognition (Web Speech API)
-      // Note: On iOS WebKit, running SpeechRecognition alongside getUserMedia can mute the MediaRecorder stream.
-      // So on iOS we let MediaRecorder handle audio exclusively, while enabling live subtitles on Desktop/Android.
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!isIOS && SpeechRecognition) {
+      // Initialize real-time browser SpeechRecognition on Desktop alongside MediaRecorder
+      if (!isMobile && SpeechRecognition) {
         try {
           const recognition = new SpeechRecognition();
           recognition.continuous = true;
@@ -138,7 +245,7 @@ export default function AudioRecorder({
         }
       }
 
-      // 2. Determine supported MediaRecorder mime type
+      // Determine supported MediaRecorder mime type
       const possibleTypes = [
         'audio/webm;codecs=opus',
         'audio/webm',
@@ -168,7 +275,6 @@ export default function AudioRecorder({
       };
 
       recorder.onstop = async () => {
-        // Stop audio tracks after recorder has completely collected all audio chunks
         try {
           if (audioStream) {
             audioStream.getTracks().forEach(track => track.stop());
@@ -176,12 +282,14 @@ export default function AudioRecorder({
         } catch {}
         setStream(null);
 
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current || 'audio/webm' });
-        await handleAudioProcessing(audioBlob);
+        if (!processingStartedRef.current) {
+          processingStartedRef.current = true;
+          const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current || 'audio/webm' });
+          await handleAudioProcessing(audioBlob);
+        }
       };
 
-      // iOS Safari handles start() without timeslice much more reliably than timeslice intervals
-      if (isIOS) {
+      if (isMobile) {
         recorder.start();
       } else {
         try {
@@ -192,24 +300,13 @@ export default function AudioRecorder({
       }
 
       setStatus('recording');
-      setElapsedTime(0);
-
-      // Start elapsed timer
-      timerIntervalRef.current = setInterval(() => {
-        setElapsedTime(prev => {
-          if (prev >= 120) {
-            stopRecording();
-            return 120;
-          }
-          return prev + 1;
-        });
-      }, 1000);
+      startElapsedTimer();
 
     } catch (err) {
       console.error('Microphone error:', err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setPermissionDenied(true);
-        setErrorMessage('Microphone access was denied. Please allow microphone permissions in your mobile browser settings.');
+        setErrorMessage('Microphone access was denied. Please allow microphone permissions in your browser settings.');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         setErrorMessage('No microphone device detected on your device.');
       } else {
@@ -221,13 +318,24 @@ export default function AudioRecorder({
   };
 
   const stopRecording = () => {
+    isRecordingRef.current = false;
+
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    setStatus('transcribing');
+
+    const hasActiveMediaRecorder = mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive';
+
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
       } catch {}
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    if (hasActiveMediaRecorder) {
       try {
         if (typeof mediaRecorderRef.current.requestData === 'function') {
           mediaRecorderRef.current.requestData();
@@ -236,24 +344,34 @@ export default function AudioRecorder({
       try {
         mediaRecorderRef.current.stop();
       } catch {}
+    } else {
+      // SpeechRecognition-only mode (mobile): wait briefly for final onresult/onend, with safety timeout
+      stopTimeoutRef.current = setTimeout(() => {
+        if (!processingStartedRef.current) {
+          processingStartedRef.current = true;
+          if (currentSessionTranscriptRef.current) {
+            finalizedSegmentsRef.current.push(currentSessionTranscriptRef.current);
+            currentSessionTranscriptRef.current = '';
+          }
+          const combined = finalizedSegmentsRef.current.filter(Boolean).join(' ').trim();
+          if (combined) {
+            transcriptAccumulatorRef.current = combined;
+          }
+          handleAudioProcessing(null);
+        }
+      }, 450);
     }
-
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-
-    // Do NOT stop stream tracks here! They are safely stopped inside recorder.onstop
-    // after all chunks have been accumulated.
-    setStatus('transcribing');
   };
 
   const cancelRecording = () => {
+    processingStartedRef.current = true;
     cleanupAudio();
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.ondataavailable = null;
       mediaRecorderRef.current.onstop = null;
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
     }
     setLiveTranscript('');
     setStatus('idle');
@@ -272,8 +390,17 @@ export default function AudioRecorder({
   const handleAudioProcessing = async (blob) => {
     try {
       setStatus('transcribing');
-      const base64 = await blobToBase64(blob);
-      const recognized = transcriptAccumulatorRef.current || liveTranscript || '';
+      let base64 = '';
+      if (blob && blob.size > 0) {
+        base64 = await blobToBase64(blob);
+      }
+      const recognized = (transcriptAccumulatorRef.current || liveTranscript || '').trim();
+
+      if (!base64 && !recognized) {
+        setErrorMessage('No speech was detected. Please speak clearly into your microphone and try again.');
+        setStatus('error');
+        return;
+      }
 
       const result = await transcribeAudio({
         audioBase64: base64,
