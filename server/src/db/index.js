@@ -8,19 +8,8 @@ const RESPONSES_FILE = path.join(DATA_DIR, 'responses.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 
-// Default sample user so creators can test immediately (password: password123)
-const defaultSampleUsers = [
-  {
-    id: 'user-demo-creator',
-    name: 'John Doe',
-    email: 'creator@voxform.ai',
-    passwordHash: '$2b$10$8ZBiAw4PQYdkN9pdwmFjkOBcpX4AcmkKfnolNBe1uBFzzQLpiLoqi',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    provider: 'email',
-    role: 'creator',
-    createdAt: new Date().toISOString()
-  }
-];
+// Start with empty user store so only real signups are tracked
+const defaultSampleUsers = [];
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {

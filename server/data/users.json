@@ -1,27 +1,5 @@
 [
   {
-    "id": "cb1e1038-a17b-40b5-9e77-9e1655a8aeaf",
-    "name": "Clean Creator",
-    "email": "clean.creator.1791768940127@test.com",
-    "passwordHash": "$2b$10$SYoPF2zNCUlmCjSSk0gtjO2qzUkm7r0s10QM5w0guBygreIMLVoVm",
-    "avatarUrl": "data:image/svg+xml;utf8,<svg></svg>",
-    "provider": "email",
-    "role": "creator",
-    "createdAt": "2026-10-12T01:35:40.315Z",
-    "updatedAt": "2026-10-12T01:35:40.315Z"
-  },
-  {
-    "id": "afc33048-e7a5-44c8-9228-57a4c51c9898",
-    "name": "Zero Form Creator",
-    "email": "zero.creator@test.com",
-    "passwordHash": "$2b$10$.6lxQnzeBVfvOT7eC66.qOEQ46Zu8e9KV4ItE57NJ9oztibpT3JSu",
-    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    "provider": "email",
-    "role": "creator",
-    "createdAt": "2026-10-12T01:24:57.091Z",
-    "updatedAt": "2026-10-12T01:24:57.092Z"
-  },
-  {
     "id": "69ae7fbc-cdd6-4833-9c4f-ffbeaec68f42",
     "name": "Olamide Ajibola",
     "email": "mavcom2020@gmail.com",
@@ -33,28 +11,6 @@
     "updatedAt": "2026-10-12T01:33:14.420Z"
   },
   {
-    "id": "c6186816-f925-4df9-94aa-dbf286dde53d",
-    "name": "Marcus Aurelius Imperator",
-    "email": "marcus@rome.com",
-    "passwordHash": "$2b$10$V29b/XpU4xLbcwNqOM2Y3uZHrny04/djQgNwgtp.spK1PTR2ZoiKW",
-    "avatarUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
-    "provider": "email",
-    "role": "creator",
-    "createdAt": "2026-10-12T00:50:09.590Z",
-    "updatedAt": "2026-10-12T00:50:17.878Z"
-  },
-  {
-    "id": "2eb9c9ec-7120-41df-a544-a824284071f8",
-    "name": "Sarah Connor",
-    "email": "sarah.connor@example.com",
-    "passwordHash": "$2b$10$Xzw8LdwQ9mN1.8kV0d8s1ecijPNbnG00upaBUtZ.EInpzh4qp8K0S",
-    "avatarUrl": "https://api.dicebear.com/7.x/initials/svg?seed=Sarah%20Connor&backgroundColor=6366f1,4f46e5,7c3aed",
-    "provider": "email",
-    "role": "creator",
-    "createdAt": "2026-10-12T00:45:24.280Z",
-    "updatedAt": "2026-10-12T00:45:24.280Z"
-  },
-  {
     "id": "18ba5cc7-8f1b-4a1a-97e2-69cbf9da4819",
     "name": "Habeeb Ajibola",
     "email": "hbeebulah@gmail.com",
@@ -64,16 +20,5 @@
     "role": "creator",
     "createdAt": "2026-09-24T21:55:29.150Z",
     "updatedAt": "2026-10-12T01:42:17.283Z"
-  },
-  {
-    "id": "298dcfca-60f3-42df-9199-089e140b9b19",
-    "name": "Tester User",
-    "email": "tester@voxform.ai",
-    "passwordHash": "$2b$10$8igg6/fdQgdzjpdh6rpXEukuxkEro.9T6ELUlCCLuyAx3TYVHf6Tu",
-    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    "provider": "email",
-    "role": "creator",
-    "createdAt": "2026-10-11T23:41:35.817Z",
-    "updatedAt": "2026-10-12T00:15:00.000Z"
   }
 ]

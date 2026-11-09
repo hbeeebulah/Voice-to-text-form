@@ -81,10 +81,9 @@ router.get('/analytics', optionalAuth, verifyAdminAccess, async (req, res) => {
       }
     });
 
-    // Build detailed per-user metrics
+    // Build privacy-preserving per-user metrics (counts and voice usage rates only — no form titles or links)
     const userBreakdowns = users.map(u => {
       const cleanEmail = (u.email || '').trim().toLowerCase();
-      // Match forms by creatorId first, then by creatorEmail
       const matchedFormsMap = new Map();
 
       (formsByCreatorId[u.id] || []).forEach(f => matchedFormsMap.set(f.id, f));
@@ -93,19 +92,17 @@ router.get('/analytics', optionalAuth, verifyAdminAccess, async (req, res) => {
       const userForms = Array.from(matchedFormsMap.values());
       userForms.forEach(f => assignedFormIds.add(f.id));
 
-      let totalResponsesReceived = 0;
+      let totalResponsesForRate = 0;
       let voiceResponsesReceived = 0;
       let voiceFieldsOnUserForms = 0;
 
-      const detailedForms = userForms.map(f => {
+      userForms.forEach(f => {
         const responses = responsesByFormId[f.id] || [];
-        totalResponsesReceived += responses.length;
+        totalResponsesForRate += responses.length;
 
-        let formVoiceCount = 0;
         responses.forEach(r => {
           const hasVoice = r.voiceFieldStats && Object.values(r.voiceFieldStats).some(Boolean);
           if (hasVoice) {
-            formVoiceCount++;
             voiceResponsesReceived++;
           }
           if (r.voiceFieldStats) {
@@ -114,29 +111,10 @@ router.get('/analytics', optionalAuth, verifyAdminAccess, async (req, res) => {
             });
           }
         });
-
-        const voiceRate = responses.length > 0
-          ? Math.round((formVoiceCount / responses.length) * 100)
-          : 0;
-
-        return {
-          id: f.id,
-          title: f.title || 'Untitled Form',
-          customSlug: f.customSlug || null,
-          createdAt: f.createdAt,
-          updatedAt: f.updatedAt,
-          questionCount: (f.questions || []).length,
-          responseCount: responses.length,
-          voiceResponseCount: formVoiceCount,
-          voiceAdoptionRate: voiceRate
-        };
       });
 
-      // Sort user forms by createdAt desc
-      detailedForms.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-      const overallUserVoiceRate = totalResponsesReceived > 0
-        ? Math.round((voiceResponsesReceived / totalResponsesReceived) * 100)
+      const overallUserVoiceRate = totalResponsesForRate > 0
+        ? Math.round((voiceResponsesReceived / totalResponsesForRate) * 100)
         : 0;
 
       return {
@@ -148,46 +126,21 @@ router.get('/analytics', optionalAuth, verifyAdminAccess, async (req, res) => {
         role: u.role || 'creator',
         createdAt: u.createdAt,
         formsCount: userForms.length,
-        totalResponsesReceived,
         voiceResponsesReceived,
         voiceFieldsOnUserForms,
-        voiceAdoptionRate: overallUserVoiceRate,
-        forms: detailedForms
+        voiceAdoptionRate: overallUserVoiceRate
       };
     });
 
     // Sort users by formsCount desc, then createdAt desc
     userBreakdowns.sort((a, b) => (b.formsCount - a.formsCount) || (new Date(b.createdAt) - new Date(a.createdAt)));
 
-    // Collect unassigned forms (created without an account or before registration)
-    const unassignedForms = forms
-      .filter(f => !assignedFormIds.has(f.id))
-      .map(f => {
-        const responses = responsesByFormId[f.id] || [];
-        let formVoiceCount = 0;
-        responses.forEach(r => {
-          if (r.voiceFieldStats && Object.values(r.voiceFieldStats).some(Boolean)) {
-            formVoiceCount++;
-          }
-        });
-        return {
-          id: f.id,
-          title: f.title || 'Untitled Form',
-          creatorName: f.creatorName || 'Guest / Unassigned',
-          creatorEmail: f.creatorEmail || null,
-          createdAt: f.createdAt,
-          responseCount: responses.length,
-          voiceResponseCount: formVoiceCount,
-          voiceAdoptionRate: responses.length > 0 ? Math.round((formVoiceCount / responses.length) * 100) : 0
-        };
-      });
-
     const totalResponses = allResponses.length;
     const overallVoiceRate = totalResponses > 0
       ? Math.round((totalVoiceResponses / totalResponses) * 100)
       : 0;
 
-    // Response timeline (last 7 days activity)
+    // Voice & Signup timeline (last 7 days activity)
     const now = new Date();
     const past7Days = [];
     for (let i = 6; i >= 0; i--) {
@@ -199,17 +152,22 @@ router.get('/analytics', optionalAuth, verifyAdminAccess, async (req, res) => {
 
     const activityByDate = {};
     past7Days.forEach(date => {
-      activityByDate[date] = { date, total: 0, voice: 0, formsCreated: 0, signups: 0 };
+      activityByDate[date] = { date, voice: 0, formsCreated: 0, signups: 0, voiceRate: 0, _totalForRate: 0 };
     });
 
     allResponses.forEach(r => {
       const dateKey = (r.submittedAt || '').slice(0, 10);
       if (activityByDate[dateKey]) {
-        activityByDate[dateKey].total++;
+        activityByDate[dateKey]._totalForRate++;
         if (r.voiceFieldStats && Object.values(r.voiceFieldStats).some(Boolean)) {
           activityByDate[dateKey].voice++;
         }
       }
+    });
+
+    Object.values(activityByDate).forEach(day => {
+      day.voiceRate = day._totalForRate > 0 ? Math.round((day.voice / day._totalForRate) * 100) : 0;
+      delete day._totalForRate;
     });
 
     forms.forEach(f => {
@@ -232,14 +190,12 @@ router.get('/analytics', optionalAuth, verifyAdminAccess, async (req, res) => {
       overview: {
         totalUsers: users.length,
         totalForms: forms.length,
-        totalResponses,
         totalVoiceResponses,
         totalVoiceFields,
         overallVoiceAdoptionRate: overallVoiceRate,
         averageFormsPerUser: users.length > 0 ? (forms.length / users.length).toFixed(1) : 0
       },
       users: userBreakdowns,
-      unassignedForms,
       activityTimeline: Object.values(activityByDate)
     });
   } catch (err) {
