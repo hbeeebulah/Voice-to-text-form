@@ -9,6 +9,7 @@ import ApiKeyModal from './components/common/ApiKeyModal';
 import ShareModal from './components/common/ShareModal';
 import AuthModal from './components/auth/AuthModal';
 import LandingPage from './components/landing/LandingPage';
+import AdminAnalytics from './components/admin/AdminAnalytics';
 import {
   fetchForms,
   fetchForm,
@@ -62,6 +63,8 @@ export default function App() {
       } else if (hash.startsWith('#edit/')) {
         const id = hash.replace('#edit/', '');
         openFormById(id, 'builder');
+      } else if (hash.startsWith('#admin-analytics') || hash.startsWith('#owner-analytics') || hash.startsWith('#secret-analytics')) {
+        setView('admin-analytics');
       } else if (hash === '#dashboard') {
         setView('dashboard');
       } else if (hash === '#landing') {
@@ -129,7 +132,9 @@ export default function App() {
       const pathname = window.location.pathname;
       const hash = window.location.hash;
 
-      if (pathname.startsWith('/s/') || pathname.startsWith('/f/')) {
+      if (pathname.startsWith('/admin-analytics') || hash.startsWith('#admin-analytics') || hash.startsWith('#owner-analytics') || hash.startsWith('#secret-analytics')) {
+        setView('admin-analytics');
+      } else if (pathname.startsWith('/s/') || pathname.startsWith('/f/')) {
         const slug = pathname.replace(/^\/(s|f)\//, '');
         await openFormBySlug(slug, 'responder');
       } else if (hash.startsWith('#form/')) {
@@ -297,7 +302,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
       {/* Top Navbar (visible in builder and responder) */}
-      {view !== 'dashboard' && view !== 'landing' && currentForm && (
+      {view !== 'dashboard' && view !== 'landing' && view !== 'admin-analytics' && currentForm && (
         <Navbar
           formTitle={currentForm.title}
           onTitleChange={(title) => handleUpdateForm({ title })}
@@ -476,6 +481,18 @@ export default function App() {
               onBackToBuilder={() => {
                 setView('builder');
                 window.location.hash = `#edit/${currentForm.id}`;
+              }}
+            />
+          </div>
+        )}
+
+        {/* VIEW 4: PRIVATE ADMIN & USER ANALYTICS */}
+        {view === 'admin-analytics' && (
+          <div className="flex-1">
+            <AdminAnalytics
+              onBackToDashboard={() => {
+                setView('dashboard');
+                window.location.hash = '#dashboard';
               }}
             />
           </div>

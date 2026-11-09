@@ -369,3 +369,27 @@ export function getAssetUrl(url) {
   return `${apiBase}${url.startsWith('/') ? url : '/' + url}`;
 }
 
+// Admin / Owner Analytics
+export async function verifyAdminKey(key) {
+  const res = await fetch(`${API_BASE}/admin/verify-key?key=${encodeURIComponent(key || '')}`, {
+    headers: { 'x-admin-key': key || '', ...getAuthHeaders() }
+  });
+  return res.ok;
+}
+
+export async function fetchAdminAnalytics(key) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-admin-key': key || '',
+    ...getAuthHeaders()
+  };
+  const res = await fetch(`${API_BASE}/admin/analytics?key=${encodeURIComponent(key || '')}`, {
+    headers
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to fetch admin analytics');
+  }
+  return data;
+}
+

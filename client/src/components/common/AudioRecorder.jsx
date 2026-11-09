@@ -73,26 +73,44 @@ export default function AudioRecorder({
     setLiveTranscript('');
     transcriptAccumulatorRef.current = '';
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setErrorMessage('Audio recording is not supported in this browser. Please use Chrome, Edge, or Safari.');
+    // Mobile HTTPS warning: mobile browsers block getUserMedia on unsecure origins
+    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      setErrorMessage('Microphone access on mobile devices requires a secure HTTPS connection. Please ensure your URL begins with https://');
       setStatus('error');
       return;
     }
 
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setErrorMessage('Audio recording is not supported in this browser. Please use Chrome, Safari, or Edge.');
+      setStatus('error');
+      return;
+    }
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
     try {
-      const audioStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+      let audioStream = null;
+      try {
+        audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+      } catch (constraintErr) {
+        // Fallback for mobile devices that reject strict audio constraints
+        console.warn('Advanced audio constraints not supported on this mobile device, using basic audio', constraintErr);
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
 
       setStream(audioStream);
 
       // 1. Initialize real-time browser SpeechRecognition (Web Speech API)
+      // Note: On iOS WebKit, running SpeechRecognition alongside getUserMedia can mute the MediaRecorder stream.
+      // So on iOS we let MediaRecorder handle audio exclusively, while enabling live subtitles on Desktop/Android.
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
+      if (!isIOS && SpeechRecognition) {
         try {
           const recognition = new SpeechRecognition();
           recognition.continuous = true;
@@ -124,9 +142,10 @@ export default function AudioRecorder({
       const possibleTypes = [
         'audio/webm;codecs=opus',
         'audio/webm',
-        'audio/ogg;codecs=opus',
         'audio/mp4',
-        'audio/aac'
+        'audio/aac',
+        'audio/ogg;codecs=opus',
+        'audio/wav'
       ];
       let selectedMime = '';
       for (const t of possibleTypes) {
@@ -149,11 +168,29 @@ export default function AudioRecorder({
       };
 
       recorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current });
+        // Stop audio tracks after recorder has completely collected all audio chunks
+        try {
+          if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+          }
+        } catch {}
+        setStream(null);
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeTypeRef.current || 'audio/webm' });
         await handleAudioProcessing(audioBlob);
       };
 
-      recorder.start(250);
+      // iOS Safari handles start() without timeslice much more reliably than timeslice intervals
+      if (isIOS) {
+        recorder.start();
+      } else {
+        try {
+          recorder.start(250);
+        } catch {
+          recorder.start();
+        }
+      }
+
       setStatus('recording');
       setElapsedTime(0);
 
@@ -172,9 +209,9 @@ export default function AudioRecorder({
       console.error('Microphone error:', err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
         setPermissionDenied(true);
-        setErrorMessage('Microphone access was denied. Please allow microphone permissions in your browser URL bar.');
+        setErrorMessage('Microphone access was denied. Please allow microphone permissions in your mobile browser settings.');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setErrorMessage('No microphone device detected on your system.');
+        setErrorMessage('No microphone device detected on your device.');
       } else {
         setErrorMessage(`Microphone error: ${err.message}`);
       }
@@ -191,7 +228,14 @@ export default function AudioRecorder({
     }
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+      try {
+        if (typeof mediaRecorderRef.current.requestData === 'function') {
+          mediaRecorderRef.current.requestData();
+        }
+      } catch {}
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
     }
 
     if (timerIntervalRef.current) {
@@ -199,11 +243,8 @@ export default function AudioRecorder({
       timerIntervalRef.current = null;
     }
 
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-
+    // Do NOT stop stream tracks here! They are safely stopped inside recorder.onstop
+    // after all chunks have been accumulated.
     setStatus('transcribing');
   };
 

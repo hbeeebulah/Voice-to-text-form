@@ -51,8 +51,12 @@ class VoiceAiService {
   async transcribeWithOpenAI(apiKey, audioBuffer, mimeType) {
     // Call OpenAI Whisper API directly if an OpenAI key (sk-...) is passed
     const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: mimeType || 'audio/webm' });
-    formData.append('file', blob, 'audio.webm');
+    const isMp4 = mimeType && (mimeType.includes('mp4') || mimeType.includes('m4a') || mimeType.includes('aac'));
+    const filename = isMp4 ? 'audio.m4a' : 'audio.webm';
+    const blobType = isMp4 ? 'audio/m4a' : (mimeType || 'audio/webm');
+
+    const blob = new Blob([audioBuffer], { type: blobType });
+    formData.append('file', blob, filename);
     formData.append('model', 'whisper-1');
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -152,6 +156,11 @@ Transcribe the user's spoken audio directly, adhering strictly to these rules:
     const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
     let lastError = null;
 
+    // Normalize iOS Safari audio/mp4 to audio/m4a which Gemini natively accepts
+    const normalizedMime = (mimeType && (mimeType.includes('mp4') || mimeType.includes('m4a')))
+      ? 'audio/m4a'
+      : (mimeType || 'audio/webm');
+
     for (const modelName of candidateModels) {
       try {
         const response = await client.models.generateContent({
@@ -162,7 +171,7 @@ Transcribe the user's spoken audio directly, adhering strictly to these rules:
               parts: [
                 {
                   inlineData: {
-                    mimeType: mimeType || 'audio/webm',
+                    mimeType: normalizedMime,
                     data: cleanBase64
                   }
                 },

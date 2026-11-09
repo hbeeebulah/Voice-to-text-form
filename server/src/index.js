@@ -7,6 +7,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const formRoutes = require('./routes/formRoutes');
 const transcribeRoutes = require('./routes/transcribeRoutes');
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const voiceAiService = require('./services/voiceAiService');
 const db = require('./db');
 
@@ -60,6 +61,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/forms', formRoutes);
 app.use('/api/transcribe', transcribeRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Static uploads storage for document attachments
 const uploadsPath = path.join(__dirname, '../uploads');

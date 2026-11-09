@@ -413,6 +413,20 @@ class Database {
     return true;
   }
 
+  async getAllResponses() {
+    if (this.mode === 'mongo' && this.ResponseModel) {
+      return await this.ResponseModel.find().sort({ submittedAt: -1 }).lean();
+    }
+    if (this.mode === 'postgres' && this.pgPool) {
+      const res = await this.pgPool.query(
+        "SELECT data FROM responses ORDER BY (data->>'submittedAt') DESC"
+      );
+      return res.rows.map(r => r.data);
+    }
+    const responses = this.readResponses();
+    return [...responses].sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+  }
+
   async getResponsesByFormId(formId) {
     if (this.mode === 'mongo' && this.ResponseModel) {
       return await this.ResponseModel.find({ formId }).sort({ submittedAt: -1 }).lean();
