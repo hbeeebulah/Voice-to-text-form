@@ -7,6 +7,7 @@ import ThemeCustomizer from './components/theme/ThemeCustomizer';
 import FormsDashboard from './components/dashboard/FormsDashboard';
 import ApiKeyModal from './components/common/ApiKeyModal';
 import ShareModal from './components/common/ShareModal';
+import AddUsersModal from './components/collaborators/AddUsersModal';
 import AuthModal from './components/auth/AuthModal';
 import LandingPage from './components/landing/LandingPage';
 import AdminAnalytics from './components/admin/AdminAnalytics';
@@ -32,6 +33,7 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isAddUsersOpen, setIsAddUsersOpen] = useState(false);
   const [isApiKeyOpen, setIsApiKeyOpen] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
 
@@ -324,6 +326,7 @@ export default function App() {
             }
           }}
           onOpenShare={() => setIsShareOpen(true)}
+          onOpenAddUsers={() => setIsAddUsersOpen(true)}
           onOpenApiKey={() => setIsApiKeyOpen(true)}
           onGoToDashboard={() => {
             setView('dashboard');
@@ -391,6 +394,10 @@ export default function App() {
                 setCurrentForm(form);
                 setIsShareOpen(true);
               }}
+              onOpenAddUsers={async (form) => {
+                setCurrentForm(form);
+                setIsAddUsersOpen(true);
+              }}
               user={user}
               onUserUpdated={(updated) => setUser(updated)}
               onOpenAuth={(tab = 'login') => {
@@ -421,6 +428,7 @@ export default function App() {
                   window.location.hash = `#form/${currentForm.id}`;
                 }}
                 onOpenShare={() => setIsShareOpen(true)}
+                onOpenAddUsers={() => setIsAddUsersOpen(true)}
                 onOpenApiKey={() => setIsApiKeyOpen(true)}
                 onNavigateTab={(tab) => {
                   if (tab === 'dashboard') {
@@ -533,6 +541,23 @@ export default function App() {
           customSlug={currentForm.customSlug}
           onSlugUpdated={(newSlug) => {
             handleUpdateForm({ customSlug: newSlug });
+          }}
+        />
+      )}
+
+      {/* Add Users / Collaborators Modal */}
+      {currentForm && (
+        <AddUsersModal
+          isOpen={isAddUsersOpen}
+          onClose={() => setIsAddUsersOpen(false)}
+          formId={currentForm.id}
+          formTitle={currentForm.title}
+          currentUser={user}
+          onCollaboratorsUpdated={(collaborators) => {
+            handleUpdateForm({ collaborators });
+            if (user?.id) {
+              fetchForms(user.id).then(setForms).catch(() => {});
+            }
           }}
         />
       )}

@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "VoxForm Voice-to-Text for Google Forms",
+  "version": "1.0.0",
+  "description": "Adds AI-powered Voice-to-Text dictation buttons directly into every Short Answer and Paragraph field on Google Forms.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://docs.google.com/forms/*",
+    "http://localhost:5000/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "VoxForm Voice-to-Text Settings"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://docs.google.com/forms/*"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

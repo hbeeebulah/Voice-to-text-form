@@ -307,8 +307,19 @@ class Database {
       forms = this.readForms().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
     }
 
-    if (filter && filter.creatorId) {
-      return forms.filter(f => f.creatorId === filter.creatorId);
+    if (filter && (filter.creatorId || filter.userId)) {
+      const targetUserId = filter.userId || filter.creatorId;
+      const targetEmail = filter.email ? filter.email.toLowerCase().trim() : null;
+      return forms.filter(f => {
+        if (f.creatorId === targetUserId) return true;
+        if (Array.isArray(f.collaborators)) {
+          return f.collaborators.some(c =>
+            (c.userId && c.userId === targetUserId) ||
+            (targetEmail && c.email && c.email.toLowerCase().trim() === targetEmail)
+          );
+        }
+        return false;
+      });
     }
     return forms;
   }
@@ -353,6 +364,7 @@ class Database {
       creatorId: formData.creatorId !== undefined ? formData.creatorId : (formData.creatorId || null),
       creatorName: formData.creatorName || null,
       creatorEmail: formData.creatorEmail || null,
+      collaborators: Array.isArray(formData.collaborators) ? formData.collaborators : (formData.collaborators || []),
       updatedAt: now,
       createdAt: formData.createdAt || now
     };

@@ -15,10 +15,15 @@ import {
   X,
   Mic,
   Sparkles,
-  Share2
+  Share2,
+  Users,
+  UserPlus,
+  Link2,
+  Check,
+  Loader2
 } from 'lucide-react';
 import UserProfileMenu from '../auth/UserProfileMenu';
-import { getAssetUrl } from '../../services/api';
+import { getAssetUrl, importGoogleFormUrl } from '../../services/api';
 
 export default function FormsDashboard({
   forms = [],
@@ -28,6 +33,7 @@ export default function FormsDashboard({
   onDeleteForm,
   onOpenResponder,
   onOpenShare,
+  onOpenAddUsers,
   user = null,
   onOpenAuth,
   onUserLoggedOut,
@@ -37,7 +43,12 @@ export default function FormsDashboard({
   hasApiKey = false
 }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [accessFilter, setAccessFilter] = useState('all'); // 'all' | 'mine' | 'shared'
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [googleAddonModalOpen, setGoogleAddonModalOpen] = useState(false);
+  const [googleFormUrl, setGoogleFormUrl] = useState('');
+  const [importingGoogleForm, setImportingGoogleForm] = useState(false);
+  const [googleImportError, setGoogleImportError] = useState('');
 
   // Keyboard shortcut: Cmd/Ctrl + N to create form
   useEffect(() => {
@@ -164,11 +175,48 @@ export default function FormsDashboard({
     setTemplateModalOpen(false);
   };
 
+  const handleImportGoogleForm = async (e) => {
+    e.preventDefault();
+    if (!googleFormUrl.trim()) return;
+    setImportingGoogleForm(true);
+    setGoogleImportError('');
+    try {
+      const res = await importGoogleFormUrl(googleFormUrl.trim(), {
+        creatorId: user?.id || null,
+        creatorName: user?.name || null,
+        creatorEmail: user?.email || null
+      });
+      setGoogleAddonModalOpen(false);
+      setGoogleFormUrl('');
+      if (res?.form?.id && onSelectForm) {
+        onSelectForm(res.form.id, 'builder');
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      setGoogleImportError(err.message || 'Could not import Google Form.');
+    } finally {
+      setImportingGoogleForm(false);
+    }
+  };
+
   // Filter forms
-  const filteredForms = forms.filter((f) =>
-    (f.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (f.description || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredForms = forms.filter((f) => {
+    const matchesSearch =
+      (f.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (f.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+
+    if (accessFilter === 'mine') {
+      return !user || f.creatorId === user.id || f.isOwner !== false;
+    }
+    if (accessFilter === 'shared') {
+      return (user && f.creatorId && f.creatorId !== user.id) || f.isOwner === false;
+    }
+    return true;
+  });
+
+  const sharedWithMeCount = forms.filter(f => (user && f.creatorId && f.creatorId !== user.id) || f.isOwner === false).length;
 
   const totalResponses = forms.reduce((sum, f) => sum + (f.responseCount || 0), 0);
   const activeFormsCount = forms.filter((f) => f.settings?.acceptingResponses !== false).length;
@@ -245,6 +293,19 @@ export default function FormsDashboard({
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
               type="button"
+              onClick={() => {
+                setGoogleImportError('');
+                setGoogleAddonModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs sm:text-sm font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+              title="Activate Voice-to-Text on a Google Form"
+            >
+              <Link2 className="w-4 h-4 text-tertiary" />
+              <span>Google Forms Add-on</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setTemplateModalOpen(true)}
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs sm:text-sm font-semibold border border-outline-variant/30 transition-all cursor-pointer"
             >
@@ -284,8 +345,8 @@ export default function FormsDashboard({
           </div>
         </section>
 
-        {/* Search Bar */}
-        <section className="flex items-center justify-between gap-4">
+        {/* Search Bar & Workspace Access Tabs */}
+        <section className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5">
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-outline absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -302,6 +363,46 @@ export default function FormsDashboard({
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
               >
                 <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Access Filter Tabs */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-surface-container-low border border-outline-variant/20 self-start sm:self-auto text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setAccessFilter('all')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                accessFilter === 'all'
+                  ? 'bg-surface-container-high text-primary shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              All Forms ({forms.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setAccessFilter('mine')}
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                accessFilter === 'mine'
+                  ? 'bg-surface-container-high text-primary shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface'
+              }`}
+            >
+              My Forms ({forms.length - sharedWithMeCount})
+            </button>
+            {sharedWithMeCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setAccessFilter('shared')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                  accessFilter === 'shared'
+                    ? 'bg-surface-container-high text-tertiary shadow-xs'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>Shared with Me ({sharedWithMeCount})</span>
               </button>
             )}
           </div>
@@ -412,17 +513,37 @@ export default function FormsDashboard({
                     <div className="p-5 flex-1 flex flex-col justify-between gap-4">
                       <div>
                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <h3
-                            onClick={() => onSelectForm(form.id, 'builder')}
-                            className="font-bold text-on-surface text-base hover:text-primary cursor-pointer transition-colors line-clamp-1"
-                          >
-                            {form.title || 'Untitled Form'}
-                          </h3>
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            <h3
+                              onClick={() => onSelectForm(form.id, 'builder')}
+                              className="font-bold text-on-surface text-base hover:text-primary cursor-pointer transition-colors line-clamp-1"
+                            >
+                              {form.title || 'Untitled Form'}
+                            </h3>
+                            {((form.isOwner === false) || (form.creatorId && user && form.creatorId !== user.id)) && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-tertiary/15 text-tertiary border border-tertiary/30">
+                                <Users className="w-3 h-3" />
+                                <span>Shared</span>
+                              </span>
+                            )}
+                          </div>
 
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-surface-container text-on-surface-variant border border-outline-variant/20 shrink-0">
-                            <MessageSquare className="w-3 h-3 text-primary" />
-                            <span>{form.responseCount || 0}</span>
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {form.collaborators && form.collaborators.length > 0 && (
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-surface-container text-tertiary border border-outline-variant/20"
+                                title={`${form.collaborators.length} collaborator(s) added`}
+                              >
+                                <Users className="w-3 h-3" />
+                                <span>{form.collaborators.length}</span>
+                              </span>
+                            )}
+
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-surface-container text-on-surface-variant border border-outline-variant/20">
+                              <MessageSquare className="w-3 h-3 text-primary" />
+                              <span>{form.responseCount || 0}</span>
+                            </span>
+                          </div>
                         </div>
 
                         <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
@@ -475,6 +596,17 @@ export default function FormsDashboard({
                           </button>
                         )}
 
+                        {onOpenAddUsers && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenAddUsers(form)}
+                            className="p-1.5 hover:text-primary hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                            title="Add Users & Manage Form Access"
+                          >
+                            <UserPlus className="w-4 h-4 text-primary" />
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => onSelectForm(form.id, 'analytics')}
@@ -510,6 +642,101 @@ export default function FormsDashboard({
           )}
         </section>
       </div>
+
+      {/* Google Forms Add-on & URL Sync Modal */}
+      {googleAddonModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-container-lowest/80 backdrop-blur-md">
+          <div className="bg-surface-container-low rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-outline-variant/30 max-h-[90vh] overflow-y-auto flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-tertiary/15 border border-tertiary/30 flex items-center justify-center text-tertiary">
+                  <Mic className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-on-surface">
+                    VoxForm Add-on for Google Forms
+                  </h3>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Add Voice-to-Text dictation to any Google Form and auto-sync responses
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGoogleAddonModalOpen(false)}
+                className="p-2 text-outline hover:text-on-surface rounded-xl hover:bg-surface-container transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Method 1: Instant URL Import & Auto-Sync */}
+            <form onSubmit={handleImportGoogleForm} className="p-5 rounded-2xl bg-surface-container/50 border border-outline-variant/30 space-y-4">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-tertiary/15 text-tertiary mb-2">
+                  Instant 1-Click Sync
+                </span>
+                <h4 className="font-bold text-sm text-on-surface">
+                  Paste your public Google Form responder link
+                </h4>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                  We will import all your questions, enable Voice-to-Text dictation on text fields, and automatically forward every spoken answer back into your original Google Form Responses tab.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <input
+                  type="url"
+                  required
+                  value={googleFormUrl}
+                  onChange={(e) => setGoogleFormUrl(e.target.value)}
+                  placeholder="https://docs.google.com/forms/d/e/.../viewform"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-xs sm:text-sm text-on-surface focus:outline-none focus:border-primary"
+                />
+                <button
+                  type="submit"
+                  disabled={importingGoogleForm}
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-50"
+                >
+                  {importingGoogleForm ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Importing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-4 h-4" />
+                      <span>Activate Voice-to-Text</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {googleImportError && (
+                <p className="text-xs text-error font-medium">{googleImportError}</p>
+              )}
+            </form>
+
+            {/* Method 2: Native Google Forms Editor Sidebar Add-on */}
+            <div className="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/25 space-y-3">
+              <h4 className="font-bold text-sm text-on-surface">
+                Or use the Native Sidebar Add-on inside Google Forms
+              </h4>
+              <ol className="text-xs text-on-surface-variant space-y-2 list-decimal list-inside leading-relaxed">
+                <li>
+                  Open your form in Google Forms, click the top-right menu (<strong>⋮</strong>) &rarr; <strong>Script editor</strong>.
+                </li>
+                <li>
+                  Paste the contents of <code className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface font-mono">google-forms-addon/Code.gs</code> and <code className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface font-mono">google-forms-addon/Sidebar.html</code> from this project.
+                </li>
+                <li>
+                  Reload your Google Form and open <strong>Add-ons &rarr; VoxForm Voice-to-Text &rarr; Open Voice-to-Text Sidebar</strong> to generate your voice link & QR code right inside Google Forms.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Template Selection Modal */}
       {templateModalOpen && (

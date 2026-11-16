@@ -255,6 +255,74 @@ export async function saveFormSlug(formId, slug) {
   return data;
 }
 
+// --- COLLABORATORS / ADD USERS API ---
+
+export async function checkUserByEmail(email) {
+  const res = await fetch(`${API_BASE}/forms/check-user?email=${encodeURIComponent(email)}`, {
+    headers: { ...getAuthHeaders() }
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to verify VoxForm user');
+  }
+  return data;
+}
+
+export async function fetchCollaborators(formId) {
+  const res = await fetch(`${API_BASE}/forms/${formId}/collaborators`, {
+    headers: { ...getAuthHeaders() }
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to load form collaborators');
+  }
+  return data;
+}
+
+export async function addCollaborator(formId, { email, role = 'editor' }) {
+  const res = await fetch(`${API_BASE}/forms/${formId}/collaborators`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify({ email, role })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to add user to form');
+  }
+  return data;
+}
+
+export async function removeCollaborator(formId, userId) {
+  const res = await fetch(`${API_BASE}/forms/${formId}/collaborators/${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+    headers: { ...getAuthHeaders() }
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to remove user from form');
+  }
+  return data;
+}
+
+export async function updateCollaboratorRole(formId, userId, role) {
+  const res = await fetch(`${API_BASE}/forms/${formId}/collaborators/${encodeURIComponent(userId)}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify({ role })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to update user role');
+  }
+  return data;
+}
+
 // --- RESPONSES & ANALYTICS API ---
 
 export async function submitResponse(formId, responseData) {
@@ -392,4 +460,25 @@ export async function fetchAdminAnalytics(key) {
   }
   return data;
 }
+
+// Import a public Google Form URL and enable Voice-to-Text
+export async function importGoogleFormUrl(url, creatorMeta = {}) {
+  const res = await fetch(`${API_BASE}/forms/google-addon/import-url`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify({
+      url,
+      ...creatorMeta
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || 'Failed to import Google Form');
+  }
+  return data;
+}
+
 

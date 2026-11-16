@@ -1,0 +1,213 @@
+/* VoxForm Voice-to-Text Injected Widget Styles for Google Forms
+ * Dynamically adapts to each Google Form's background & theme colors via CSS variables
+ */
+
+.voxform-ext-container {
+  --vf-bg: #f0ebf8;
+  --vf-surface: #ffffff;
+  --vf-border: rgba(103, 58, 183, 0.28);
+  --vf-accent: #673ab7;
+  --vf-accent-soft: rgba(103, 58, 183, 0.14);
+  --vf-accent-text: #ffffff;
+  --vf-text: #1f2937;
+  --vf-text-muted: #4b5563;
+
+  margin-top: 10px;
+  margin-bottom: 4px;
+  font-family: 'Google Sans', Roboto, 'Inter', Arial, sans-serif;
+  width: 100%;
+  max-width: 520px;
+  box-sizing: border-box;
+}
+
+.voxform-ext-idle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--vf-border);
+  background: var(--vf-bg);
+  color: var(--vf-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.18s ease;
+}
+
+.voxform-ext-idle-btn:hover {
+  border-color: var(--vf-accent);
+  filter: brightness(0.97);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.voxform-ext-mic-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--vf-accent-soft);
+  color: var(--vf-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.voxform-ext-badge {
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--vf-accent);
+  color: var(--vf-accent-text);
+  letter-spacing: 0.03em;
+}
+
+/* Active Recording Card — matches the Google Form's background color */
+.voxform-ext-card {
+  background: var(--vf-bg);
+  color: var(--vf-text);
+  border: 1.5px solid var(--vf-accent);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.voxform-ext-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.voxform-ext-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #dc2626;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.voxform-ext-pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #dc2626;
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  animation: voxformPulse 1.4s infinite;
+}
+
+@keyframes voxformPulse {
+  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+}
+
+.voxform-ext-timer {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vf-text);
+  background: var(--vf-surface);
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--vf-border);
+}
+
+.voxform-ext-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.voxform-ext-done-btn {
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: none;
+  background: var(--vf-accent);
+  color: var(--vf-accent-text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.voxform-ext-done-btn:hover {
+  filter: brightness(1.08);
+}
+
+.voxform-ext-cancel-btn {
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--vf-border);
+  background: var(--vf-surface);
+  color: var(--vf-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.voxform-ext-cancel-btn:hover {
+  color: var(--vf-text);
+  border-color: var(--vf-accent);
+}
+
+.voxform-ext-live-box {
+  margin-top: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--vf-surface);
+  border: 1px solid var(--vf-border);
+  font-size: 12px;
+  color: var(--vf-text);
+  font-style: italic;
+}
+
+.voxform-ext-success {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--vf-bg);
+  border: 1.5px solid var(--vf-accent);
+  color: var(--vf-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.voxform-ext-undo-btn {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--vf-border);
+  background: var(--vf-surface);
+  color: var(--vf-text);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.voxform-ext-undo-btn:hover {
+  border-color: var(--vf-accent);
+}
+
+.voxform-ext-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--vf-bg);
+  border: 1px solid rgba(220, 38, 38, 0.5);
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+}

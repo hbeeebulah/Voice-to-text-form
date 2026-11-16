@@ -5,6 +5,8 @@ import {
   Eye,
   Settings,
   Share2,
+  Users,
+  UserPlus,
   Image as ImageIcon,
   Trash2,
   Sparkles,
@@ -23,6 +25,7 @@ export default function FormBuilder({
   onOpenTheme,
   onOpenPreview,
   onOpenShare,
+  onOpenAddUsers,
   onOpenApiKey,
   onNavigateTab
 }) {
@@ -221,6 +224,35 @@ export default function FormBuilder({
             />
           </div>
 
+          {/* Collaborative Access Strip */}
+          <div className="pt-2 pb-1 border-t border-outline-variant/15 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-primary" />
+                <span>Form Collaborators:</span>
+              </span>
+              {Array.isArray(form.collaborators) && form.collaborators.length > 0 ? (
+                <span className="text-xs text-tertiary font-semibold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
+                  {form.collaborators.length} user{form.collaborators.length > 1 ? 's' : ''} added
+                </span>
+              ) : (
+                <span className="text-xs text-on-surface-variant font-mono">Only you have access</span>
+              )}
+            </div>
+
+            {onOpenAddUsers && (
+              <button
+                type="button"
+                onClick={onOpenAddUsers}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-primary hover:text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>+ Add Users</span>
+              </button>
+            )}
+          </div>
+
           {/* Form Settings Accordion (From commit 52e2aa9) */}
           <div className="pt-2 border-t border-outline-variant/20">
             <button
@@ -390,6 +422,17 @@ export default function FormBuilder({
         >
           <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
+
+        {onOpenAddUsers && (
+          <button
+            type="button"
+            onClick={onOpenAddUsers}
+            className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+            title="Add Users to Form"
+          >
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+          </button>
+        )}
       </div>
 
       {/* Header Image Modal */}

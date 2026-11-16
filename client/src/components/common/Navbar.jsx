@@ -11,6 +11,7 @@ export default function Navbar({
   onOpenTheme,
   onOpenPreview,
   onOpenShare,
+  onOpenAddUsers,
   onGoToDashboard,
   mode = 'builder', // 'builder' | 'responder'
   user = null,
@@ -124,6 +125,19 @@ export default function Navbar({
 
           {mode === 'builder' && (
             <>
+              {/* Add Users / Collaborators Button */}
+              {onOpenAddUsers && (
+                <button
+                  type="button"
+                  onClick={onOpenAddUsers}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+                  title="Add Users & Manage Form Access"
+                >
+                  <span className="material-symbols-outlined text-[16px] text-primary">person_add</span>
+                  <span className="hidden sm:inline">Add Users</span>
+                </button>
+              )}
+
               {/* Preview Button */}
               <button
                 type="button"

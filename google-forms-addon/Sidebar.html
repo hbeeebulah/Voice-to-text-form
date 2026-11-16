@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #4edea3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #0f172a;
+      font-size: 16px;
+    }
+    .title {
+      font-weight: 800;
+      font-size: 15px;
+      color: #ffffff;
+    }
+    .subtitle {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    .btn {
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #ffffff;
+    }
+    .btn-secondary {
+      background: #334155;
+      color: #f8fafc;
+      margin-top: 8px;
+    }
+    .btn-emerald {
+      background: #10b981;
+      color: #052e16;
+      margin-top: 8px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .stat-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #4edea3;
+    }
+    .stat-lbl {
+      font-size: 10px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .qr-box {
+      text-align: center;
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 12px;
+      margin: 10px auto 0;
+      width: 148px;
+    }
+    .qr-box img {
+      width: 128px;
+      height: 128px;
+      display: block;
+    }
+    .status-msg {
+      padding: 9px 11px;
+      border-radius: 10px;
+      font-size: 11px;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .status-ok {
+      display: block;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+    .status-err {
+      display: block;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #334155;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">V</div>
+    <div>
+      <div class="title">VoxForm Add-on</div>
+      <div class="subtitle">Voice-to-Text for Google Forms</div>
+    </div>
+  </div>
+
+  <div id="statusBox" class="status-msg"></div>
+
+  <div class="card">
+    <span class="label">VoxForm Server URL</span>
+    <input type="text" id="serverUrl" placeholder="https://your-voxform-url.onrender.com" />
+
+    <button id="activateBtn" class="btn btn-primary" onclick="handleActivate()">
+      🎙️ Activate Voice-to-Text
+    </button>
+  </div>
+
+  <div id="activeSection" style="display:none;">
+    <div class="card">
+      <span class="label">Voice-Enabled Responder Link</span>
+      <input type="text" id="shortUrlInput" readonly onclick="this.select()" />
+      <button class="btn btn-secondary" onclick="copyVoiceLink()">
+        📋 Copy Voice Responder Link
+      </button>
+
+      <div class="qr-box">
+        <img id="qrImg" alt="Voice Form QR Code" />
+      </div>
+      <div style="text-align:center; font-size:10px; color:#94a3b8; margin-top:6px;">
+        Respondents scan or open link to answer by voice (zero install)
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="label">Voice-to-Text Adoption & Sync</span>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div id="voiceCount" class="stat-val">0</div>
+          <div class="stat-lbl">Voice Users</div>
+        </div>
+        <div class="stat-box">
+          <div id="voiceRate" class="stat-val">0%</div>
+          <div class="stat-lbl">Voice Usage Rate</div>
+        </div>
+      </div>
+
+      <button id="syncBtn" class="btn btn-emerald" onclick="handleSyncNow()">
+        🔄 Sync Responses to Google Form
+      </button>
+
+      <div class="toggle-row">
+        <span>Auto-sync every 5 mins</span>
+        <input type="checkbox" id="autoSyncToggle" onchange="handleAutoSyncToggle(this.checked)" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showMessage(text, isError) {
+      const box = document.getElementById('statusBox');
+      box.textContent = text;
+      box.className = 'status-msg ' + (isError ? 'status-err' : 'status-ok');
+    }
+
+    function renderState(state) {
+      if (!state) return;
+      if (state.serverUrl) {
+        document.getElementById('serverUrl').value = state.serverUrl;
+      }
+      if (state.voxFormId && (state.shortUrl || state.responderUrl)) {
+        document.getElementById('activeSection').style.display = 'block';
+        const link = state.shortUrl || state.responderUrl;
+        document.getElementById('shortUrlInput').value = link;
+        document.getElementById('qrImg').src =
+          'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(link);
+        document.getElementById('activateBtn').textContent = '✨ Update Voice-to-Text Questions';
+      }
+      document.getElementById('autoSyncToggle').checked = Boolean(state.autoSyncEnabled);
+      if (state.stats) {
+        document.getElementById('voiceCount').textContent = state.stats.voiceResponsesCount || 0;
+        document.getElementById('voiceRate').textContent = (state.stats.voiceAdoptionRate || 0) + '%';
+      }
+    }
+
+    function handleActivate() {
+      const btn = document.getElementById('activateBtn');
+      const serverUrl = document.getElementById('serverUrl').value.trim();
+      btn.disabled = true;
+      btn.textContent = 'Syncing Questions...';
+      showMessage('Converting Google Form questions to Voice-to-Text...', false);
+
+      google.script.run
+        .withSuccessHandler(function(state) {
+          btn.disabled = false;
+          renderState(state);
+          showMessage('Voice-to-Text activated! Share the voice link below.', false);
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = '🎙️ Activate Voice-to-Text';
+          showMessage(err.message || 'Activation failed.', true);
+        })
+        .activateVoiceToText(serverUrl);
+    }
+
+    function copyVoiceLink() {
+      const input = document.getElementById('shortUrlInput');
+      input.select();
+      document.execCommand('copy');
+      showMessage('Voice responder link copied to clipboard!', false);
+    }
+
+    function handleSyncNow() {
+      const btn = document.getElementById('syncBtn');
+      btn.disabled = true;
+      btn.textContent = 'Syncing...';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false;
+          btn.textContent = '🔄 Sync Responses to Google Form';
+          if (res && res.state) renderState(res.state);
+          showMessage('Synced ' + (res ? res.syncedCount : 0) + ' new voice responses into this Google Form.', false);
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = '🔄 Sync Responses to Google Form';
+          showMessage(err.message || 'Sync failed.', true);
+        })
+        .syncResponsesToGoogleForm();
+    }
+
+    function handleAutoSyncToggle(enabled) {
+      google.script.run
+        .withSuccessHandler(function(state) {
+          renderState(state);
+          showMessage(enabled ? 'Auto-sync enabled (every 5 minutes).' : 'Auto-sync paused.', false);
+        })
+        .withFailureHandler(function(err) {
+          showMessage(err.message || 'Could not update auto-sync trigger.', true);
+        })
+        .toggleAutoSync(enabled);
+    }
+
+    // Initial load
+    google.script.run
+      .withSuccessHandler(renderState)
+      .getAddonState();
+  </script>
+</body>
+</html>

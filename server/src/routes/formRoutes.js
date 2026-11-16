@@ -6,6 +6,7 @@ const multer = require('multer');
 const db = require('../db');
 const { v4: uuidv4 } = require('uuid');
 const { optionalAuth } = require('../middleware/auth');
+const googleFormsIntegrationService = require('../services/googleFormsIntegrationService');
 
 // Multer storage for document attachments
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -56,15 +57,23 @@ router.get('/', optionalAuth, async (req, res) => {
   try {
     let creatorFilter = {};
     if (req.user && req.user.id) {
-      creatorFilter = { creatorId: req.user.id };
+      creatorFilter = { creatorId: req.user.id, userId: req.user.id, email: req.user.email };
     } else if (req.query.creatorId) {
-      creatorFilter = { creatorId: req.query.creatorId };
+      creatorFilter = { creatorId: req.query.creatorId, userId: req.query.creatorId };
     }
     const forms = await db.getAllForms(creatorFilter);
     // Return summary data for forms list
     const formSummaries = await Promise.all(
       forms.map(async (form) => {
         const responses = await db.getResponsesByFormId(form.id);
+        const isOwner = req.user ? form.creatorId === req.user.id : true;
+        const myCollabRecord = req.user && Array.isArray(form.collaborators)
+          ? form.collaborators.find(c => 
+              c.userId === req.user.id || 
+              (c.email && req.user.email && c.email.toLowerCase() === req.user.email.toLowerCase())
+            )
+          : null;
+
         return {
           id: form.id,
           title: form.title,
@@ -74,6 +83,9 @@ router.get('/', optionalAuth, async (req, res) => {
           creatorId: form.creatorId || null,
           creatorName: form.creatorName || null,
           creatorEmail: form.creatorEmail || null,
+          collaborators: form.collaborators || [],
+          isOwner,
+          userRole: isOwner ? 'owner' : (myCollabRecord?.role || 'collaborator'),
           questionCount: form.questions ? form.questions.length : 0,
           responseCount: responses.length,
           updatedAt: form.updatedAt,
@@ -85,6 +97,299 @@ router.get('/', optionalAuth, async (req, res) => {
   } catch (err) {
     console.error('[Forms GET] Error:', err);
     res.status(500).json({ error: 'Failed to retrieve forms.' });
+  }
+});
+
+// POST /api/forms/google-addon/sync - Create or update a voice-enabled VoxForm from Google Forms Add-on
+router.post('/google-addon/sync', optionalAuth, async (req, res) => {
+  try {
+    const {
+      googleFormId,
+      title,
+      description,
+      publishedUrl,
+      editUrl,
+      creatorEmail,
+      creatorName,
+      questions = []
+    } = req.body;
+
+    if (!googleFormId && !publishedUrl) {
+      return res.status(400).json({ error: 'googleFormId or publishedUrl is required.' });
+    }
+
+    // Check if this Google Form was already synced to VoxForm
+    const allForms = await db.getAllForms();
+    const existingForm = allForms.find(
+      f =>
+        (googleFormId && f.googleFormConfig?.googleFormId === googleFormId) ||
+        (publishedUrl && f.googleFormConfig?.publishedUrl === publishedUrl)
+    );
+
+    // Enrich questions with Google Form entry.<id> mappings if publishedUrl is provided
+    const { questions: enrichedQuestions, formResponseUrl } =
+      await googleFormsIntegrationService.enrichAddonQuestionsWithEntryIds(publishedUrl, questions);
+
+    const formId = existingForm ? existingForm.id : uuidv4();
+    const cleanTitleSlug = (title || 'voice-form')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 24);
+    const defaultSlug = existingForm?.customSlug || `${cleanTitleSlug || 'voice-form'}-${formId.slice(0, 6)}`;
+
+    // Match creator user by email if not authenticated via bearer token
+    let resolvedCreatorId = req.user ? req.user.id : (existingForm?.creatorId || null);
+    let resolvedCreatorName = req.user ? req.user.name : (creatorName || existingForm?.creatorName || null);
+    const resolvedCreatorEmail = req.user ? req.user.email : (creatorEmail || existingForm?.creatorEmail || null);
+
+    if (!resolvedCreatorId && resolvedCreatorEmail) {
+      const matchedUser = await db.getUserByEmail(resolvedCreatorEmail);
+      if (matchedUser) {
+        resolvedCreatorId = matchedUser.id;
+        resolvedCreatorName = matchedUser.name || resolvedCreatorName;
+      }
+    }
+
+    const syncedForm = {
+      ...(existingForm || {}),
+      id: formId,
+      customSlug: defaultSlug,
+      title: title || existingForm?.title || 'Untitled Form',
+      description: description !== undefined ? description : (existingForm?.description || ''),
+      creatorId: resolvedCreatorId,
+      creatorName: resolvedCreatorName,
+      creatorEmail: resolvedCreatorEmail,
+      googleFormConfig: {
+        googleFormId: googleFormId || existingForm?.googleFormConfig?.googleFormId || null,
+        publishedUrl: publishedUrl || existingForm?.googleFormConfig?.publishedUrl || null,
+        editUrl: editUrl || existingForm?.googleFormConfig?.editUrl || null,
+        formResponseUrl: formResponseUrl || existingForm?.googleFormConfig?.formResponseUrl || null,
+        syncedResponseIds: existingForm?.googleFormConfig?.syncedResponseIds || [],
+        lastSyncedAt: new Date().toISOString()
+      },
+      theme: existingForm?.theme || {
+        themeId: 'modern-minimalist',
+        accentColor: '#6366f1',
+        headerColor: '#4f46e5',
+        backgroundColor: '#f8fafc',
+        fontHeader: 'Inter',
+        fontBody: 'Inter',
+        headerBannerUrl: '',
+        cardRoundness: 'rounded-2xl',
+        buttonStyle: 'rounded-xl'
+      },
+      questions: enrichedQuestions.map(q => ({
+        id: q.id || (q.googleItemId ? `gf-${q.googleItemId}` : uuidv4()),
+        googleItemId: q.googleItemId ? String(q.googleItemId) : null,
+        googleEntryId: q.googleEntryId || null,
+        title: q.title || 'Untitled Question',
+        description: q.description || '',
+        type: q.type || 'short_answer',
+        required: Boolean(q.required),
+        voiceEnabled: q.voiceEnabled !== undefined
+          ? Boolean(q.voiceEnabled)
+          : (q.type === 'short_answer' || q.type === 'paragraph' || !q.type),
+        ...(q.options ? { options: q.options } : {}),
+        ...(q.scaleConfig ? { scaleConfig: q.scaleConfig } : {})
+      })),
+      settings: existingForm?.settings || {
+        allowMultipleSubmissions: true,
+        showProgressBar: true,
+        confirmationMessage: 'Your voice response has been recorded and synced.'
+      },
+      createdAt: existingForm?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const saved = await db.saveForm(syncedForm);
+    return res.status(existingForm ? 200 : 201).json({
+      success: true,
+      isUpdate: Boolean(existingForm),
+      form: saved,
+      responderPath: `/#form/${saved.id}`,
+      shortPath: `/s/${saved.customSlug}`
+    });
+  } catch (err) {
+    console.error('[Google Add-on Sync] Error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to sync Google Form with VoxForm.' });
+  }
+});
+
+// POST /api/forms/google-addon/import-url - Import any public Google Form URL and enable Voice-to-Text
+router.post('/google-addon/import-url', optionalAuth, async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'Please provide a valid public Google Form responder URL.' });
+    }
+
+    const parsed = await googleFormsIntegrationService.fetchPublicGoogleFormStructure(url);
+    const formId = uuidv4();
+    const cleanTitleSlug = (parsed.title || 'voice-form')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 24);
+    const defaultSlug = `${cleanTitleSlug || 'voice-form'}-${formId.slice(0, 6)}`;
+
+    const newForm = {
+      id: formId,
+      customSlug: defaultSlug,
+      title: parsed.title,
+      description: parsed.description,
+      creatorId: req.user ? req.user.id : (req.body.creatorId || null),
+      creatorName: req.user ? req.user.name : (req.body.creatorName || null),
+      creatorEmail: req.user ? req.user.email : (req.body.creatorEmail || null),
+      googleFormConfig: {
+        googleFormId: null,
+        publishedUrl: parsed.publishedUrl,
+        formResponseUrl: parsed.formResponseUrl,
+        syncedResponseIds: [],
+        lastSyncedAt: new Date().toISOString()
+      },
+      theme: {
+        themeId: 'modern-minimalist',
+        accentColor: '#6366f1',
+        headerColor: '#4f46e5',
+        backgroundColor: '#f8fafc',
+        fontHeader: 'Inter',
+        fontBody: 'Inter',
+        headerBannerUrl: '',
+        cardRoundness: 'rounded-2xl',
+        buttonStyle: 'rounded-xl'
+      },
+      questions: parsed.questions,
+      settings: {
+        allowMultipleSubmissions: true,
+        showProgressBar: true,
+        confirmationMessage: 'Your response has been recorded and synced.'
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const saved = await db.saveForm(newForm);
+    return res.status(201).json({
+      success: true,
+      form: saved,
+      responderPath: `/#form/${saved.id}`,
+      shortPath: `/s/${saved.customSlug}`
+    });
+  } catch (err) {
+    console.error('[Google Form URL Import] Error:', err);
+    return res.status(400).json({ error: err.message || 'Could not import Google Form from URL.' });
+  }
+});
+
+// GET /api/forms/:id/google-addon/status - Status & voice stats for the Google Forms Add-on sidebar
+router.get('/:id/google-addon/status', async (req, res) => {
+  try {
+    const form = await db.getFormById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+    const responses = await db.getResponsesByFormId(req.params.id);
+    const syncedSet = new Set(form.googleFormConfig?.syncedResponseIds || []);
+
+    let voiceResponsesCount = 0;
+    let unsyncedCount = 0;
+
+    responses.forEach(r => {
+      if (r.voiceFieldStats && Object.values(r.voiceFieldStats).some(Boolean)) {
+        voiceResponsesCount++;
+      }
+      if (!r.syncedToGoogleForm && !syncedSet.has(r.id)) {
+        unsyncedCount++;
+      }
+    });
+
+    const voiceRate = responses.length > 0 ? Math.round((voiceResponsesCount / responses.length) * 100) : 0;
+
+    return res.json({
+      success: true,
+      formId: form.id,
+      title: form.title,
+      customSlug: form.customSlug,
+      totalResponses: responses.length,
+      voiceResponsesCount,
+      voiceAdoptionRate: voiceRate,
+      unsyncedCount
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to load add-on status.' });
+  }
+});
+
+// GET /api/forms/:id/google-addon/unsynced-responses - Fetch unsynced responses for native FormApp insertion
+router.get('/:id/google-addon/unsynced-responses', async (req, res) => {
+  try {
+    const form = await db.getFormById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+    const responses = await db.getResponsesByFormId(req.params.id);
+    const syncedSet = new Set(form.googleFormConfig?.syncedResponseIds || []);
+
+    const unsynced = responses
+      .filter(r => !r.syncedToGoogleForm && !syncedSet.has(r.id))
+      .map(r => {
+        // Map question.id answers to googleItemId so Code.gs can match FormApp items by ID or title
+        const itemAnswers = [];
+        (form.questions || []).forEach(q => {
+          const val = r.answers?.[q.id];
+          if (val !== undefined && val !== null && val !== '') {
+            itemAnswers.push({
+              questionId: q.id,
+              googleItemId: q.googleItemId || null,
+              title: q.title,
+              type: q.type,
+              value: val
+            });
+          }
+        });
+        return {
+          responseId: r.id,
+          submittedAt: r.submittedAt,
+          itemAnswers
+        };
+      });
+
+    return res.json({
+      success: true,
+      unsynced
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to retrieve unsynced responses.' });
+  }
+});
+
+// POST /api/forms/:id/google-addon/mark-synced - Mark response IDs as synced to Google Form
+router.post('/:id/google-addon/mark-synced', async (req, res) => {
+  try {
+    const form = await db.getFormById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+    const { responseIds = [] } = req.body;
+    const existingIds = form.googleFormConfig?.syncedResponseIds || [];
+    const mergedIds = Array.from(new Set([...existingIds, ...responseIds]));
+
+    form.googleFormConfig = {
+      ...(form.googleFormConfig || {}),
+      syncedResponseIds: mergedIds,
+      lastSyncedAt: new Date().toISOString()
+    };
+    await db.saveForm(form);
+
+    return res.json({
+      success: true,
+      syncedCount: responseIds.length
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to mark responses as synced.' });
   }
 });
 
@@ -105,6 +410,7 @@ router.post('/', optionalAuth, async (req, res) => {
       creatorId: req.user ? req.user.id : (req.body.creatorId || null),
       creatorName: req.user ? req.user.name : (req.body.creatorName || null),
       creatorEmail: req.user ? req.user.email : (req.body.creatorEmail || null),
+      collaborators: req.body.collaborators || [],
       theme: req.body.theme || {
         themeId: 'modern-minimalist',
         accentColor: '#3b82f6',
@@ -245,6 +551,36 @@ router.post('/:id/slug', optionalAuth, async (req, res) => {
   }
 });
 
+// GET /api/forms/check-user - Real-time lookup to verify if an email has a registered VoxForm account
+router.get('/check-user', optionalAuth, async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Email parameter is required.' });
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await db.getUserByEmail(cleanEmail);
+    if (!user) {
+      return res.json({
+        exists: false,
+        message: `No VoxForm account found with email "${cleanEmail}". Users must have a VoxForm account to be added to a form.`
+      });
+    }
+    return res.json({
+      exists: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl
+      }
+    });
+  } catch (err) {
+    console.error('[Check User] Error:', err);
+    res.status(500).json({ error: 'Failed to verify VoxForm user.' });
+  }
+});
+
 // GET /api/forms/:id - Get form by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -260,7 +596,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // PUT /api/forms/:id - Update form (autosave & manual save)
-router.put('/:id', async (req, res) => {
+router.put('/:id', optionalAuth, async (req, res) => {
   try {
     const existing = await db.getFormById(req.params.id);
     if (!existing) {
@@ -271,6 +607,7 @@ router.put('/:id', async (req, res) => {
       ...existing,
       ...req.body,
       id: req.params.id,
+      collaborators: req.body.collaborators !== undefined ? req.body.collaborators : (existing.collaborators || []),
       updatedAt: new Date().toISOString()
     };
 
@@ -279,6 +616,172 @@ router.put('/:id', async (req, res) => {
   } catch (err) {
     console.error('[Form PUT :id] Error:', err);
     res.status(500).json({ error: 'Failed to update form.' });
+  }
+});
+
+// --- COLLABORATORS / ADD USERS API ---
+
+// GET /api/forms/:id/collaborators - List all users added to a form
+router.get('/:id/collaborators', optionalAuth, async (req, res) => {
+  try {
+    const form = await db.getFormById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+
+    let creator = null;
+    if (form.creatorId) {
+      const creatorUser = await db.getUserById(form.creatorId);
+      if (creatorUser) {
+        creator = {
+          id: creatorUser.id,
+          name: creatorUser.name,
+          email: creatorUser.email,
+          avatarUrl: creatorUser.avatarUrl
+        };
+      }
+    }
+    if (!creator) {
+      creator = {
+        id: form.creatorId || 'creator',
+        name: form.creatorName || 'Form Creator',
+        email: form.creatorEmail || 'creator@voxform.ai',
+        avatarUrl: null
+      };
+    }
+
+    res.json({
+      formId: form.id,
+      title: form.title,
+      creator,
+      collaborators: form.collaborators || []
+    });
+  } catch (err) {
+    console.error('[Collaborators GET] Error:', err);
+    res.status(500).json({ error: 'Failed to retrieve form collaborators.' });
+  }
+});
+
+// POST /api/forms/:id/collaborators - Add a user with a VoxForm account to this form
+router.post('/:id/collaborators', optionalAuth, async (req, res) => {
+  try {
+    const form = await db.getFormById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+
+    const { email, role = 'editor' } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Please provide an email address.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Verify user has an existing VoxForm account
+    const user = await db.getUserByEmail(cleanEmail);
+    if (!user) {
+      return res.status(404).json({
+        error: `No VoxForm account found for "${cleanEmail}". Users must have a VoxForm account in order to be added to this form.`
+      });
+    }
+
+    // Check if user is the form creator/owner
+    if (form.creatorId && user.id === form.creatorId) {
+      return res.status(400).json({
+        error: `"${user.name || cleanEmail}" is already the creator of this form.`
+      });
+    }
+
+    const currentCollaborators = Array.isArray(form.collaborators) ? form.collaborators : [];
+    const alreadyAdded = currentCollaborators.find(c => 
+      c.userId === user.id || (c.email && c.email.toLowerCase() === cleanEmail)
+    );
+
+    if (alreadyAdded) {
+      return res.status(400).json({
+        error: `"${user.name || cleanEmail}" is already added to this form.`
+      });
+    }
+
+    const newCollaborator = {
+      userId: user.id,
+      name: user.name || cleanEmail.split('@')[0],
+      email: user.email.toLowerCase(),
+      avatarUrl: user.avatarUrl || null,
+      role: role === 'viewer' ? 'viewer' : 'editor',
+      addedAt: new Date().toISOString()
+    };
+
+    form.collaborators = [...currentCollaborators, newCollaborator];
+    form.updatedAt = new Date().toISOString();
+    await db.saveForm(form);
+
+    res.status(201).json({
+      success: true,
+      collaborator: newCollaborator,
+      collaborators: form.collaborators,
+      message: `"${newCollaborator.name}" was successfully added to this form.`
+    });
+  } catch (err) {
+    console.error('[Collaborators POST] Error:', err);
+    res.status(500).json({ error: 'Failed to add user to form.' });
+  }
+});
+
+// DELETE /api/forms/:id/collaborators/:userId - Remove a user from the form
+router.delete('/:id/collaborators/:userId', optionalAuth, async (req, res) => {
+  try {
+    const form = await db.getFormById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+
+    const target = req.params.userId;
+    const currentCollaborators = Array.isArray(form.collaborators) ? form.collaborators : [];
+    form.collaborators = currentCollaborators.filter(c => 
+      c.userId !== target && c.email?.toLowerCase() !== target.toLowerCase()
+    );
+    form.updatedAt = new Date().toISOString();
+    await db.saveForm(form);
+
+    res.json({
+      success: true,
+      collaborators: form.collaborators,
+      message: 'User removed from form.'
+    });
+  } catch (err) {
+    console.error('[Collaborators DELETE] Error:', err);
+    res.status(500).json({ error: 'Failed to remove user from form.' });
+  }
+});
+
+// PUT /api/forms/:id/collaborators/:userId - Update collaborator role (editor / viewer)
+router.put('/:id/collaborators/:userId', optionalAuth, async (req, res) => {
+  try {
+    const form = await db.getFormById(req.params.id);
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+
+    const { role } = req.body;
+    const target = req.params.userId;
+    const currentCollaborators = Array.isArray(form.collaborators) ? form.collaborators : [];
+    form.collaborators = currentCollaborators.map(c => {
+      if (c.userId === target || c.email?.toLowerCase() === target.toLowerCase()) {
+        return { ...c, role: role === 'viewer' ? 'viewer' : 'editor' };
+      }
+      return c;
+    });
+    form.updatedAt = new Date().toISOString();
+    await db.saveForm(form);
+
+    res.json({
+      success: true,
+      collaborators: form.collaborators
+    });
+  } catch (err) {
+    console.error('[Collaborators PUT] Error:', err);
+    res.status(500).json({ error: 'Failed to update user role.' });
   }
 });
 
@@ -369,18 +872,36 @@ router.post('/:id/responses', async (req, res) => {
       });
     }
 
+    // If this VoxForm is linked to a Google Form, forward the response in real time
+    let syncedToGoogleForm = false;
+    if (form.googleFormConfig?.formResponseUrl) {
+      const forwardResult = await googleFormsIntegrationService.forwardResponseToGoogleForm(form, answersMap);
+      syncedToGoogleForm = Boolean(forwardResult.forwarded);
+    }
+
     const responseRecord = {
       id: uuidv4(),
       formId: req.params.id,
       answers: answersMap,
       voiceFieldStats: voiceFieldStats || {},
+      syncedToGoogleForm,
       submittedAt: new Date().toISOString()
     };
 
     const saved = await db.saveResponse(responseRecord);
+    if (syncedToGoogleForm) {
+      const syncedIds = form.googleFormConfig?.syncedResponseIds || [];
+      form.googleFormConfig = {
+        ...form.googleFormConfig,
+        syncedResponseIds: Array.from(new Set([...syncedIds, saved.id]))
+      };
+      await db.saveForm(form);
+    }
+
     res.status(201).json({
       success: true,
       responseId: saved.id,
+      syncedToGoogleForm,
       confirmationMessage: form.settings?.confirmationMessage || 'Your response has been recorded.'
     });
   } catch (err) {
