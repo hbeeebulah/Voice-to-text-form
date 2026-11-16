@@ -29,6 +29,7 @@ export default function FormsDashboard({
   forms = [],
   onSelectForm,
   onCreateForm,
+  onFormImported,
   onDuplicateForm,
   onDeleteForm,
   onOpenResponder,
@@ -188,7 +189,9 @@ export default function FormsDashboard({
       });
       setGoogleAddonModalOpen(false);
       setGoogleFormUrl('');
-      if (res?.form?.id && onSelectForm) {
+      if (onFormImported && res?.form) {
+        onFormImported(res.form);
+      } else if (res?.form?.id && onSelectForm) {
         onSelectForm(res.form.id, 'builder');
       } else {
         window.location.reload();
@@ -298,10 +301,10 @@ export default function FormsDashboard({
                 setGoogleAddonModalOpen(true);
               }}
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs sm:text-sm font-semibold border border-outline-variant/30 transition-all cursor-pointer"
-              title="Activate Voice-to-Text on a Google Form"
+              title="Import and transition from Google Forms to VoxForm"
             >
               <Link2 className="w-4 h-4 text-tertiary" />
-              <span>Google Forms Add-on</span>
+              <span>Import from Google Form</span>
             </button>
 
             <button
@@ -435,6 +438,18 @@ export default function FormsDashboard({
                 >
                   <Plus className="w-4 h-4" />
                   <span>Create New Form</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGoogleImportError('');
+                    setGoogleAddonModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs sm:text-sm font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+                >
+                  <Link2 className="w-4 h-4 text-tertiary" />
+                  <span>Import from Google Form</span>
                 </button>
 
                 <button
@@ -643,21 +658,21 @@ export default function FormsDashboard({
         </section>
       </div>
 
-      {/* Google Forms Add-on & URL Sync Modal */}
+      {/* Google Forms Import & Transition Modal */}
       {googleAddonModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-container-lowest/80 backdrop-blur-md">
           <div className="bg-surface-container-low rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-outline-variant/30 max-h-[90vh] overflow-y-auto flex flex-col gap-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-tertiary/15 border border-tertiary/30 flex items-center justify-center text-tertiary">
+                <div className="w-10 h-10 rounded-xl bg-tertiary/15 border border-tertiary/30 flex items-center justify-center text-tertiary shadow-sm">
                   <Mic className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-lg sm:text-xl font-bold text-on-surface">
-                    VoxForm Add-on for Google Forms
+                    Import & Transition from Google Forms
                   </h3>
                   <p className="text-xs text-on-surface-variant mt-0.5">
-                    Add Voice-to-Text dictation to any Google Form and auto-sync responses
+                    Paste your Google Form link and we will automatically build your voice-enabled form
                   </p>
                 </div>
               </div>
@@ -670,17 +685,22 @@ export default function FormsDashboard({
               </button>
             </div>
 
-            {/* Method 1: Instant URL Import & Auto-Sync */}
-            <form onSubmit={handleImportGoogleForm} className="p-5 rounded-2xl bg-surface-container/50 border border-outline-variant/30 space-y-4">
+            {/* Instant URL Parser & Builder Form */}
+            <form onSubmit={handleImportGoogleForm} className="p-5 sm:p-6 rounded-2xl bg-surface-container/60 border border-outline-variant/30 space-y-4 shadow-sm">
               <div>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-tertiary/15 text-tertiary mb-2">
-                  Instant 1-Click Sync
-                </span>
-                <h4 className="font-bold text-sm text-on-surface">
-                  Paste your public Google Form responder link
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary/15 text-primary">
+                    1-Click Auto-Build
+                  </span>
+                  <span className="text-[11px] text-tertiary font-semibold flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5" /> Voice Dictation Enabled
+                  </span>
+                </div>
+                <h4 className="font-bold text-sm sm:text-base text-on-surface">
+                  Enter your Google Form responder or edit link
                 </h4>
                 <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                  We will import all your questions, enable Voice-to-Text dictation on text fields, and automatically forward every spoken answer back into your original Google Form Responses tab.
+                  We automatically extract all questions (short answers, paragraphs, multiple choice, checkboxes, dropdowns, and linear scales), enable Voice-to-Text dictation on text responses, and generate your live short link and QR code.
                 </p>
               </div>
 
@@ -691,49 +711,61 @@ export default function FormsDashboard({
                   value={googleFormUrl}
                   onChange={(e) => setGoogleFormUrl(e.target.value)}
                   placeholder="https://docs.google.com/forms/d/e/.../viewform"
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-xs sm:text-sm text-on-surface focus:outline-none focus:border-primary"
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-xs sm:text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-outline"
                 />
                 <button
                   type="submit"
                   disabled={importingGoogleForm}
-                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-50 shadow-md transition-all"
                 >
                   {importingGoogleForm ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Importing...</span>
+                      <span>Building VoxForm...</span>
                     </>
                   ) : (
                     <>
-                      <Mic className="w-4 h-4" />
-                      <span>Activate Voice-to-Text</span>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Build My VoxForm</span>
                     </>
                   )}
                 </button>
               </div>
 
               {googleImportError && (
-                <p className="text-xs text-error font-medium">{googleImportError}</p>
+                <div className="p-3 rounded-xl bg-error/10 border border-error/20 text-xs text-error font-medium">
+                  {googleImportError}
+                </div>
               )}
+
+              <div className="pt-2 border-t border-outline-variant/15 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-on-surface-variant">
+                <span>✓ Works with public Google Forms</span>
+                <span>✓ Automatically syncs back to Google Forms</span>
+                <span>✓ Short link & QR code ready</span>
+              </div>
             </form>
 
-            {/* Method 2: Native Google Forms Editor Sidebar Add-on */}
-            <div className="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/25 space-y-3">
-              <h4 className="font-bold text-sm text-on-surface">
-                Or use the Native Sidebar Add-on inside Google Forms
-              </h4>
-              <ol className="text-xs text-on-surface-variant space-y-2 list-decimal list-inside leading-relaxed">
-                <li>
-                  Open your form in Google Forms, click the top-right menu (<strong>⋮</strong>) &rarr; <strong>Script editor</strong>.
-                </li>
-                <li>
-                  Paste the contents of <code className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface font-mono">google-forms-addon/Code.gs</code> and <code className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface font-mono">google-forms-addon/Sidebar.html</code> from this project.
-                </li>
-                <li>
-                  Reload your Google Form and open <strong>Add-ons &rarr; VoxForm Voice-to-Text &rarr; Open Voice-to-Text Sidebar</strong> to generate your voice link & QR code right inside Google Forms.
-                </li>
-              </ol>
-            </div>
+            {/* Optional 2-Way Sync / Sidebar Add-on */}
+            <details className="rounded-2xl bg-surface-container-lowest border border-outline-variant/25 p-4 text-xs group">
+              <summary className="font-semibold text-on-surface cursor-pointer select-none flex items-center justify-between">
+                <span>Advanced: Use Google Forms Editor Sidebar Add-on (Optional)</span>
+                <span className="text-outline text-xs group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="mt-3 space-y-2 text-on-surface-variant leading-relaxed border-t border-outline-variant/15 pt-3">
+                <p>If you prefer installing directly into your Google Forms editor menu:</p>
+                <ol className="space-y-1.5 list-decimal list-inside pl-1">
+                  <li>
+                    Open your form in Google Forms &rarr; click <strong>⋮ (More)</strong> &rarr; <strong>Script editor</strong>.
+                  </li>
+                  <li>
+                    Paste the contents of <code className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface font-mono">google-forms-addon/Code.gs</code> and <code className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface font-mono">google-forms-addon/Sidebar.html</code>.
+                  </li>
+                  <li>
+                    Click <strong>Add-ons &rarr; VoxForm Voice-to-Text &rarr; Open Voice-to-Text Sidebar</strong>.
+                  </li>
+                </ol>
+              </div>
+            </details>
           </div>
         </div>
       )}

@@ -253,6 +253,27 @@ export default function FormBuilder({
             )}
           </div>
 
+          {/* Google Form Link / Sync Status Badge */}
+          {form.googleFormConfig?.publishedUrl && (
+            <div className="p-2.5 rounded-xl bg-tertiary/10 border border-tertiary/25 flex items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 truncate">
+                <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse shrink-0" />
+                <span className="font-semibold text-tertiary">Google Form Sync Active:</span>
+                <a
+                  href={form.googleFormConfig.publishedUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-on-surface-variant hover:text-on-surface truncate font-mono text-[11px] underline"
+                >
+                  {form.googleFormConfig.publishedUrl}
+                </a>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-tertiary/20 text-tertiary shrink-0">
+                Voice Dictation Enabled
+              </span>
+            </div>
+          )}
+
           {/* Form Settings Accordion (From commit 52e2aa9) */}
           <div className="pt-2 border-t border-outline-variant/20">
             <button

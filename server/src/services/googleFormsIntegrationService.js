@@ -17,7 +17,16 @@ class GoogleFormsIntegrationService {
       throw new Error('A valid Google Form URL is required.');
     }
 
-    const cleanUrl = publicUrl.trim();
+    let cleanUrl = publicUrl.trim();
+    // If user pasted an /edit link, auto-convert it to public /viewform
+    if (cleanUrl.includes('/forms/d/')) {
+      if (cleanUrl.includes('/edit')) {
+        cleanUrl = cleanUrl.replace(/\/edit(\?.*)?$/, '/viewform');
+      } else if (!cleanUrl.endsWith('/viewform') && !cleanUrl.endsWith('/viewform/') && !cleanUrl.includes('/viewform?')) {
+        cleanUrl = cleanUrl.replace(/\/+$/, '') + '/viewform';
+      }
+    }
+
     const response = await fetch(cleanUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -33,7 +42,10 @@ class GoogleFormsIntegrationService {
     const html = await response.text();
 
     // Extract FB_PUBLIC_LOAD_DATA_ = [...];
-    const match = html.match(/var\s+FB_PUBLIC_LOAD_DATA_\s*=\s*(\[[\s\S]*?\]);\s*<\/script>/);
+    let match = html.match(/(?:var\s+|window\.)?FB_PUBLIC_LOAD_DATA_\s*=\s*(\[[\s\S]*?\]);\s*<\/script>/);
+    if (!match || !match[1]) {
+      match = html.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*(\[[\s\S]*?\]);/);
+    }
     if (!match || !match[1]) {
       throw new Error('Could not read questions from this Google Form URL. Make sure you paste the public responder link (ending in /viewform) and that "Sign in required" is turned off.');
     }

@@ -386,6 +386,14 @@ export default function App() {
                   openFormById(id, 'builder');
                 }
               }}
+              onFormImported={(importedForm) => {
+                setForms(prev => [importedForm, ...prev]);
+                setCurrentForm(importedForm);
+                activeFormIdRef.current = importedForm.id;
+                setView('builder');
+                setActiveTab('questions');
+                window.location.hash = `#edit/${importedForm.id}`;
+              }}
               onCreateForm={handleCreateNewForm}
               onDuplicateForm={handleDuplicate}
               onDeleteForm={handleDelete}
