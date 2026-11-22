@@ -121,46 +121,55 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/google - Sign in or Sign up with Google OAuth
+// POST /api/auth/google - Authenticate with verified Google OAuth ID Token
 router.post('/google', async (req, res) => {
   try {
-    const { credential, userInfo } = req.body;
-    let googleUser = null;
+    const { credential } = req.body;
 
-    // 1. If Google ID token (credential) is provided, verify it with Google's official tokeninfo API
-    if (credential) {
-      try {
-        const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
-        if (verifyRes.ok) {
-          const payload = await verifyRes.json();
-          googleUser = {
-            googleId: payload.sub,
-            email: (payload.email || '').toLowerCase(),
-            name: payload.name || payload.email?.split('@')[0] || 'Google User',
-            picture: payload.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(payload.name || 'G')}&backgroundColor=ea4335`,
-            emailVerified: payload.email_verified === 'true' || payload.email_verified === true
-          };
-        } else {
-          console.warn('[Google Auth] tokeninfo verification returned non-OK:', await verifyRes.text());
-        }
-      } catch (verifyErr) {
-        console.warn('[Google Auth] Could not reach tokeninfo service:', verifyErr.message);
-      }
+    // Strict validation: Reject any unverified client-supplied user payload
+    if (!credential || typeof credential !== 'string' || !credential.trim()) {
+      return res.status(400).json({
+        error: 'A valid Google ID token credential is required. Unverified credentials are not accepted.'
+      });
     }
 
-    // 2. Fallback to userInfo (e.g. for demo mode or pre-verified Google payload)
-    if (!googleUser && userInfo) {
+    let googleUser = null;
+
+    // Verify Google ID token against Google's official tokeninfo API
+    try {
+      const verifyRes = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential.trim())}`
+      );
+      if (!verifyRes.ok) {
+        return res.status(401).json({
+          error: 'Google ID token verification failed or expired. Please sign in again.'
+        });
+      }
+
+      const payload = await verifyRes.json();
+      const isEmailVerified = payload.email_verified === 'true' || payload.email_verified === true;
+
+      if (!isEmailVerified || !payload.email) {
+        return res.status(401).json({
+          error: 'Google email address is not verified by Google.'
+        });
+      }
+
       googleUser = {
-        googleId: userInfo.googleId || userInfo.id || `google-demo-${Date.now()}`,
-        email: (userInfo.email || 'google.creator@voxform.ai').toLowerCase(),
-        name: userInfo.name || 'Google Creator',
-        picture: userInfo.picture || userInfo.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        emailVerified: true
+        googleId: payload.sub,
+        email: payload.email.trim().toLowerCase(),
+        name: payload.name || payload.email.split('@')[0] || 'Google User',
+        picture: payload.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(payload.name || 'G')}&backgroundColor=ea4335`
       };
+    } catch (verifyErr) {
+      console.warn('[Google Auth] Could not reach Google token verification service:', verifyErr.message);
+      return res.status(503).json({
+        error: 'Google authentication service is currently unreachable. Please try again.'
+      });
     }
 
     if (!googleUser || !googleUser.email) {
-      return res.status(400).json({ error: 'Unable to verify Google credentials. Please try again.' });
+      return res.status(400).json({ error: 'Unable to verify Google credentials.' });
     }
 
     // Check if user exists by email or googleId
@@ -174,7 +183,7 @@ router.post('/google', async (req, res) => {
       const updates = {
         googleId: googleUser.googleId,
         avatarUrl: googleUser.picture || user.avatarUrl,
-        provider: 'google',
+        provider: user.provider || 'google',
         lastLoginAt: new Date().toISOString()
       };
       user = await db.updateUser(user.id, updates);

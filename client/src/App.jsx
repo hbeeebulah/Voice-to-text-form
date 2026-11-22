@@ -45,6 +45,32 @@ export default function App() {
   const autosaveTimerRef = useRef(null);
   const activeFormIdRef = useRef(null);
 
+  const canUserEditForm = (form, currentUser) => {
+    if (!form) return false;
+    // Unowned starter forms or templates without a creator can be edited by any user in studio
+    if (!form.creatorId && !form.creatorEmail) return true;
+
+    // If form has a creator, but no user is currently authenticated in state
+    if (!currentUser) {
+      // Check if user has an auth token in localStorage (session exists)
+      const token = localStorage.getItem('voxform_token');
+      if (!token) return false;
+      return true; // Token exists, allow editor view while session loads
+    }
+
+    if (currentUser.role === 'admin') return true;
+    if (form.creatorId && String(form.creatorId) === String(currentUser.id)) return true;
+    if (form.creatorEmail && currentUser.email && form.creatorEmail.toLowerCase() === currentUser.email.toLowerCase()) return true;
+    if (Array.isArray(form.collaborators)) {
+      const coll = form.collaborators.find(
+        (c) => (c.userId && String(c.userId) === String(currentUser.id)) ||
+               (c.email && currentUser.email && c.email.toLowerCase() === currentUser.email.toLowerCase())
+      );
+      if (coll && (coll.role === 'editor' || coll.role === 'owner')) return true;
+    }
+    return false;
+  };
+
   useEffect(() => {
     activeFormIdRef.current = currentForm?.id;
   }, [currentForm]);
@@ -57,13 +83,13 @@ export default function App() {
     const handleHash = () => {
       const hash = window.location.hash;
       if (hash.startsWith('#form/')) {
-        const id = hash.replace('#form/', '');
+        const id = hash.replace('#form/', '').split('?')[0];
         openFormById(id, 'responder');
       } else if (hash.startsWith('#s/') || hash.startsWith('#f/')) {
-        const slug = hash.replace(/^#(s|f)\//, '');
+        const slug = hash.replace(/^#(s|f)\//, '').split('?')[0];
         openFormBySlug(slug, 'responder');
       } else if (hash.startsWith('#edit/')) {
-        const id = hash.replace('#edit/', '');
+        const id = hash.replace('#edit/', '').split('?')[0];
         openFormById(id, 'builder');
       } else if (hash.startsWith('#admin-analytics') || hash.startsWith('#owner-analytics') || hash.startsWith('#secret-analytics')) {
         setView('admin-analytics');
@@ -137,17 +163,17 @@ export default function App() {
       if (pathname.startsWith('/admin-analytics') || hash.startsWith('#admin-analytics') || hash.startsWith('#owner-analytics') || hash.startsWith('#secret-analytics')) {
         setView('admin-analytics');
       } else if (pathname.startsWith('/s/') || pathname.startsWith('/f/')) {
-        const slug = pathname.replace(/^\/(s|f)\//, '');
+        const slug = pathname.replace(/^\/(s|f)\//, '').split('?')[0];
         await openFormBySlug(slug, 'responder');
       } else if (hash.startsWith('#form/')) {
-        const id = hash.replace('#form/', '');
+        const id = hash.replace('#form/', '').split('?')[0];
         await openFormById(id, 'responder');
       } else if (hash.startsWith('#s/') || hash.startsWith('#f/')) {
-        const slug = hash.replace(/^#(s|f)\//, '');
+        const slug = hash.replace(/^#(s|f)\//, '').split('?')[0];
         await openFormBySlug(slug, 'responder');
       } else if (hash.startsWith('#edit/')) {
-        const id = hash.replace('#edit/', '');
-        await openFormById(id, 'builder');
+        const id = hash.replace('#edit/', '').split('?')[0];
+        await openFormById(id, 'builder', currentUser);
       } else if (hash === '#dashboard' || (currentUser && hash !== '#landing')) {
         setView('dashboard');
       } else {
@@ -166,9 +192,15 @@ export default function App() {
       const form = await fetchFormBySlug(slug);
       setCurrentForm(form);
       activeFormIdRef.current = form.id;
-      setView(targetView);
-      if (targetView === 'responder' && window.location.hash !== `#form/${form.id}`) {
+      let effectiveView = targetView;
+      if (effectiveView === 'builder' && !canUserEditForm(form, user)) {
+        effectiveView = 'responder';
+      }
+      setView(effectiveView);
+      if (effectiveView === 'responder' && window.location.hash !== `#form/${form.id}`) {
         window.location.hash = `#form/${form.id}`;
+      } else if (effectiveView === 'builder' && window.location.hash !== `#edit/${form.id}`) {
+        window.location.hash = `#edit/${form.id}`;
       }
     } catch (err) {
       alert(`Could not open form with short link "${slug}": ${err.message}`);
@@ -178,27 +210,33 @@ export default function App() {
     }
   };
 
-  const openFormById = async (id, targetView = 'builder') => {
-    if (activeFormIdRef.current === id && currentForm) {
-      setView(targetView);
-      if (targetView === 'builder' && window.location.hash !== `#edit/${id}`) {
-        window.location.hash = `#edit/${id}`;
-      } else if (targetView === 'responder' && window.location.hash !== `#form/${id}`) {
-        window.location.hash = `#form/${id}`;
-      }
-      return;
-    }
-
+  const openFormById = async (id, targetView = 'builder', overrideUser) => {
     try {
       setLoading(true);
-      const form = await fetchForm(id);
-      setCurrentForm(form);
-      activeFormIdRef.current = form.id;
-      setView(targetView);
-      if (targetView === 'builder' && window.location.hash !== `#edit/${id}`) {
-        window.location.hash = `#edit/${id}`;
-      } else if (targetView === 'responder' && window.location.hash !== `#form/${id}`) {
-        window.location.hash = `#form/${id}`;
+      let formToUse = currentForm;
+      if (activeFormIdRef.current !== id || !formToUse) {
+        formToUse = await fetchForm(id);
+        setCurrentForm(formToUse);
+        activeFormIdRef.current = formToUse.id;
+      }
+
+      const activeUser = overrideUser !== undefined ? overrideUser : user;
+      let effectiveView = targetView;
+      // Only bounce away from builder if target is builder, form has an explicit owner, and user is unauthorized
+      if (effectiveView === 'builder' && formToUse?.creatorId && !canUserEditForm(formToUse, activeUser)) {
+        effectiveView = 'responder';
+      }
+
+      setView(effectiveView);
+      if (effectiveView === 'builder') {
+        setActiveTab('questions');
+        if (window.location.hash !== `#edit/${id}`) {
+          window.location.hash = `#edit/${id}`;
+        }
+      } else if (effectiveView === 'responder') {
+        if (window.location.hash !== `#form/${id}`) {
+          window.location.hash = `#form/${id}`;
+        }
       }
     } catch (err) {
       alert(`Could not open form: ${err.message}`);
@@ -303,10 +341,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
-      {/* Top Navbar (visible in builder and responder) */}
-      {view !== 'dashboard' && view !== 'landing' && view !== 'admin-analytics' && currentForm && (
+      {/* Top Navbar (visible only in builder studio) */}
+      {view === 'builder' && currentForm && (
         <Navbar
           formTitle={currentForm.title}
+          isPublished={Boolean(currentForm.isPublished || currentForm.status === 'published')}
+          acceptingResponses={currentForm.settings?.acceptingResponses !== false}
           onTitleChange={(title) => handleUpdateForm({ title })}
           activeTab={activeTab}
           setActiveTab={(tab) => {
@@ -494,10 +534,16 @@ export default function App() {
           <div className="flex-1">
             <FormResponder
               form={currentForm}
-              onBackToBuilder={() => {
-                setView('builder');
-                window.location.hash = `#edit/${currentForm.id}`;
-              }}
+              canEdit={canUserEditForm(currentForm, user)}
+              onBackToBuilder={
+                canUserEditForm(currentForm, user)
+                  ? () => {
+                      setView('builder');
+                      setActiveTab('questions');
+                      window.location.hash = `#edit/${currentForm.id}`;
+                    }
+                  : null
+              }
             />
           </div>
         )}
@@ -539,7 +585,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Share Modal */}
+      {/* Share / Publish Modal */}
       {currentForm && (
         <ShareModal
           isOpen={isShareOpen}
@@ -547,8 +593,23 @@ export default function App() {
           formId={currentForm.id}
           formTitle={currentForm.title}
           customSlug={currentForm.customSlug}
+          isPublished={Boolean(currentForm.isPublished || currentForm.status === 'published')}
+          acceptingResponses={currentForm.settings?.acceptingResponses !== false}
+          closedMessage={currentForm.settings?.closedMessage || ''}
           onSlugUpdated={(newSlug) => {
             handleUpdateForm({ customSlug: newSlug });
+          }}
+          onPublishStateChanged={(published) => {
+            handleUpdateForm({ isPublished: published, status: published ? 'published' : 'draft' });
+          }}
+          onToggleAcceptingResponses={(accepting, closedMsg) => {
+            handleUpdateForm({
+              settings: {
+                ...(currentForm.settings || {}),
+                acceptingResponses: accepting,
+                ...(closedMsg !== undefined ? { closedMessage: closedMsg } : {})
+              }
+            });
           }}
         />
       )}

@@ -5,7 +5,7 @@ const fs = require('fs');
 const multer = require('multer');
 const db = require('../db');
 const { v4: uuidv4 } = require('uuid');
-const { optionalAuth } = require('../middleware/auth');
+const { authenticate, optionalAuth, requireFormAccess } = require('../middleware/auth');
 const googleFormsIntegrationService = require('../services/googleFormsIntegrationService');
 
 // Multer storage for document attachments
@@ -218,7 +218,7 @@ router.post('/google-addon/sync', optionalAuth, async (req, res) => {
 });
 
 // POST /api/forms/google-addon/import-url - Import any public Google Form URL and enable Voice-to-Text
-router.post('/google-addon/import-url', optionalAuth, async (req, res) => {
+router.post('/google-addon/import-url', authenticate, async (req, res) => {
   try {
     const { url } = req.body;
     if (!url || typeof url !== 'string') {
@@ -240,9 +240,9 @@ router.post('/google-addon/import-url', optionalAuth, async (req, res) => {
       customSlug: defaultSlug,
       title: parsed.title,
       description: parsed.description,
-      creatorId: req.user ? req.user.id : (req.body.creatorId || null),
-      creatorName: req.user ? req.user.name : (req.body.creatorName || null),
-      creatorEmail: req.user ? req.user.email : (req.body.creatorEmail || null),
+      creatorId: req.user.id,
+      creatorName: req.user.name || null,
+      creatorEmail: req.user.email || null,
       googleFormConfig: {
         googleFormId: null,
         publishedUrl: parsed.publishedUrl,
@@ -438,6 +438,8 @@ router.post('/', optionalAuth, async (req, res) => {
         showProgressBar: true,
         confirmationMessage: 'Your response has been recorded.'
       },
+      isPublished: req.body.isPublished !== undefined ? Boolean(req.body.isPublished) : false,
+      status: req.body.status || (req.body.isPublished ? 'published' : 'draft'),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -450,12 +452,44 @@ router.post('/', optionalAuth, async (req, res) => {
   }
 });
 
+function canUserViewDraft(form, user) {
+  if (!form) return false;
+  const isPublished = form.isPublished !== undefined
+    ? Boolean(form.isPublished)
+    : form.status !== undefined
+      ? form.status === 'published'
+      : true;
+  if (isPublished) return true;
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (form.creatorId && form.creatorId === user.id) return true;
+  if (form.creatorEmail && user.email && form.creatorEmail.toLowerCase() === user.email.toLowerCase()) return true;
+  if (Array.isArray(form.collaborators)) {
+    return form.collaborators.some(
+      c => (c.userId && c.userId === user.id) || (c.email && user.email && c.email.toLowerCase() === user.email.toLowerCase())
+    );
+  }
+  return false;
+}
+
 // GET /api/forms/by-slug/:slug - Get form by custom short link slug
-router.get('/by-slug/:slug', async (req, res) => {
+router.get('/by-slug/:slug', optionalAuth, async (req, res) => {
   try {
     const form = await db.getFormBySlug(req.params.slug);
     if (!form) {
       return res.status(404).json({ error: 'Form not found for this short link.' });
+    }
+    if (!canUserViewDraft(form, req.user)) {
+      return res.json({
+        id: form.id,
+        title: form.title,
+        description: form.description,
+        isPublished: false,
+        status: 'draft',
+        theme: form.theme,
+        settings: form.settings,
+        questions: []
+      });
     }
     res.json(form);
   } catch (err) {
@@ -502,9 +536,9 @@ router.get('/check-slug/:slug', async (req, res) => {
 });
 
 // POST /api/forms/:id/slug - Set, update, or remove custom short link slug
-router.post('/:id/slug', optionalAuth, async (req, res) => {
+router.post('/:id/slug', authenticate, requireFormAccess('editor'), async (req, res) => {
   try {
-    const form = await db.getFormById(req.params.id);
+    const form = req.form || (await db.getFormById(req.params.id));
     if (!form) {
       return res.status(404).json({ error: 'Form not found.' });
     }
@@ -551,6 +585,48 @@ router.post('/:id/slug', optionalAuth, async (req, res) => {
   }
 });
 
+// POST /api/forms/:id/publish - Publish or unpublish a form
+router.post('/:id/publish', authenticate, requireFormAccess('editor'), async (req, res) => {
+  try {
+    const form = req.form || (await db.getFormById(req.params.id));
+    if (!form) {
+      return res.status(404).json({ error: 'Form not found.' });
+    }
+
+    const { customSlug, isPublished = true } = req.body;
+
+    if (customSlug && String(customSlug).trim()) {
+      const cleanSlug = String(customSlug).toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9_-]/g, '');
+      const reserved = ['api', 'admin', 'auth', 'uploads', 'dashboard', 'settings', 'form', 'edit', 'landing', 'null', 'undefined'];
+      if (!reserved.includes(cleanSlug)) {
+        const existing = await db.getFormBySlug(cleanSlug);
+        if (!existing || existing.id === form.id) {
+          form.customSlug = cleanSlug;
+        }
+      }
+    }
+
+    form.isPublished = Boolean(isPublished);
+    form.status = form.isPublished ? 'published' : 'draft';
+    if (form.isPublished && !form.publishedAt) {
+      form.publishedAt = new Date().toISOString();
+    }
+    form.updatedAt = new Date().toISOString();
+
+    const saved = await db.saveForm(form);
+    return res.json({
+      success: true,
+      form: saved,
+      isPublished: saved.isPublished,
+      status: saved.status,
+      customSlug: saved.customSlug
+    });
+  } catch (err) {
+    console.error('[Publish Form] Error:', err);
+    return res.status(500).json({ error: 'Failed to update publication status.' });
+  }
+});
+
 // GET /api/forms/check-user - Real-time lookup to verify if an email has a registered VoxForm account
 router.get('/check-user', optionalAuth, async (req, res) => {
   try {
@@ -582,11 +658,23 @@ router.get('/check-user', optionalAuth, async (req, res) => {
 });
 
 // GET /api/forms/:id - Get form by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const form = await db.getFormById(req.params.id);
     if (!form) {
       return res.status(404).json({ error: 'Form not found.' });
+    }
+    if (!canUserViewDraft(form, req.user)) {
+      return res.json({
+        id: form.id,
+        title: form.title,
+        description: form.description,
+        isPublished: false,
+        status: 'draft',
+        theme: form.theme,
+        settings: form.settings,
+        questions: []
+      });
     }
     res.json(form);
   } catch (err) {
@@ -595,10 +683,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PUT /api/forms/:id - Update form (autosave & manual save)
-router.put('/:id', optionalAuth, async (req, res) => {
+// PUT /api/forms/:id - Update form (autosave & manual save - requires editor role or owner)
+router.put('/:id', authenticate, requireFormAccess('editor'), async (req, res) => {
   try {
-    const existing = await db.getFormById(req.params.id);
+    const existing = req.form || (await db.getFormById(req.params.id));
     if (!existing) {
       return res.status(404).json({ error: 'Form not found.' });
     }
@@ -607,7 +695,10 @@ router.put('/:id', optionalAuth, async (req, res) => {
       ...existing,
       ...req.body,
       id: req.params.id,
-      collaborators: req.body.collaborators !== undefined ? req.body.collaborators : (existing.collaborators || []),
+      creatorId: existing.creatorId, // Protect original ownership
+      collaborators: req.userFormRole === 'owner' && req.body.collaborators !== undefined
+        ? req.body.collaborators
+        : (existing.collaborators || []),
       updatedAt: new Date().toISOString()
     };
 
@@ -622,9 +713,9 @@ router.put('/:id', optionalAuth, async (req, res) => {
 // --- COLLABORATORS / ADD USERS API ---
 
 // GET /api/forms/:id/collaborators - List all users added to a form
-router.get('/:id/collaborators', optionalAuth, async (req, res) => {
+router.get('/:id/collaborators', authenticate, requireFormAccess('viewer'), async (req, res) => {
   try {
-    const form = await db.getFormById(req.params.id);
+    const form = req.form || (await db.getFormById(req.params.id));
     if (!form) {
       return res.status(404).json({ error: 'Form not found.' });
     }
@@ -662,10 +753,10 @@ router.get('/:id/collaborators', optionalAuth, async (req, res) => {
   }
 });
 
-// POST /api/forms/:id/collaborators - Add a user with a VoxForm account to this form
-router.post('/:id/collaborators', optionalAuth, async (req, res) => {
+// POST /api/forms/:id/collaborators - Add a user with a VoxForm account to this form (owner only)
+router.post('/:id/collaborators', authenticate, requireFormAccess('owner'), async (req, res) => {
   try {
-    const form = await db.getFormById(req.params.id);
+    const form = req.form || (await db.getFormById(req.params.id));
     if (!form) {
       return res.status(404).json({ error: 'Form not found.' });
     }
@@ -728,10 +819,10 @@ router.post('/:id/collaborators', optionalAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/forms/:id/collaborators/:userId - Remove a user from the form
-router.delete('/:id/collaborators/:userId', optionalAuth, async (req, res) => {
+// DELETE /api/forms/:id/collaborators/:userId - Remove a user from the form (owner only)
+router.delete('/:id/collaborators/:userId', authenticate, requireFormAccess('owner'), async (req, res) => {
   try {
-    const form = await db.getFormById(req.params.id);
+    const form = req.form || (await db.getFormById(req.params.id));
     if (!form) {
       return res.status(404).json({ error: 'Form not found.' });
     }
@@ -755,10 +846,10 @@ router.delete('/:id/collaborators/:userId', optionalAuth, async (req, res) => {
   }
 });
 
-// PUT /api/forms/:id/collaborators/:userId - Update collaborator role (editor / viewer)
-router.put('/:id/collaborators/:userId', optionalAuth, async (req, res) => {
+// PUT /api/forms/:id/collaborators/:userId - Update collaborator role (owner only)
+router.put('/:id/collaborators/:userId', authenticate, requireFormAccess('owner'), async (req, res) => {
   try {
-    const form = await db.getFormById(req.params.id);
+    const form = req.form || (await db.getFormById(req.params.id));
     if (!form) {
       return res.status(404).json({ error: 'Form not found.' });
     }
@@ -785,8 +876,8 @@ router.put('/:id/collaborators/:userId', optionalAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/forms/:id - Delete form
-router.delete('/:id', async (req, res) => {
+// DELETE /api/forms/:id - Delete form (owner only)
+router.delete('/:id', authenticate, requireFormAccess('owner'), async (req, res) => {
   try {
     await db.deleteForm(req.params.id);
     res.json({ success: true, message: 'Form deleted successfully.' });
@@ -797,9 +888,9 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/forms/:id/duplicate - Duplicate form
-router.post('/:id/duplicate', optionalAuth, async (req, res) => {
+router.post('/:id/duplicate', authenticate, requireFormAccess('viewer'), async (req, res) => {
   try {
-    const original = await db.getFormById(req.params.id);
+    const original = req.form || (await db.getFormById(req.params.id));
     if (!original) {
       return res.status(404).json({ error: 'Original form not found.' });
     }
@@ -829,6 +920,18 @@ router.post('/:id/responses', async (req, res) => {
     const form = await db.getFormById(req.params.id);
     if (!form) {
       return res.status(404).json({ error: 'Form not found.' });
+    }
+
+    // Check if form is published
+    const isPublished = form.isPublished !== undefined
+      ? Boolean(form.isPublished)
+      : form.status !== undefined
+        ? form.status === 'published'
+        : true;
+    if (!isPublished) {
+      return res.status(403).json({
+        error: 'This form is currently in draft mode and not accepting public responses yet.'
+      });
     }
 
     // Check if form has closed responses
@@ -910,8 +1013,8 @@ router.post('/:id/responses', async (req, res) => {
   }
 });
 
-// GET /api/forms/:id/responses - Get all responses for a form
-router.get('/:id/responses', async (req, res) => {
+// GET /api/forms/:id/responses - Get all responses for a form (requires viewer permission or owner)
+router.get('/:id/responses', authenticate, requireFormAccess('viewer'), async (req, res) => {
   try {
     const responses = await db.getResponsesByFormId(req.params.id);
     res.json(responses);
@@ -921,10 +1024,10 @@ router.get('/:id/responses', async (req, res) => {
   }
 });
 
-// GET /api/forms/:id/analytics - Aggregated analytics dashboard data
-router.get('/:id/analytics', async (req, res) => {
+// GET /api/forms/:id/analytics - Aggregated analytics dashboard data (requires viewer permission or owner)
+router.get('/:id/analytics', authenticate, requireFormAccess('viewer'), async (req, res) => {
   try {
-    const form = await db.getFormById(req.params.id);
+    const form = req.form || (await db.getFormById(req.params.id));
     if (!form) {
       return res.status(404).json({ error: 'Form not found.' });
     }
@@ -1108,10 +1211,10 @@ router.get('/:id/analytics', async (req, res) => {
   }
 });
 
-// GET /api/forms/:id/export/csv - Export responses as CSV
-router.get('/:id/export/csv', async (req, res) => {
+// GET /api/forms/:id/export/csv - Export responses as CSV (requires viewer permission or owner)
+router.get('/:id/export/csv', authenticate, requireFormAccess('viewer'), async (req, res) => {
   try {
-    const form = await db.getFormById(req.params.id);
+    const form = req.form || (await db.getFormById(req.params.id));
     if (!form) return res.status(404).json({ error: 'Form not found.' });
 
     const responses = await db.getResponsesByFormId(req.params.id);
@@ -1138,7 +1241,13 @@ router.get('/:id/export/csv', async (req, res) => {
         } else {
           val = String(val);
         }
-        row.push(`"${val.replace(/"/g, '""')}"`);
+
+        // Neutralize CSV formula injection (=, +, -, @, \t, \r)
+        let sanitized = val;
+        if (/^[=+\-@\t\r]/.test(sanitized)) {
+          sanitized = `'${sanitized}`;
+        }
+        row.push(`"${sanitized.replace(/"/g, '""')}"`);
       });
 
       rows.push(row.join(','));
@@ -1156,10 +1265,10 @@ router.get('/:id/export/csv', async (req, res) => {
   }
 });
 
-// GET /api/forms/:id/export/json - Export responses as JSON
-router.get('/:id/export/json', async (req, res) => {
+// GET /api/forms/:id/export/json - Export responses as JSON (requires viewer permission or owner)
+router.get('/:id/export/json', authenticate, requireFormAccess('viewer'), async (req, res) => {
   try {
-    const form = await db.getFormById(req.params.id);
+    const form = req.form || (await db.getFormById(req.params.id));
     if (!form) return res.status(404).json({ error: 'Form not found.' });
 
     const responses = await db.getResponsesByFormId(req.params.id);

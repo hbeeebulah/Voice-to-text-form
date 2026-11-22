@@ -1,5 +1,26 @@
 [
   {
+    "id": "c0378a7b-7d12-41f8-8ba6-5a43e3e17962",
+    "name": "Attacker",
+    "email": "test_attacker@example.com",
+    "passwordHash": "$2b$10$rySBMHQRAiKfmMS7GpbDZuIvUxxcv2TZBCyPRh15OQRPB8EtSQ9Lm",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-11-22T18:39:47.000Z",
+    "updatedAt": "2026-11-22T18:39:47.000Z"
+  },
+  {
+    "id": "user-demo-creator",
+    "name": "John Doe",
+    "email": "creator@voxform.ai",
+    "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "provider": "email",
+    "role": "creator",
+    "createdAt": "2026-11-22T18:39:46.795Z",
+    "updatedAt": "2026-11-22T18:39:46.796Z"
+  },
+  {
     "name": "Bob Colleague",
     "email": "bob.1794839685153@test.com",
     "role": "creator",

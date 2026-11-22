@@ -36,6 +36,30 @@ export function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// Helper to safely parse JSON responses without throwing "Unexpected end of JSON input"
+async function parseJsonResponse(res, defaultError = 'Request failed') {
+  let data = null;
+  const text = await res.text();
+  if (text && text.trim()) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { error: text };
+    }
+  }
+
+  if (!res.ok) {
+    const errorMsg =
+      data?.error ||
+      (res.status === 502 || res.status === 504 || res.status === 500
+        ? 'Unable to connect to VoxForm backend. Please check that the server is running on port 5000.'
+        : `${defaultError} (HTTP ${res.status})`);
+    throw new Error(errorMsg);
+  }
+
+  return data || {};
+}
+
 // --- AUTH API METHODS ---
 
 export async function registerUser({ name, email, password, avatarUrl }) {
@@ -44,8 +68,7 @@ export async function registerUser({ name, email, password, avatarUrl }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password, avatarUrl })
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Registration failed');
+  const data = await parseJsonResponse(res, 'Registration failed');
   if (data.token) setAuthToken(data.token);
   if (data.user) setStoredUser(data.user);
   return data;
@@ -60,8 +83,7 @@ export async function updateUserProfile({ name, avatarUrl }) {
     },
     body: JSON.stringify({ name, avatarUrl })
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to update profile');
+  const data = await parseJsonResponse(res, 'Failed to update profile');
   if (data.user) setStoredUser(data.user);
   return data;
 }
@@ -72,8 +94,7 @@ export async function loginUser({ email, password }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password })
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Login failed');
+  const data = await parseJsonResponse(res, 'Login failed');
   if (data.token) setAuthToken(data.token);
   if (data.user) setStoredUser(data.user);
   return data;
@@ -255,6 +276,18 @@ export async function saveFormSlug(formId, slug) {
   return data;
 }
 
+export async function publishForm(formId, { customSlug, isPublished = true } = {}) {
+  const res = await fetch(`${API_BASE}/forms/${formId}/publish`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify({ customSlug, isPublished })
+  });
+  return parseJsonResponse(res, 'Failed to update form publication status.');
+}
+
 // --- COLLABORATORS / ADD USERS API ---
 
 export async function checkUserByEmail(email) {
@@ -402,11 +435,15 @@ export async function setServerApiKey(apiKey) {
 }
 
 export function getExportCsvUrl(formId) {
-  return `${API_BASE}/forms/${formId}/export/csv`;
+  const token = getAuthToken();
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${API_BASE}/forms/${formId}/export/csv${tokenParam}`;
 }
 
 export function getExportJsonUrl(formId) {
-  return `${API_BASE}/forms/${formId}/export/json`;
+  const token = getAuthToken();
+  const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
+  return `${API_BASE}/forms/${formId}/export/json${tokenParam}`;
 }
 
 // Upload document attachment

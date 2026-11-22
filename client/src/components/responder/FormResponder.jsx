@@ -27,6 +27,7 @@ function formatFileSize(bytes) {
 export default function FormResponder({
   form = {},
   onBackToBuilder,
+  canEdit = false,
   apiKey = ''
 }) {
   const [answers, setAnswers] = useState({});
@@ -40,7 +41,34 @@ export default function FormResponder({
   const theme = form.theme || {};
   const questions = form.questions || [];
   const headerBannerUrl = theme.headerBannerUrl || form.headerBannerUrl || form.headerImage || '';
-  const accentColor = theme.accentColor || '#8083ff';
+  const baseAccentColor = theme.accentColor || '#8083ff';
+
+  // Embed query parameters detection
+  const getEmbedConfig = () => {
+    if (typeof window === 'undefined') return { isEmbed: false };
+    const hash = window.location.hash || '';
+    const hashQuery = hash.includes('?') ? hash.split('?')[1] : '';
+    const search = window.location.search ? window.location.search.replace(/^\?/, '') : '';
+    const combined = [search, hashQuery].filter(Boolean).join('&');
+    const params = new URLSearchParams(combined);
+
+    const isEmbed = params.get('embed') === 'true' || (window.self !== window.top);
+    const hideHeader = params.get('hideHeader') === 'true' || params.get('noHeader') === 'true';
+    const transparent = params.get('transparent') === 'true';
+    const bg = params.get('bg'); // 'light' | 'dark' | 'transparent'
+    const customAccent = params.get('accent') ? decodeURIComponent(params.get('accent')) : null;
+
+    return {
+      isEmbed,
+      hideHeader: isEmbed && (hideHeader || (params.get('hideHeader') !== 'false' && params.get('showHeader') !== 'true')),
+      transparent: transparent || bg === 'transparent',
+      bg,
+      accentColor: customAccent || baseAccentColor
+    };
+  };
+
+  const embedConfig = getEmbedConfig();
+  const accentColor = embedConfig.accentColor;
 
   // Handle value change
   const handleAnswerChange = (qId, value, wasVoice = false) => {
@@ -153,6 +181,19 @@ export default function FormResponder({
       });
       setIsSubmitted(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Notify host embedding website via postMessage
+      if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+        try {
+          window.parent.postMessage({
+            type: 'voxform-response-submitted',
+            formId: form.id,
+            answersCount: formattedAnswers.length
+          }, '*');
+        } catch {
+          // ignore cross-origin postMessage errors
+        }
+      }
     } catch (err) {
       alert(`Submission error: ${err.message}`);
     } finally {
@@ -169,36 +210,75 @@ export default function FormResponder({
     }
   };
 
-  // If form is closed
+  // If form is closed or unpublished
   const isFormClosed = form.settings?.acceptingResponses === false;
+  const isFormPublished = form.isPublished !== undefined
+    ? Boolean(form.isPublished)
+    : form.status !== undefined
+      ? form.status === 'published'
+      : true;
+
+  const outerBgClass = embedConfig.transparent
+    ? 'bg-transparent text-on-surface'
+    : embedConfig.bg === 'light'
+      ? 'bg-slate-50 text-slate-900'
+      : embedConfig.bg === 'dark'
+        ? 'bg-slate-950 text-slate-100'
+        : 'bg-surface text-on-surface';
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container pb-24">
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 px-4 sm:px-8 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-on-primary font-bold shadow-md">
-            <Mic className="w-4 h-4" />
+    <div className={`min-h-screen ${outerBgClass} antialiased selection:bg-primary-container selection:text-on-primary-container ${embedConfig.isEmbed ? 'pb-8 pt-2' : 'pb-24'}`}>
+      {/* Top Header Bar (hidden in embed when clean embed is requested) */}
+      {!embedConfig.hideHeader && (
+        <header className="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 px-4 sm:px-8 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold shadow-md"
+              style={{ backgroundColor: accentColor }}
+            >
+              <Mic className="w-4 h-4" />
+            </div>
+            <span className="font-bold text-sm tracking-tight text-on-surface">
+              VoxForm
+            </span>
           </div>
-          <span className="font-bold text-sm tracking-tight text-on-surface">
-            VoxForm
-          </span>
-        </div>
 
-        {onBackToBuilder && (
-          <button
-            type="button"
-            onClick={onBackToBuilder}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-primary" />
-            <span>Back to Builder</span>
-          </button>
-        )}
-      </header>
+          {canEdit && onBackToBuilder && (
+            <button
+              type="button"
+              onClick={onBackToBuilder}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-primary" />
+              <span>Back to Builder</span>
+            </button>
+          )}
+        </header>
+      )}
 
       {/* Main Centered Responder Canvas */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 flex flex-col gap-5">
+        {/* Creator Draft Preview Banner */}
+        {!isFormPublished && canEdit && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-xs text-amber-200 shadow-sm animate-fadeIn">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+              <span className="truncate sm:whitespace-normal">
+                <strong>Draft Mode (Creator Preview)</strong> — Not published yet. Public visitors cannot fill this form until you click Publish in the studio.
+              </span>
+            </div>
+            {onBackToBuilder && (
+              <button
+                type="button"
+                onClick={onBackToBuilder}
+                className="px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-100 font-semibold text-xs shrink-0 transition-all cursor-pointer border border-amber-500/30"
+              >
+                Go to Studio
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Cover Banner (if present) */}
         {headerBannerUrl && (
           <div className="rounded-2xl overflow-hidden shadow-xl bg-surface-container-low border border-outline-variant/20 h-44 sm:h-56 w-full">
@@ -251,8 +331,22 @@ export default function FormResponder({
           </div>
         )}
 
-        {/* Case 1: Form is Closed */}
-        {isFormClosed ? (
+        {/* Case 0: Form in Draft / Not Yet Published (for public responders) */}
+        {!isFormPublished && !canEdit ? (
+          <div className="bg-surface-container-low rounded-3xl p-8 sm:p-12 shadow-xl border border-outline-variant/30 text-center flex flex-col items-center gap-4 max-w-lg mx-auto my-8 animate-fadeIn">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-on-surface">
+                Form Not Published Yet
+              </h2>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                This form is currently in draft mode and not accepting public responses yet. If you are the creator, please open your VoxForm studio and click <strong>Publish</strong> to make it live.
+              </p>
+            </div>
+          </div>
+        ) : isFormClosed ? (
           <div className="bg-surface-container-low rounded-2xl p-8 shadow-xl border border-outline-variant/20 text-center flex flex-col items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
               <AlertCircle className="w-6 h-6" />
@@ -286,7 +380,7 @@ export default function FormResponder({
               >
                 Submit another response
               </button>
-              {onBackToBuilder && (
+              {canEdit && onBackToBuilder && (
                 <button
                   type="button"
                   onClick={onBackToBuilder}
@@ -592,6 +686,19 @@ export default function FormResponder({
           </form>
         )}
       </div>
+
+      {/* Floating Google Forms-style Edit button (Only visible to authenticated creator/editor) */}
+      {canEdit && onBackToBuilder && (
+        <button
+          type="button"
+          onClick={onBackToBuilder}
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-primary hover:bg-primary-container text-on-primary font-bold shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer group border border-white/20"
+          title="Edit this form (Only visible to you as the creator)"
+        >
+          <Edit3 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+          <span className="text-xs font-semibold hidden sm:inline">Edit this form</span>
+        </button>
+      )}
     </div>
   );
 }

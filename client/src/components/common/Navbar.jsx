@@ -8,6 +8,8 @@ export default function Navbar({
   setActiveTab,
   responseCount = 0,
   isSaving = false,
+  isPublished = false,
+  acceptingResponses = true,
   onOpenTheme,
   onOpenPreview,
   onOpenShare,
@@ -148,27 +150,33 @@ export default function Navbar({
                 <span className="material-symbols-outlined text-[18px]">visibility</span>
               </button>
 
-              {/* Share Button */}
+              {/* Publish & Status Button */}
               <button
                 type="button"
                 onClick={onOpenShare}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-primary-container to-secondary-container hover:opacity-95 text-on-primary-fixed text-xs font-semibold transition-all shadow-sm cursor-pointer"
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-sm cursor-pointer ${
+                  !isPublished
+                    ? 'bg-gradient-to-r from-primary to-indigo-600 hover:opacity-95 text-white ring-2 ring-primary/40'
+                    : acceptingResponses === false
+                      ? 'bg-gradient-to-r from-rose-600 to-amber-600 hover:opacity-95 text-white shadow-rose-900/30'
+                      : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white'
+                }`}
+                title={
+                  !isPublished
+                    ? 'Publish this form to the public'
+                    : acceptingResponses === false
+                      ? 'Form is Published but Closed — Click to Reopen or Manage Link'
+                      : 'Form is Live & Published — Click to Share or Manage Link'
+                }
               >
-                <span className="material-symbols-outlined text-[16px]">share</span>
-                <span>Share</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  {!isPublished ? 'rocket_launch' : acceptingResponses === false ? 'do_not_disturb_on' : 'check_circle'}
+                </span>
+                <span>
+                  {!isPublished ? 'Publish' : acceptingResponses === false ? 'Closed' : 'Published'}
+                </span>
               </button>
             </>
-          )}
-
-          {mode === 'responder' && (
-            <button
-              type="button"
-              onClick={onOpenPreview}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-medium border border-outline-variant/30 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[16px] text-primary">edit</span>
-              <span>Edit Form</span>
-            </button>
           )}
 
           {/* User Profile Menu with Headshot */}

@@ -1,6 +1,64 @@
 const { v4: uuidv4 } = require('uuid');
 
 /**
+ * Strict Google Form URL Sanitizer & SSRF Guard
+ * Rejects non-HTTPS protocols, non-Google hosts, IP addresses, and private networks.
+ */
+function validateAndSanitizeGoogleFormUrl(rawUrl) {
+  if (!rawUrl || typeof rawUrl !== 'string') {
+    throw new Error('A valid Google Form URL is required.');
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(rawUrl.trim());
+  } catch {
+    throw new Error('Invalid URL format provided.');
+  }
+
+  // 1. Enforce HTTPS strictly
+  if (parsed.protocol !== 'https:') {
+    throw new Error('Security Error: Only secure HTTPS Google Form URLs are permitted.');
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  // 2. Reject direct IP addresses and loopback hosts
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname === 'localhost' || hostname.includes('::')) {
+    throw new Error('Security Error: Direct IP addresses and loopback hosts are forbidden.');
+  }
+
+  // 3. Whitelist allowed Google Form hostnames
+  const allowedDomains = ['docs.google.com', 'forms.gle'];
+  if (!allowedDomains.includes(hostname)) {
+    throw new Error('Security Error: Only URLs from docs.google.com or forms.gle are permitted.');
+  }
+
+  // 4. Validate Google Forms path patterns
+  if (hostname === 'docs.google.com') {
+    if (!parsed.pathname.startsWith('/forms/d/') && !parsed.pathname.startsWith('/forms/u/')) {
+      throw new Error('Security Error: Invalid Google Form path on docs.google.com.');
+    }
+  }
+
+  if (hostname === 'forms.gle' && parsed.pathname.length <= 1) {
+    throw new Error('Security Error: Invalid forms.gle short link.');
+  }
+
+  let cleanUrl = parsed.toString();
+  // Auto-convert /edit to /viewform for public responder parsing
+  if (cleanUrl.includes('/forms/d/')) {
+    if (cleanUrl.includes('/edit')) {
+      cleanUrl = cleanUrl.replace(/\/edit(\?.*)?$/, '/viewform');
+    } else if (!cleanUrl.endsWith('/viewform') && !cleanUrl.endsWith('/viewform/') && !cleanUrl.includes('/viewform?')) {
+      cleanUrl = cleanUrl.replace(/\/+$/, '') + '/viewform';
+    }
+  }
+
+  return cleanUrl;
+}
+
+/**
  * Google Forms Integration Service
  * Supports:
  * 1. Syncing forms from the official VoxForm Google Forms Add-on (Google Apps Script)
@@ -11,35 +69,52 @@ const { v4: uuidv4 } = require('uuid');
 class GoogleFormsIntegrationService {
   /**
    * Extract FB_PUBLIC_LOAD_DATA_ JSON array from a public Google Form viewform HTML page
+   * Includes anti-SSRF protections, HTTPS enforcement, and hop-by-hop redirect verification.
    */
   async fetchPublicGoogleFormStructure(publicUrl) {
-    if (!publicUrl || typeof publicUrl !== 'string') {
-      throw new Error('A valid Google Form URL is required.');
-    }
+    let currentUrl = validateAndSanitizeGoogleFormUrl(publicUrl);
+    let hops = 0;
+    const maxHops = 5;
+    let finalHtml = null;
+    let finalUrl = currentUrl;
 
-    let cleanUrl = publicUrl.trim();
-    // If user pasted an /edit link, auto-convert it to public /viewform
-    if (cleanUrl.includes('/forms/d/')) {
-      if (cleanUrl.includes('/edit')) {
-        cleanUrl = cleanUrl.replace(/\/edit(\?.*)?$/, '/viewform');
-      } else if (!cleanUrl.endsWith('/viewform') && !cleanUrl.endsWith('/viewform/') && !cleanUrl.includes('/viewform?')) {
-        cleanUrl = cleanUrl.replace(/\/+$/, '') + '/viewform';
+    while (hops < maxHops) {
+      hops++;
+      const response = await fetch(currentUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        },
+        redirect: 'manual'
+      });
+
+      // Handle redirects manually to validate destination domain on every single hop
+      if ([301, 302, 303, 307, 308].includes(response.status)) {
+        const location = response.headers.get('location');
+        if (!location) {
+          throw new Error('Google Form redirect response missing location header.');
+        }
+
+        const resolved = new URL(location, currentUrl);
+        // Validates redirect destination strictly against Google domains (prevents open-redirect SSRF)
+        currentUrl = validateAndSanitizeGoogleFormUrl(resolved.toString());
+        continue;
       }
+
+      if (!response.ok) {
+        throw new Error(`Could not access Google Form URL (HTTP ${response.status}). Make sure the form is published and public.`);
+      }
+
+      finalHtml = await response.text();
+      finalUrl = currentUrl;
+      break;
     }
 
-    const response = await fetch(cleanUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-      },
-      redirect: 'follow'
-    });
-
-    if (!response.ok) {
-      throw new Error(`Could not access Google Form URL (HTTP ${response.status}). Make sure the form is published and accessible.`);
+    if (!finalHtml) {
+      throw new Error('Too many redirects while accessing Google Form URL.');
     }
 
-    const finalUrl = response.url || cleanUrl;
-    const html = await response.text();
+    const html = finalHtml;
 
     // Extract FB_PUBLIC_LOAD_DATA_ = [...];
     let match = html.match(/(?:var\s+|window\.)?FB_PUBLIC_LOAD_DATA_\s*=\s*(\[[\s\S]*?\]);\s*<\/script>/);
@@ -210,6 +285,20 @@ class GoogleFormsIntegrationService {
     const formResponseUrl = form?.googleFormConfig?.formResponseUrl;
     if (!formResponseUrl || !Array.isArray(form.questions)) {
       return { forwarded: false, reason: 'No formResponseUrl configured' };
+    }
+
+    // SSRF guard: ensure formResponseUrl strictly targets docs.google.com/forms/.../formResponse over HTTPS
+    try {
+      const parsedResp = new URL(formResponseUrl);
+      if (
+        parsedResp.protocol !== 'https:' ||
+        parsedResp.hostname.toLowerCase() !== 'docs.google.com' ||
+        !parsedResp.pathname.endsWith('/formResponse')
+      ) {
+        return { forwarded: false, reason: 'Invalid or unauthorized Google formResponse endpoint' };
+      }
+    } catch {
+      return { forwarded: false, reason: 'Malformed formResponseUrl' };
     }
 
     const params = new URLSearchParams();
