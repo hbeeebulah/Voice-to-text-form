@@ -70,9 +70,17 @@ if (!fs.existsSync(uploadsPath)) {
 }
 app.use('/uploads', express.static(uploadsPath));
 
-// Serve static frontend assets if built
+// Serve static frontend assets if built with optimized caching
 const clientDistPath = path.join(__dirname, '../../client/dist');
-app.use(express.static(clientDistPath));
+app.use(express.static(clientDistPath, {
+  maxAge: '1d',
+  setHeaders: (res, filePath) => {
+    if (filePath.includes(path.sep + 'assets' + path.sep)) {
+      // Immutable long-term cache for Vite hashed assets
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
 
 // Catch-all fallback for client-side SPA routing
 app.use((req, res, next) => {

@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import Navbar from './components/common/Navbar';
-import FormBuilder from './components/builder/FormBuilder';
-import FormResponder from './components/responder/FormResponder';
-import ResponseAnalytics from './components/analytics/ResponseAnalytics';
-import ThemeCustomizer from './components/theme/ThemeCustomizer';
-import FormsDashboard from './components/dashboard/FormsDashboard';
-import ApiKeyModal from './components/common/ApiKeyModal';
-import ShareModal from './components/common/ShareModal';
-import AddUsersModal from './components/collaborators/AddUsersModal';
-import AuthModal from './components/auth/AuthModal';
 import LandingPage from './components/landing/LandingPage';
-import AdminAnalytics from './components/admin/AdminAnalytics';
+import FormsDashboard from './components/dashboard/FormsDashboard';
+
+// Code-split heavy views to drastically reduce initial JS load time
+const FormBuilder = lazy(() => import('./components/builder/FormBuilder'));
+const FormResponder = lazy(() => import('./components/responder/FormResponder'));
+const ResponseAnalytics = lazy(() => import('./components/analytics/ResponseAnalytics'));
+const ThemeCustomizer = lazy(() => import('./components/theme/ThemeCustomizer'));
+const ShareModal = lazy(() => import('./components/common/ShareModal'));
+const AddUsersModal = lazy(() => import('./components/collaborators/AddUsersModal'));
+const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
+const ApiKeyModal = lazy(() => import('./components/common/ApiKeyModal'));
+const AuthModal = lazy(() => import('./components/auth/AuthModal'));
+
 import {
   fetchForms,
   fetchForm,
@@ -21,15 +24,54 @@ import {
   duplicateForm,
   getTranscribeStatus,
   getCurrentUser,
+  getStoredUser,
   logoutUser
 } from './services/api';
 
+// Fast synchronous route resolver for instant zero-delay first paint
+function getInitialRouteState() {
+  if (typeof window === 'undefined') {
+    return { view: 'landing', targetFormId: null, targetSlug: null, isEditing: false };
+  }
+  const pathname = window.location.pathname;
+  const hash = window.location.hash;
+
+  if (pathname.startsWith('/admin-analytics') || hash.startsWith('#admin-analytics') || hash.startsWith('#owner-analytics') || hash.startsWith('#secret-analytics')) {
+    return { view: 'admin-analytics', targetFormId: null, targetSlug: null, isEditing: false };
+  }
+  if (pathname.startsWith('/s/') || pathname.startsWith('/f/')) {
+    const slug = pathname.replace(/^\/(s|f)\//, '').split('?')[0];
+    return { view: 'responder', targetFormId: null, targetSlug: slug, isEditing: false };
+  }
+  if (hash.startsWith('#s/') || hash.startsWith('#f/')) {
+    const slug = hash.replace(/^#(s|f)\//, '').split('?')[0];
+    return { view: 'responder', targetFormId: null, targetSlug: slug, isEditing: false };
+  }
+  if (hash.startsWith('#form/')) {
+    const id = hash.replace('#form/', '').split('?')[0];
+    return { view: 'responder', targetFormId: id, targetSlug: null, isEditing: false };
+  }
+  if (hash.startsWith('#edit/')) {
+    const id = hash.replace('#edit/', '').split('?')[0];
+    return { view: 'builder', targetFormId: id, targetSlug: null, isEditing: true };
+  }
+  if (hash === '#dashboard') {
+    return { view: 'dashboard', targetFormId: null, targetSlug: null, isEditing: false };
+  }
+  if (hash === '#landing') {
+    return { view: 'landing', targetFormId: null, targetSlug: null, isEditing: false };
+  }
+  const token = localStorage.getItem('voxform_token');
+  return { view: token ? 'dashboard' : 'landing', targetFormId: null, targetSlug: null, isEditing: false };
+}
+
 export default function App() {
-  const [view, setView] = useState('landing'); // 'landing' | 'dashboard' | 'builder' | 'responder'
+  const initialRoute = getInitialRouteState();
+  const [view, setView] = useState(initialRoute.view); // 'landing' | 'dashboard' | 'builder' | 'responder'
   const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'responses' | 'theme'
   const [forms, setForms] = useState([]);
   const [currentForm, setCurrentForm] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(initialRoute.targetFormId || initialRoute.targetSlug));
   const [isSaving, setIsSaving] = useState(false);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -37,8 +79,8 @@ export default function App() {
   const [isApiKeyOpen, setIsApiKeyOpen] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
 
-  // Authentication State
-  const [user, setUser] = useState(null);
+  // Authentication State - initialize immediately from localStorage for 0ms auth delay
+  const [user, setUser] = useState(getStoredUser);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState('login');
 
@@ -137,52 +179,31 @@ export default function App() {
   }, []);
 
   const loadInitialData = async () => {
-    setLoading(true);
+    // 1. Immediately initiate form fetch if visiting a specific form URL
+    const route = getInitialRouteState();
+    if (route.targetSlug) {
+      openFormBySlug(route.targetSlug, 'responder').catch(console.error);
+    } else if (route.targetFormId) {
+      openFormById(route.targetFormId, route.isEditing ? 'builder' : 'responder').catch(console.error);
+    }
+
+    // 2. Fetch background user session and service status without blocking page render
     try {
       const [transcribeStatus, currentUser] = await Promise.all([
-        getTranscribeStatus(),
-        getCurrentUser()
+        getTranscribeStatus().catch(() => ({ configured: false })),
+        getCurrentUser().catch(() => null)
       ]);
-      setHasApiKey(Boolean(transcribeStatus.configured));
-      setUser(currentUser);
-
-      let formsData = [];
-      if (currentUser?.id) {
-        try {
-          formsData = await fetchForms(currentUser.id);
-        } catch (e) {
-          console.warn('Could not load user forms:', e);
-        }
-      }
-      setForms(formsData);
-
-      // Check initial pathname or hash
-      const pathname = window.location.pathname;
-      const hash = window.location.hash;
-
-      if (pathname.startsWith('/admin-analytics') || hash.startsWith('#admin-analytics') || hash.startsWith('#owner-analytics') || hash.startsWith('#secret-analytics')) {
-        setView('admin-analytics');
-      } else if (pathname.startsWith('/s/') || pathname.startsWith('/f/')) {
-        const slug = pathname.replace(/^\/(s|f)\//, '').split('?')[0];
-        await openFormBySlug(slug, 'responder');
-      } else if (hash.startsWith('#form/')) {
-        const id = hash.replace('#form/', '').split('?')[0];
-        await openFormById(id, 'responder');
-      } else if (hash.startsWith('#s/') || hash.startsWith('#f/')) {
-        const slug = hash.replace(/^#(s|f)\//, '').split('?')[0];
-        await openFormBySlug(slug, 'responder');
-      } else if (hash.startsWith('#edit/')) {
-        const id = hash.replace('#edit/', '').split('?')[0];
-        await openFormById(id, 'builder', currentUser);
-      } else if (hash === '#dashboard' || (currentUser && hash !== '#landing')) {
-        setView('dashboard');
-      } else {
-        setView('landing');
+      setHasApiKey(Boolean(transcribeStatus?.configured));
+      if (currentUser) {
+        setUser(currentUser);
+        fetchForms(currentUser.id).then(setForms).catch(() => {});
       }
     } catch (err) {
-      console.error('Initialization error:', err);
+      console.warn('Background initialization notice:', err);
     } finally {
-      setLoading(false);
+      if (!route.targetSlug && !route.targetFormId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -328,12 +349,12 @@ export default function App() {
     }
   };
 
-  if (loading && !currentForm && forms.length === 0) {
+  if (loading && !currentForm && (view === 'responder' || view === 'builder')) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-surface">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-semibold text-slate-600">Loading Form Studio...</p>
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-semibold text-on-surface-variant">Loading form...</p>
         </div>
       </div>
     );
@@ -341,6 +362,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface text-on-surface flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
+      <Suspense fallback={
+        <div className="flex-1 flex items-center justify-center min-h-[300px]">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
       {/* Top Navbar (visible only in builder studio) */}
       {view === 'builder' && currentForm && (
         <Navbar
@@ -663,6 +689,7 @@ export default function App() {
         }}
         onContinueAsGuest={() => setIsAuthModalOpen(false)}
       />
+      </Suspense>
     </div>
   );
 }
