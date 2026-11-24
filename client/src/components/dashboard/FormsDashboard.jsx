@@ -266,12 +266,7 @@ export default function FormsDashboard({
       {/* Top Header / Greeting Bar */}
       <header className="sticky top-0 z-30 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onGoToMainPage}
-            className="flex items-center gap-2.5 hover:opacity-85 transition-opacity cursor-pointer text-left"
-            title="Return to Main Landing Page"
-          >
+          <div className="flex items-center gap-2.5 text-left">
             <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-on-primary font-bold shadow-md">
               <Mic className="w-4 h-4" />
             </div>
@@ -280,9 +275,9 @@ export default function FormsDashboard({
                 VoxForm Studio
               </span>
             </div>
-          </button>
+          </div>
 
-          {onGoToMainPage && (
+          {!user && onGoToMainPage && (
             <button
               type="button"
               onClick={onGoToMainPage}

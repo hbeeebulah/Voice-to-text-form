@@ -30,15 +30,27 @@ export default function Navbar({
       <div className="h-14 sm:h-16 w-full max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left Section: Logo, Breadcrumb & Editable Title */}
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 sm:flex-initial">
+          {onGoToDashboard && (
+            <button
+              type="button"
+              onClick={onGoToDashboard}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer group shrink-0"
+              title="Return to Dashboard"
+            >
+              <span className="material-symbols-outlined text-[16px] text-primary group-hover:-translate-x-0.5 transition-transform">arrow_back</span>
+              <span className="hidden xs:inline">Dashboard</span>
+            </button>
+          )}
+
           <div
             onClick={onGoToDashboard}
             className="flex items-center gap-2 cursor-pointer group shrink-0"
-            title="Go to Dashboard"
+            title="VoxForm Studio"
           >
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-secondary-container flex items-center justify-center text-on-primary shadow-sm group-hover:scale-105 transition-transform">
               <span className="material-symbols-outlined text-[18px]">graphic_eq</span>
             </div>
-            <span className="font-headline-sm text-base sm:text-lg text-on-surface tracking-tight font-bold hidden sm:inline-block">
+            <span className="font-headline-sm text-base sm:text-lg text-on-surface tracking-tight font-bold hidden md:inline-block">
               VoxForm
             </span>
           </div>

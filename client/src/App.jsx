@@ -58,11 +58,17 @@ function getInitialRouteState() {
   if (hash === '#dashboard') {
     return { view: 'dashboard', targetFormId: null, targetSlug: null, isEditing: false };
   }
+  const token = localStorage.getItem('voxform_token');
+  if (token) {
+    if (hash === '#landing' || !hash) {
+      window.location.hash = '#dashboard';
+    }
+    return { view: 'dashboard', targetFormId: null, targetSlug: null, isEditing: false };
+  }
   if (hash === '#landing') {
     return { view: 'landing', targetFormId: null, targetSlug: null, isEditing: false };
   }
-  const token = localStorage.getItem('voxform_token');
-  return { view: token ? 'dashboard' : 'landing', targetFormId: null, targetSlug: null, isEditing: false };
+  return { view: 'landing', targetFormId: null, targetSlug: null, isEditing: false };
 }
 
 export default function App() {
@@ -138,11 +144,18 @@ export default function App() {
       } else if (hash === '#dashboard') {
         setView('dashboard');
       } else if (hash === '#landing') {
-        setView('landing');
+        const token = localStorage.getItem('voxform_token');
+        if (token) {
+          setView('dashboard');
+          window.location.hash = '#dashboard';
+        } else {
+          setView('landing');
+        }
       } else {
         const token = localStorage.getItem('voxform_token');
         if (token) {
           setView('dashboard');
+          window.location.hash = '#dashboard';
         } else {
           setView('landing');
         }
@@ -245,9 +258,15 @@ export default function App() {
 
       const activeUser = overrideUser !== undefined ? overrideUser : user;
       let effectiveView = targetView;
-      // Only bounce away from builder if target is builder, form has an explicit owner, and user is unauthorized
+      // If target is builder, form has an explicit owner, and user is unauthorized
       if (effectiveView === 'builder' && formToUse?.creatorId && !canUserEditForm(formToUse, activeUser)) {
-        effectiveView = 'responder';
+        if (!activeUser && !localStorage.getItem('voxform_token')) {
+          setAuthModalTab('login');
+          setIsAuthModalOpen(true);
+          return;
+        } else {
+          effectiveView = 'responder';
+        }
       }
 
       setView(effectiveView);
@@ -262,8 +281,13 @@ export default function App() {
         }
       }
     } catch (err) {
-      alert(`Could not open form: ${err.message}`);
-      setView('dashboard');
+      if (err.message && (err.message.includes('Please log in') || err.message.includes('Authentication required') || err.message.includes('401'))) {
+        setAuthModalTab('login');
+        setIsAuthModalOpen(true);
+      } else {
+        alert(`Could not open form: ${err.message}`);
+        setView('dashboard');
+      }
     } finally {
       setLoading(false);
     }
@@ -440,6 +464,12 @@ export default function App() {
         {view === 'landing' && (
           <div className="flex-1">
             <LandingPage
+              user={user}
+              onGoToDashboard={() => {
+                setView('dashboard');
+                window.location.hash = '#dashboard';
+                fetchForms(user?.id).then(setForms).catch(() => {});
+              }}
               onOpenAuth={(tab = 'login') => {
                 setAuthModalTab(tab);
                 setIsAuthModalOpen(true);
@@ -698,13 +728,17 @@ export default function App() {
         onAuthSuccess={(authUser) => {
           setUser(authUser);
           setIsAuthModalOpen(false);
-          setView('dashboard');
-          window.location.hash = '#dashboard';
-          setForms([]);
           if (authUser?.id) {
             fetchForms(authUser.id)
               .then((formsData) => setForms(formsData))
               .catch(() => setForms([]));
+          }
+          if (window.location.hash.startsWith('#edit/')) {
+            const editId = window.location.hash.replace('#edit/', '').split('?')[0];
+            openFormById(editId, 'builder', authUser);
+          } else {
+            setView('dashboard');
+            window.location.hash = '#dashboard';
           }
         }}
         onContinueAsGuest={() => setIsAuthModalOpen(false)}

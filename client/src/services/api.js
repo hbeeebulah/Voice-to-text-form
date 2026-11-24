@@ -186,8 +186,7 @@ export async function fetchForm(id) {
   const res = await fetch(`${API_BASE}/forms/${id}`, {
     headers: { ...getAuthHeaders() }
   });
-  if (!res.ok) throw new Error('Form not found');
-  return res.json();
+  return parseJsonResponse(res, 'Form not found');
 }
 
 export async function createForm(formData = {}) {

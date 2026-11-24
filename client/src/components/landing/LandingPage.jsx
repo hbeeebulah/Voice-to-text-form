@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 export default function LandingPage({
   onOpenAuth,
   onOpenResponderDemo,
-  onExploreDashboard
+  onExploreDashboard,
+  user = null,
+  onGoToDashboard = null
 }) {
   const [activePromptIndex, setActivePromptIndex] = useState(0);
   const [isRecordingSandbox, setIsRecordingSandbox] = useState(true);
@@ -75,27 +77,49 @@ export default function LandingPage({
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3">
-            <button
-              type="button"
-              onClick={() => onOpenAuth('login')}
-              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenAuth('signup')}
-              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-inverse-primary to-secondary-container text-on-surface text-xs sm:text-sm font-semibold shadow-[0_0_24px_rgba(73,75,214,0.4)] hover:shadow-[0_0_32px_rgba(87,27,193,0.6)] transition-all cursor-pointer"
-            >
-              <span>
-                <span className="hidden sm:inline">Get Started Free</span>
-                <span className="sm:hidden">Get Started</span>
-              </span>
-              <span className="material-symbols-outlined text-[15px] sm:text-[16px]">arrow_forward</span>
-            </button>
-            <div className="w-8 h-8 rounded-full bg-primary hidden sm:flex items-center justify-center shrink-0 ml-1">
-              <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
-            </div>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onGoToDashboard || onExploreDashboard}
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary text-xs sm:text-sm font-semibold shadow-[0_0_20px_rgba(73,75,214,0.4)] hover:shadow-[0_0_28px_rgba(87,27,193,0.6)] transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[16px] sm:text-[18px]">dashboard</span>
+                  <span>Go to Dashboard</span>
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </button>
+                <div
+                  className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xs font-bold border border-outline-variant/40"
+                  title={`Signed in as ${user.name || user.email}`}
+                >
+                  {user.name ? user.name[0].toUpperCase() : 'U'}
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onOpenAuth('login')}
+                  className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenAuth('signup')}
+                  className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-inverse-primary to-secondary-container text-on-surface text-xs sm:text-sm font-semibold shadow-[0_0_24px_rgba(73,75,214,0.4)] hover:shadow-[0_0_32px_rgba(87,27,193,0.6)] transition-all cursor-pointer"
+                >
+                  <span>
+                    <span className="hidden sm:inline">Get Started Free</span>
+                    <span className="sm:hidden">Get Started</span>
+                  </span>
+                  <span className="material-symbols-outlined text-[15px] sm:text-[16px]">arrow_forward</span>
+                </button>
+                <div className="w-8 h-8 rounded-full bg-primary hidden sm:flex items-center justify-center shrink-0 ml-1">
+                  <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -136,14 +160,26 @@ export default function LandingPage({
 
               {/* Primary CTA Row */}
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => onOpenAuth('signup')}
-                  className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-inverse-primary via-secondary-container to-primary-container text-on-surface text-sm sm:text-base font-semibold shadow-[0_0_36px_rgba(73,75,214,0.45)] hover:shadow-[0_0_48px_rgba(87,27,193,0.7)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-tertiary">auto_awesome</span>
-                  <span>Start Building Free</span>
-                </button>
+                {user ? (
+                  <button
+                    type="button"
+                    onClick={onGoToDashboard || onExploreDashboard}
+                    className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-inverse-primary via-secondary-container to-primary-container text-on-surface text-sm sm:text-base font-semibold shadow-[0_0_36px_rgba(73,75,214,0.45)] hover:shadow-[0_0_48px_rgba(87,27,193,0.7)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-tertiary">dashboard</span>
+                    <span>Go to My Forms Dashboard</span>
+                    <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onOpenAuth('signup')}
+                    className="flex items-center gap-2 px-8 py-3.5 rounded-full bg-gradient-to-r from-inverse-primary via-secondary-container to-primary-container text-on-surface text-sm sm:text-base font-semibold shadow-[0_0_36px_rgba(73,75,214,0.45)] hover:shadow-[0_0_48px_rgba(87,27,193,0.7)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-tertiary">auto_awesome</span>
+                    <span>Start Building Free</span>
+                  </button>
+                )}
 
                 <button
                   type="button"

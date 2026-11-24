@@ -674,6 +674,13 @@ router.get('/:id', optionalAuth, async (req, res) => {
       return res.status(404).json({ error: 'Form not found.' });
     }
     if (!canUserViewDraft(form, req.user)) {
+      if (!req.user && form.creatorId) {
+        return res.status(401).json({
+          error: 'This draft form belongs to a registered creator. Please log in to view and edit this form.',
+          isDraft: true,
+          requireAuth: true
+        });
+      }
       return res.json({
         id: form.id,
         title: form.title,
@@ -704,7 +711,9 @@ router.put('/:id', optionalAuth, requireFormAccess('editor'), async (req, res) =
       ...existing,
       ...req.body,
       id: req.params.id,
-      creatorId: existing.creatorId, // Protect original ownership
+      creatorId: existing.creatorId || (req.user ? req.user.id : (req.body.creatorId || null)),
+      creatorName: existing.creatorName || (req.user ? req.user.name : (req.body.creatorName || null)),
+      creatorEmail: existing.creatorEmail || (req.user ? req.user.email : (req.body.creatorEmail || null)),
       collaborators: req.userFormRole === 'owner' && req.body.collaborators !== undefined
         ? req.body.collaborators
         : (existing.collaborators || []),

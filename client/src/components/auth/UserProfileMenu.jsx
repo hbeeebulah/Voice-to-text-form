@@ -258,7 +258,7 @@ export default function UserProfileMenu({
               </button>
             )}
 
-            {onGoToMainPage && (
+            {!user && onGoToMainPage && (
               <button
                 type="button"
                 onClick={() => {

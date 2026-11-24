@@ -494,12 +494,20 @@ class Database {
     if (this.mode === 'mongo' && this.UserModel) {
       return await this.UserModel.find().lean();
     }
+    if (this.mode === 'postgres' && this.pgPool) {
+      const res = await this.pgPool.query("SELECT data FROM users ORDER BY (data->>'createdAt') DESC");
+      return res.rows.map(r => r.data);
+    }
     return this.readUsers();
   }
 
   async getUserById(id) {
     if (this.mode === 'mongo' && this.UserModel) {
       return await this.UserModel.findOne({ id }).lean();
+    }
+    if (this.mode === 'postgres' && this.pgPool) {
+      const res = await this.pgPool.query('SELECT data FROM users WHERE id = $1', [id]);
+      return res.rows[0] ? res.rows[0].data : null;
     }
     const users = this.readUsers();
     return users.find(u => u.id === id) || null;
@@ -511,6 +519,10 @@ class Database {
     if (this.mode === 'mongo' && this.UserModel) {
       return await this.UserModel.findOne({ email: cleanEmail }).lean();
     }
+    if (this.mode === 'postgres' && this.pgPool) {
+      const res = await this.pgPool.query('SELECT data FROM users WHERE LOWER(email) = $1', [cleanEmail]);
+      return res.rows[0] ? res.rows[0].data : null;
+    }
     const users = this.readUsers();
     return users.find(u => u.email && u.email.toLowerCase() === cleanEmail) || null;
   }
@@ -519,6 +531,10 @@ class Database {
     if (!googleId) return null;
     if (this.mode === 'mongo' && this.UserModel) {
       return await this.UserModel.findOne({ googleId }).lean();
+    }
+    if (this.mode === 'postgres' && this.pgPool) {
+      const res = await this.pgPool.query("SELECT data FROM users WHERE data->>'googleId' = $1", [googleId]);
+      return res.rows[0] ? res.rows[0].data : null;
     }
     const users = this.readUsers();
     return users.find(u => u.googleId === googleId) || null;
@@ -536,6 +552,13 @@ class Database {
 
     if (this.mode === 'mongo' && this.UserModel) {
       await this.UserModel.findOneAndUpdate({ id }, record, { upsert: true, new: true });
+      return record;
+    }
+    if (this.mode === 'postgres' && this.pgPool) {
+      await this.pgPool.query(
+        'INSERT INTO users (id, email, data) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET email = $2, data = $3',
+        [id, record.email, JSON.stringify(record)]
+      );
       return record;
     }
 
@@ -562,10 +585,23 @@ class Database {
   }
 
   async getSettings() {
+    if (this.mode === 'postgres' && this.pgPool) {
+      const res = await this.pgPool.query("SELECT data FROM settings WHERE key = 'app_settings'");
+      return res.rows[0] ? res.rows[0].data : {};
+    }
     return this.readSettings();
   }
 
   async updateSettings(updates) {
+    if (this.mode === 'postgres' && this.pgPool) {
+      const current = await this.getSettings();
+      const merged = { ...current, ...updates };
+      await this.pgPool.query(
+        "INSERT INTO settings (key, data) VALUES ('app_settings', $1) ON CONFLICT (key) DO UPDATE SET data = $1",
+        [JSON.stringify(merged)]
+      );
+      return merged;
+    }
     const current = this.readSettings();
     const merged = { ...current, ...updates };
     this.writeSettings(merged);
@@ -582,6 +618,15 @@ class Database {
       CREATE TABLE IF NOT EXISTS responses (
         id VARCHAR(255) PRIMARY KEY,
         form_id VARCHAR(255) NOT NULL,
+        data JSONB NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        data JSONB NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS settings (
+        key VARCHAR(255) PRIMARY KEY,
         data JSONB NOT NULL
       );
     `);
