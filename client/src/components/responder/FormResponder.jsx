@@ -232,7 +232,7 @@ export default function FormResponder({
     <div className={`min-h-screen ${outerBgClass} antialiased selection:bg-primary-container selection:text-on-primary-container ${embedConfig.isEmbed ? 'pb-8 pt-2' : 'pb-24'}`}>
       {/* Top Header Bar (hidden in embed when clean embed is requested) */}
       {!embedConfig.hideHeader && (
-        <header className="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 px-4 sm:px-8 py-3 flex items-center justify-between">
+        <header className="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 px-3.5 sm:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold shadow-md"
@@ -249,10 +249,11 @@ export default function FormResponder({
             <button
               type="button"
               onClick={onBackToBuilder}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
             >
               <Edit3 className="w-3.5 h-3.5 text-primary" />
-              <span>Back to Builder</span>
+              <span className="hidden xs:inline">Back to Builder</span>
+              <span className="xs:hidden">Studio</span>
             </button>
           )}
         </header>

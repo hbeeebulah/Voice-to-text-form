@@ -53,44 +53,47 @@ export default function LandingPage({
   return (
     <div className="bg-surface font-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container min-h-screen flex flex-col relative overflow-x-hidden">
       {/* 1. FLOATING HEADER CAPSULE (Stitch 05 Header) */}
-      <header className="fixed top-0 left-0 w-full z-50 flex items-center justify-center pt-4 px-4 sm:px-8 pointer-events-none">
-        <div className="w-full max-w-7xl h-16 sm:h-20 rounded-full bg-surface-container-low/80 backdrop-blur-xl px-5 sm:px-8 flex items-center justify-between pointer-events-auto border border-outline-variant/30 shadow-[0_20px_50px_-10px_rgba(2,6,23,0.85)]">
+      <header className="fixed top-0 left-0 w-full z-50 flex items-center justify-center pt-2 sm:pt-4 px-2 sm:px-8 pointer-events-none">
+        <div className="w-full max-w-7xl h-14 sm:h-20 rounded-full bg-surface-container-low/80 backdrop-blur-xl px-3.5 sm:px-8 flex items-center justify-between pointer-events-auto border border-outline-variant/30 shadow-[0_20px_50px_-10px_rgba(2,6,23,0.85)]">
           <div className="flex items-center gap-6">
             <div
               className="flex items-center gap-2.5 cursor-pointer group"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
-              <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:text-tertiary transition-colors shadow-[0_0_16px_rgba(192,193,255,0.25)] border border-outline-variant/30">
-                <span className="material-symbols-outlined text-[20px]">graphic_eq</span>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:text-tertiary transition-colors shadow-[0_0_16px_rgba(192,193,255,0.25)] border border-outline-variant/30 shrink-0">
+                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">graphic_eq</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="font-headline-sm text-base sm:text-lg text-on-surface tracking-tight font-bold">
                   Vox<span className="text-primary">Form</span>
                 </span>
-                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary border border-secondary/20 font-bold">
+                <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-secondary-container/40 text-secondary border border-secondary/20 font-bold hidden xs:inline-block">
                   AI
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <button
               type="button"
               onClick={() => onOpenAuth('login')}
-              className="px-4 py-2 rounded-full text-xs sm:text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors cursor-pointer"
             >
               Sign In
             </button>
             <button
               type="button"
               onClick={() => onOpenAuth('signup')}
-              className="flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-full bg-gradient-to-r from-inverse-primary to-secondary-container text-on-surface text-xs sm:text-sm font-semibold shadow-[0_0_24px_rgba(73,75,214,0.4)] hover:shadow-[0_0_32px_rgba(87,27,193,0.6)] transition-all cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-inverse-primary to-secondary-container text-on-surface text-xs sm:text-sm font-semibold shadow-[0_0_24px_rgba(73,75,214,0.4)] hover:shadow-[0_0_32px_rgba(87,27,193,0.6)] transition-all cursor-pointer"
             >
-              <span>Get Started Free</span>
-              <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              <span>
+                <span className="hidden sm:inline">Get Started Free</span>
+                <span className="sm:hidden">Get Started</span>
+              </span>
+              <span className="material-symbols-outlined text-[15px] sm:text-[16px]">arrow_forward</span>
             </button>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 ml-1">
+            <div className="w-8 h-8 rounded-full bg-primary hidden sm:flex items-center justify-center shrink-0 ml-1">
               <span className="material-symbols-outlined text-on-primary text-[18px]">person</span>
             </div>
           </div>

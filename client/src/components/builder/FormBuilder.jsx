@@ -152,7 +152,7 @@ export default function FormBuilder({
   return (
     <div className="min-h-screen bg-surface text-on-surface antialiased relative pb-32">
       {/* Centered Canvas Layout */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 flex flex-col gap-5">
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 pt-26 sm:pt-28 md:pt-20 flex flex-col gap-5">
         {/* 1. FORM COVER BANNER */}
         <div className="relative group rounded-2xl overflow-hidden shadow-xl bg-surface-container-low border border-outline-variant/20">
           {headerBannerUrl ? (

@@ -78,7 +78,7 @@ export default function ResponseAnalytics({
   return (
     <div className="min-h-screen bg-surface text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container pb-24">
       {/* Centered Analytics Container */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 flex flex-col gap-6">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-26 sm:pt-28 md:pt-20 flex flex-col gap-6">
         {/* Header Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-outline-variant/20">
           <div className="flex flex-col gap-1">

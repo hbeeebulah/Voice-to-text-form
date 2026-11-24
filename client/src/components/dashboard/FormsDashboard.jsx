@@ -274,11 +274,11 @@ export default function FormsDashboard({
             <button
               type="button"
               onClick={onGoToMainPage}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer group"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer group"
               title="Return to Main Landing Page"
             >
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-              <span>Back to Main Page</span>
+              <span className="hidden sm:inline">Back to Main Page</span>
             </button>
           )}
         </div>
