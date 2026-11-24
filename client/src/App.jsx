@@ -197,6 +197,8 @@ export default function App() {
       if (currentUser) {
         setUser(currentUser);
         fetchForms(currentUser.id).then(setForms).catch(() => {});
+      } else {
+        fetchForms().then(setForms).catch(() => {});
       }
     } catch (err) {
       console.warn('Background initialization notice:', err);
@@ -414,7 +416,7 @@ export default function App() {
           onGoToDashboard={() => {
             setView('dashboard');
             window.location.hash = '#dashboard';
-            fetchForms().then(setForms).catch(() => {});
+            fetchForms(user?.id).then(setForms).catch(() => {});
           }}
           onGoToMainPage={() => {
             setView('landing');

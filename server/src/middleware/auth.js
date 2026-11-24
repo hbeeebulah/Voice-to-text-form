@@ -78,6 +78,12 @@ function requireFormAccess(requiredRole = 'viewer') {
 
       req.form = form;
 
+      // If form is unowned (created without a creator account), allow full editing/viewing access
+      if (!form.creatorId && !form.creatorEmail) {
+        req.userFormRole = 'owner';
+        return next();
+      }
+
       if (!req.user || !req.user.id) {
         return res.status(401).json({ error: 'Authentication required to access this form.' });
       }

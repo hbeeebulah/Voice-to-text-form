@@ -88,6 +88,9 @@ router.get('/', optionalAuth, async (req, res) => {
           userRole: isOwner ? 'owner' : (myCollabRecord?.role || 'collaborator'),
           questionCount: form.questions ? form.questions.length : 0,
           responseCount: responses.length,
+          isPublished: form.isPublished !== undefined ? Boolean(form.isPublished) : (form.status === 'published'),
+          status: form.status || (form.isPublished ? 'published' : 'draft'),
+          isStarred: Boolean(form.isStarred),
           updatedAt: form.updatedAt,
           createdAt: form.createdAt
         };
@@ -464,6 +467,8 @@ function canUserViewDraft(form, user) {
       ? form.status === 'published'
       : true;
   if (isPublished) return true;
+  // Unowned starter forms or drafts created without sign-in can be viewed/edited in studio
+  if (!form.creatorId && !form.creatorEmail) return true;
   if (!user) return false;
   if (user.role === 'admin') return true;
   if (form.creatorId && form.creatorId === user.id) return true;
@@ -688,7 +693,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 });
 
 // PUT /api/forms/:id - Update form (autosave & manual save - requires editor role or owner)
-router.put('/:id', authenticate, requireFormAccess('editor'), async (req, res) => {
+router.put('/:id', optionalAuth, requireFormAccess('editor'), async (req, res) => {
   try {
     const existing = req.form || (await db.getFormById(req.params.id));
     if (!existing) {

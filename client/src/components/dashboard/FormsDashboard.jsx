@@ -659,6 +659,15 @@ export default function FormsDashboard({
                               Shared
                             </span>
                           )}
+                          {form.status === 'draft' || form.isPublished === false ? (
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                              Draft
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold bg-emerald-500/15 text-emerald-400">
+                              Live
+                            </span>
+                          )}
                           {form.settings?.acceptingResponses === false && (
                             <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold bg-rose-500/15 text-rose-400">
                               Closed
@@ -811,6 +820,15 @@ export default function FormsDashboard({
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-tertiary/15 text-tertiary border border-tertiary/30">
                                 <Users className="w-3 h-3" />
                                 <span>Shared</span>
+                              </span>
+                            )}
+                            {form.status === 'draft' || form.isPublished === false ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                Draft
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                                Published
                               </span>
                             )}
                             {form.settings?.acceptingResponses === false && (
