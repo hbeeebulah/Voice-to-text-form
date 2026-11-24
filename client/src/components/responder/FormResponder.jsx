@@ -220,19 +220,35 @@ export default function FormResponder({
       ? form.status === 'published'
       : true;
 
+  const isLightMode = theme.mode === 'light' || embedConfig.bg === 'light';
+  const customBg = theme.backgroundColor;
+
   const outerBgClass = embedConfig.transparent
     ? 'bg-transparent text-on-surface'
-    : embedConfig.bg === 'light'
-      ? 'bg-slate-50 text-slate-900'
-      : embedConfig.bg === 'dark'
-        ? 'bg-slate-950 text-slate-100'
-        : 'bg-surface text-on-surface';
+    : isLightMode
+      ? 'text-slate-900'
+      : 'bg-surface text-on-surface';
+
+  const outerBgStyle = embedConfig.transparent
+    ? {}
+    : customBg
+      ? { backgroundColor: customBg }
+      : isLightMode
+        ? { backgroundColor: '#f0ebf8' }
+        : {};
 
   return (
-    <div className={`min-h-screen ${outerBgClass} antialiased selection:bg-primary-container selection:text-on-primary-container ${embedConfig.isEmbed ? 'pb-8 pt-2' : 'pb-24'}`}>
+    <div
+      className={`min-h-screen ${outerBgClass} antialiased selection:bg-primary-container selection:text-on-primary-container ${embedConfig.isEmbed ? 'pb-8 pt-2' : 'pb-24'} transition-colors duration-200`}
+      style={outerBgStyle}
+    >
       {/* Top Header Bar (hidden in embed when clean embed is requested) */}
       {!embedConfig.hideHeader && (
-        <header className="sticky top-0 z-40 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-outline-variant/20 px-3.5 sm:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-3">
+        <header className={`sticky top-0 z-40 backdrop-blur-xl border-b px-3.5 sm:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-3 ${
+          isLightMode
+            ? 'bg-white/80 border-slate-200/80 text-slate-900 shadow-xs'
+            : 'bg-surface-container-lowest/80 border-outline-variant/20 text-on-surface'
+        }`}>
           <div className="flex items-center gap-2.5">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold shadow-md"
@@ -240,7 +256,7 @@ export default function FormResponder({
             >
               <Mic className="w-4 h-4" />
             </div>
-            <span className="font-bold text-sm tracking-tight text-on-surface">
+            <span className={`font-bold text-sm tracking-tight ${isLightMode ? 'text-slate-900' : 'text-on-surface'}`}>
               VoxForm
             </span>
           </div>
@@ -249,9 +265,13 @@ export default function FormResponder({
             <button
               type="button"
               onClick={onBackToBuilder}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                isLightMode
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200'
+                  : 'bg-surface-container hover:bg-surface-container-high text-on-surface border-outline-variant/30'
+              }`}
             >
-              <Edit3 className="w-3.5 h-3.5 text-primary" />
+              <Edit3 className="w-3.5 h-3.5" style={{ color: accentColor }} />
               <span className="hidden xs:inline">Back to Builder</span>
               <span className="xs:hidden">Studio</span>
             </button>
@@ -297,8 +317,9 @@ export default function FormResponder({
         )}
 
         {/* Form Title & Description Card */}
-        <div className="bg-surface-container-low rounded-2xl p-6 sm:p-8 shadow-xl border border-outline-variant/20 flex flex-col gap-3">
-          <h1 className="font-bold text-2xl sm:text-3xl text-on-surface tracking-tight">
+        <div className={`${isLightMode ? 'bg-white text-slate-900 border-slate-200/80 shadow-md' : 'bg-surface-container-low text-on-surface border-outline-variant/20 shadow-xl'} rounded-2xl p-6 sm:p-8 border flex flex-col gap-3 relative overflow-hidden`}>
+          <div className="h-2.5 w-full absolute top-0 left-0" style={{ backgroundColor: accentColor }} />
+          <h1 className="font-bold text-2xl sm:text-3xl tracking-tight pt-1">
             {form.title || 'Untitled Form'}
           </h1>
           {form.description && (
@@ -317,12 +338,16 @@ export default function FormResponder({
 
         {/* Progress Bar (if enabled) */}
         {form.settings?.showProgressBar !== false && !isSubmitted && !isFormClosed && questions.length > 0 && (
-          <div className="bg-surface-container-low rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-xs font-mono text-on-surface-variant">
+          <div className={`${
+            isLightMode
+              ? 'bg-white text-slate-900 border-slate-200/80 shadow-md'
+              : 'bg-surface-container-low text-on-surface border-outline-variant/20 shadow-sm'
+          } rounded-2xl p-4 border flex flex-col gap-1.5`}>
+            <div className={`flex items-center justify-between text-xs font-mono ${isLightMode ? 'text-slate-600' : 'text-on-surface-variant'}`}>
               <span>{answeredCount} of {questions.length} answered</span>
-              <span className="text-primary font-bold">{progressPercentage}%</span>
+              <span className="font-bold" style={{ color: accentColor }}>{progressPercentage}%</span>
             </div>
-            <div className="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+            <div className={`w-full h-1.5 rounded-full overflow-hidden ${isLightMode ? 'bg-slate-100' : 'bg-surface-container-highest'}`}>
               <div
                 className="h-full rounded-full transition-all duration-300"
                 style={{
@@ -336,39 +361,48 @@ export default function FormResponder({
 
         {/* Case 0: Form in Draft / Not Yet Published (for public responders) */}
         {!isFormPublished && !canEdit ? (
-          <div className="bg-surface-container-low rounded-3xl p-8 sm:p-12 shadow-xl border border-outline-variant/30 text-center flex flex-col items-center gap-4 max-w-lg mx-auto my-8 animate-fadeIn">
+          <div className={`${
+            isLightMode ? 'bg-white border-slate-200/80 shadow-md' : 'bg-surface-container-low border-outline-variant/30 shadow-xl'
+          } rounded-3xl p-8 sm:p-12 border text-center flex flex-col items-center gap-4 max-w-lg mx-auto my-8 animate-fadeIn`}>
             <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center">
               <AlertCircle className="w-8 h-8" />
             </div>
             <div className="flex flex-col gap-2">
-              <h2 className="text-xl sm:text-2xl font-bold text-on-surface">
+              <h2 className={`text-xl sm:text-2xl font-bold ${isLightMode ? 'text-slate-900' : 'text-on-surface'}`}>
                 Form Not Published Yet
               </h2>
-              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+              <p className={`text-xs sm:text-sm leading-relaxed ${isLightMode ? 'text-slate-600' : 'text-on-surface-variant'}`}>
                 This form is currently in draft mode and not accepting public responses yet. If you are the creator, please open your VoxForm studio and click <strong>Publish</strong> to make it live.
               </p>
             </div>
           </div>
         ) : isFormClosed ? (
-          <div className="bg-surface-container-low rounded-2xl p-8 shadow-xl border border-outline-variant/20 text-center flex flex-col items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-outline">
+          <div className={`${
+            isLightMode ? 'bg-white border-slate-200/80 shadow-md' : 'bg-surface-container-low border-outline-variant/20 shadow-xl'
+          } rounded-2xl p-8 border text-center flex flex-col items-center gap-3`}>
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="font-bold text-lg text-on-surface">Form Closed</h2>
-            <p className="text-xs sm:text-sm text-on-surface-variant max-w-md">
+            <h2 className={`font-bold text-lg ${isLightMode ? 'text-slate-900' : 'text-on-surface'}`}>Form Closed</h2>
+            <p className={`text-xs sm:text-sm max-w-md ${isLightMode ? 'text-slate-600' : 'text-on-surface-variant'}`}>
               {form.settings?.closedMessage || 'This form is no longer accepting responses.'}
             </p>
           </div>
         ) : isSubmitted ? (
           /* Case 2: Response Submitted Successfully */
-          <div className="bg-surface-container-low rounded-2xl p-8 sm:p-10 shadow-xl border border-outline-variant/20 text-center flex flex-col items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-tertiary/20 text-tertiary flex items-center justify-center shadow-lg">
+          <div className={`${
+            isLightMode ? 'bg-white border-slate-200/80 shadow-md' : 'bg-surface-container-low border-outline-variant/20 shadow-xl'
+          } rounded-2xl p-8 sm:p-10 border text-center flex flex-col items-center gap-4`}>
+            <div
+              className="w-14 h-14 rounded-full text-white flex items-center justify-center shadow-lg"
+              style={{ backgroundColor: accentColor }}
+            >
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h2 className="font-bold text-xl sm:text-2xl text-on-surface">
+            <h2 className={`font-bold text-xl sm:text-2xl ${isLightMode ? 'text-slate-900' : 'text-on-surface'}`}>
               {form.settings?.confirmationMessage || 'Thank you! Your response has been recorded.'}
             </h2>
-            <p className="text-xs sm:text-sm text-on-surface-variant">
+            <p className={`text-xs sm:text-sm ${isLightMode ? 'text-slate-600' : 'text-on-surface-variant'}`}>
               Your voice and text inputs were successfully saved.
             </p>
             <div className="flex items-center gap-3 pt-2">
@@ -379,7 +413,11 @@ export default function FormResponder({
                   setVoiceFieldStats({});
                   setIsSubmitted(false);
                 }}
-                className="px-5 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold transition-all border border-outline-variant/30 cursor-pointer"
+                className={`px-5 py-2.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer ${
+                  isLightMode
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200'
+                    : 'bg-surface-container hover:bg-surface-container-high text-on-surface border-outline-variant/30'
+                }`}
               >
                 Submit another response
               </button>
@@ -387,7 +425,8 @@ export default function FormResponder({
                 <button
                   type="button"
                   onClick={onBackToBuilder}
-                  className="px-5 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-semibold transition-all shadow-md cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl text-white text-xs font-semibold transition-all shadow-md cursor-pointer"
+                  style={{ backgroundColor: accentColor }}
                 >
                   Back to Editor
                 </button>
@@ -406,20 +445,24 @@ export default function FormResponder({
                 <div
                   key={q.id}
                   id={`q-card-${q.id}`}
-                  className={`bg-surface-container-low rounded-2xl p-5 sm:p-7 shadow-lg border transition-all flex flex-col gap-3.5 ${
+                  className={`${
+                    isLightMode
+                      ? 'bg-white text-slate-900 border-slate-200/80 shadow-md'
+                      : 'bg-surface-container-low text-on-surface border-outline-variant/20 shadow-lg'
+                  } rounded-2xl p-5 sm:p-7 border transition-all flex flex-col gap-3.5 ${
                     hasError
                       ? 'border-error ring-1 ring-error/50'
-                      : 'border-outline-variant/20'
+                      : ''
                   }`}
                 >
                   {/* Question Title & Description */}
                   <div className="flex flex-col gap-1">
-                    <h3 className="font-semibold text-base sm:text-lg text-on-surface leading-snug">
+                    <h3 className={`font-semibold text-base sm:text-lg leading-snug ${isLightMode ? 'text-slate-900' : 'text-on-surface'}`}>
                       {q.title || `Question ${idx + 1}`}
                       {q.required && <span className="text-error ml-1">*</span>}
                     </h3>
                     {q.description && (
-                      <p className="text-xs text-on-surface-variant leading-relaxed">
+                      <p className={`text-xs leading-relaxed ${isLightMode ? 'text-slate-500' : 'text-on-surface-variant'}`}>
                         {q.description}
                       </p>
                     )}
@@ -434,7 +477,12 @@ export default function FormResponder({
                           value={val || ''}
                           onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                           placeholder="Your answer..."
-                          className="w-full px-3.5 py-2.5 bg-surface-container text-on-surface text-xs sm:text-sm rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary transition-colors placeholder:text-outline"
+                          className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border transition-colors focus:outline-none ${
+                            isLightMode
+                              ? 'bg-slate-50 text-slate-900 border-slate-200 placeholder:text-slate-400 focus:bg-white focus:border-slate-400'
+                              : 'bg-surface-container text-on-surface border-outline-variant/30 placeholder:text-outline focus:border-primary'
+                          }`}
+                          style={val ? { borderColor: accentColor } : {}}
                         />
                       ) : (
                         <textarea
@@ -442,7 +490,12 @@ export default function FormResponder({
                           value={val || ''}
                           onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                           placeholder="Your answer (type or speak)..."
-                          className="w-full px-3.5 py-2.5 bg-surface-container text-on-surface text-xs sm:text-sm rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary transition-colors placeholder:text-outline resize-y"
+                          className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border transition-colors focus:outline-none resize-y ${
+                            isLightMode
+                              ? 'bg-slate-50 text-slate-900 border-slate-200 placeholder:text-slate-400 focus:bg-white focus:border-slate-400'
+                              : 'bg-surface-container text-on-surface border-outline-variant/30 placeholder:text-outline focus:border-primary'
+                          }`}
+                          style={val ? { borderColor: accentColor } : {}}
                         />
                       )}
 
@@ -463,7 +516,9 @@ export default function FormResponder({
                             <button
                               type="button"
                               onClick={() => handleAnswerChange(q.id, '')}
-                              className="text-[11px] text-outline hover:text-on-surface font-mono transition-colors"
+                              className={`text-[11px] font-mono transition-colors ${
+                                isLightMode ? 'text-slate-400 hover:text-slate-800' : 'text-outline hover:text-on-surface'
+                              }`}
                             >
                               Clear
                             </button>
@@ -481,9 +536,14 @@ export default function FormResponder({
                           key={optIdx}
                           className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                             val === option
-                              ? 'bg-surface-container-high border-primary text-on-surface font-medium'
-                              : 'bg-surface-container/60 hover:bg-surface-container border-outline-variant/20 text-on-surface-variant'
+                              ? isLightMode
+                                ? 'bg-slate-50/90 font-medium text-slate-900 border-2'
+                                : 'bg-surface-container-high text-on-surface font-medium border-2'
+                              : isLightMode
+                                ? 'bg-slate-50/60 hover:bg-slate-100/80 border-slate-200 text-slate-700'
+                                : 'bg-surface-container/60 hover:bg-surface-container border-outline-variant/20 text-on-surface-variant'
                           }`}
+                          style={val === option ? { borderColor: accentColor } : {}}
                         >
                           <input
                             type="radio"
@@ -492,10 +552,15 @@ export default function FormResponder({
                             onChange={() => handleAnswerChange(q.id, option)}
                             className="sr-only"
                           />
-                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                            val === option ? 'border-primary bg-primary' : 'border-outline'
-                          }`}>
-                            {val === option && <div className="w-1.5 h-1.5 rounded-full bg-on-primary" />}
+                          <div
+                            className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                              val === option
+                                ? ''
+                                : isLightMode ? 'border-slate-300' : 'border-outline'
+                            }`}
+                            style={val === option ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
+                          >
+                            {val === option && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                           </div>
                           <span className="text-xs sm:text-sm">{option}</span>
                         </label>
@@ -513,9 +578,14 @@ export default function FormResponder({
                             key={optIdx}
                             className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                               isChecked
-                                ? 'bg-surface-container-high border-primary text-on-surface font-medium'
-                                : 'bg-surface-container/60 hover:bg-surface-container border-outline-variant/20 text-on-surface-variant'
+                                ? isLightMode
+                                  ? 'bg-slate-50/90 font-medium text-slate-900 border-2'
+                                  : 'bg-surface-container-high text-on-surface font-medium border-2'
+                                : isLightMode
+                                  ? 'bg-slate-50/60 hover:bg-slate-100/80 border-slate-200 text-slate-700'
+                                  : 'bg-surface-container/60 hover:bg-surface-container border-outline-variant/20 text-on-surface-variant'
                             }`}
+                            style={isChecked ? { borderColor: accentColor } : {}}
                           >
                             <input
                               type="checkbox"
@@ -523,10 +593,15 @@ export default function FormResponder({
                               onChange={() => handleCheckboxToggle(q.id, option)}
                               className="sr-only"
                             />
-                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ${
-                              isChecked ? 'border-primary bg-primary' : 'border-outline'
-                            }`}>
-                              {isChecked && <CheckCircle2 className="w-3.5 h-3.5 text-on-primary" />}
+                            <div
+                              className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ${
+                                isChecked
+                                  ? ''
+                                  : isLightMode ? 'border-slate-300' : 'border-outline'
+                              }`}
+                              style={isChecked ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
+                            >
+                              {isChecked && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
                             </div>
                             <span className="text-xs sm:text-sm">{option}</span>
                           </label>
@@ -541,7 +616,12 @@ export default function FormResponder({
                       <select
                         value={val || ''}
                         onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-surface-container text-on-surface text-xs sm:text-sm rounded-xl border border-outline-variant/30 focus:outline-none focus:border-primary cursor-pointer"
+                        className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border cursor-pointer focus:outline-none ${
+                          isLightMode
+                            ? 'bg-slate-50 text-slate-900 border-slate-200 focus:bg-white'
+                            : 'bg-surface-container text-on-surface border-outline-variant/30 focus:border-primary'
+                        }`}
+                        style={val ? { borderColor: accentColor } : {}}
                       >
                         <option value="">Select an option</option>
                         {(q.options || []).map((option, optIdx) => (
@@ -566,15 +646,20 @@ export default function FormResponder({
                             onClick={() => handleAnswerChange(q.id, num)}
                             className={`flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all border cursor-pointer ${
                               val === num
-                                ? 'bg-primary text-on-primary border-primary shadow-md'
-                                : 'bg-surface-container hover:bg-surface-container-high text-on-surface border-outline-variant/20'
+                                ? 'text-white shadow-md'
+                                : isLightMode
+                                  ? 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                                  : 'bg-surface-container hover:bg-surface-container-high text-on-surface border-outline-variant/20'
                             }`}
+                            style={val === num ? { backgroundColor: accentColor, borderColor: accentColor } : {}}
                           >
                             {num}
                           </button>
                         ))}
                       </div>
-                      <div className="flex items-center justify-between text-[11px] text-on-surface-variant px-1 font-mono">
+                      <div className={`flex items-center justify-between text-[11px] px-1 font-mono ${
+                        isLightMode ? 'text-slate-500' : 'text-on-surface-variant'
+                      }`}>
                         <span>{q.scaleConfig?.minLabel || 'Low'}</span>
                         <span>{q.scaleConfig?.maxLabel || 'High'}</span>
                       </div>
@@ -598,7 +683,9 @@ export default function FormResponder({
                               }}
                               onMouseEnter={() => setHoveredRating(prev => ({ ...prev, [q.id]: starNum }))}
                               onMouseLeave={() => setHoveredRating(prev => ({ ...prev, [q.id]: undefined }))}
-                              className="p-1 sm:p-2 rounded-xl hover:bg-surface-container-high transition-transform active:scale-95 cursor-pointer focus:outline-none"
+                              className={`p-1 sm:p-2 rounded-xl transition-transform active:scale-95 cursor-pointer focus:outline-none ${
+                                isLightMode ? 'hover:bg-slate-100' : 'hover:bg-surface-container-high'
+                              }`}
                               title={`Rate ${starNum} out of ${q.ratingConfig?.max || 5} stars`}
                               aria-label={`Rate ${starNum} of ${q.ratingConfig?.max || 5} stars`}
                             >
@@ -606,7 +693,9 @@ export default function FormResponder({
                                 className={`w-8 h-8 sm:w-9 sm:h-9 transition-all duration-150 ${
                                   isFilled
                                     ? 'fill-amber-400 text-amber-400 scale-105 drop-shadow-sm'
-                                    : 'text-outline/40 hover:text-amber-300'
+                                    : isLightMode
+                                      ? 'text-slate-300 hover:text-amber-300'
+                                      : 'text-outline/40 hover:text-amber-300'
                                 }`}
                               />
                             </button>
@@ -614,14 +703,16 @@ export default function FormResponder({
                         })}
 
                         {Number(val) > 0 && (
-                          <span className="ml-2 px-3 py-1 rounded-full text-xs font-bold font-mono bg-amber-400/15 text-amber-400 border border-amber-400/30">
+                          <span className="ml-2 px-3 py-1 rounded-full text-xs font-bold font-mono bg-amber-400/15 text-amber-500 border border-amber-400/30">
                             {val} / {q.ratingConfig?.max || 5} Stars
                           </span>
                         )}
                       </div>
 
                       {(q.ratingConfig?.lowLabel || q.ratingConfig?.highLabel) && (
-                        <div className="flex items-center justify-between text-xs text-on-surface-variant px-1 font-mono">
+                        <div className={`flex items-center justify-between text-xs px-1 font-mono ${
+                          isLightMode ? 'text-slate-500' : 'text-on-surface-variant'
+                        }`}>
                           <span>{q.ratingConfig?.lowLabel || '1 Star'}</span>
                           <span>{q.ratingConfig?.highLabel || `${q.ratingConfig?.max || 5} Stars`}</span>
                         </div>
@@ -633,16 +724,21 @@ export default function FormResponder({
                   {q.type === 'file_upload' && (
                     <div className="pt-1 flex flex-col gap-2">
                       {val && (val.fileName || val.name) ? (
-                        <div className="p-3.5 rounded-xl bg-surface-container border border-outline-variant/30 flex items-center justify-between gap-3">
+                        <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
+                          isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-surface-container border-outline-variant/30'
+                        }`}>
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 shadow-xs"
+                              style={{ backgroundColor: accentColor }}
+                            >
                               <FileText className="w-4 h-4" />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-semibold text-on-surface truncate">
+                              <p className={`text-xs font-semibold truncate ${isLightMode ? 'text-slate-800' : 'text-on-surface'}`}>
                                 {val.fileName || val.name}
                               </p>
-                              <p className="text-[10px] text-on-surface-variant">
+                              <p className={`text-[10px] ${isLightMode ? 'text-slate-500' : 'text-on-surface-variant'}`}>
                                 {formatFileSize(val.fileSize)}
                               </p>
                             </div>
@@ -671,9 +767,12 @@ export default function FormResponder({
                           }}
                           className={`p-6 rounded-xl border-2 border-dashed text-center flex flex-col items-center justify-center gap-2 transition-all ${
                             dragOverQuestionId === q.id
-                              ? 'border-primary bg-surface-container-high'
-                              : 'border-outline-variant/30 hover:border-outline-variant/60 bg-surface-container/50'
+                              ? 'border-2 shadow-inner'
+                              : isLightMode
+                                ? 'border-slate-300 hover:border-slate-400 bg-slate-50/50'
+                                : 'border-outline-variant/30 hover:border-outline-variant/60 bg-surface-container/50'
                           }`}
+                          style={dragOverQuestionId === q.id ? { borderColor: accentColor } : {}}
                         >
                           <input
                             type="file"
@@ -684,18 +783,19 @@ export default function FormResponder({
                               if (file) handleFileSelect(q.id, file, q.fileConfig);
                             }}
                           />
-                          <UploadCloud className="w-6 h-6 text-primary" />
-                          <p className="text-xs text-on-surface font-medium">
+                          <UploadCloud className="w-6 h-6" style={{ color: accentColor }} />
+                          <p className={`text-xs font-medium ${isLightMode ? 'text-slate-700' : 'text-on-surface'}`}>
                             Drag & drop file here, or{' '}
                             <button
                               type="button"
                               onClick={() => document.getElementById(`file-input-${q.id}`)?.click()}
-                              className="text-primary underline cursor-pointer"
+                              className="underline cursor-pointer font-semibold"
+                              style={{ color: accentColor }}
                             >
                               browse
                             </button>
                           </p>
-                          <p className="text-[10px] text-outline font-mono">
+                          <p className={`text-[10px] font-mono ${isLightMode ? 'text-slate-400' : 'text-outline'}`}>
                             Up to {q.fileConfig?.maxSizeMB || 10} MB
                           </p>
                         </div>

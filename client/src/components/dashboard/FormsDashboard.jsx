@@ -74,7 +74,9 @@ export default function FormsDashboard({
     {
       title: 'Blank Form',
       description: 'Start from scratch with a single question',
-      accentColor: '#8083ff',
+      accentColor: '#673ab7',
+      mode: 'light',
+      backgroundColor: '#f0ebf8',
       questions: [
         {
           id: `q-${Date.now()}-1`,
@@ -89,7 +91,9 @@ export default function FormsDashboard({
     {
       title: 'Customer Audio Feedback',
       description: 'Collect detailed spoken opinions, feature ratings, and satisfaction scores',
-      accentColor: '#4edea3',
+      accentColor: '#009688',
+      mode: 'light',
+      backgroundColor: '#e0f2f1',
       questions: [
         {
           id: `q-${Date.now()}-1`,
@@ -118,7 +122,9 @@ export default function FormsDashboard({
     {
       title: 'Daily Voice Standup',
       description: 'Frictionless daily reflection powered by speech-to-text dictation',
-      accentColor: '#ff80bf',
+      accentColor: '#e91e63',
+      mode: 'light',
+      backgroundColor: '#fce4ec',
       questions: [
         {
           id: `q-${Date.now()}-1`,
@@ -146,7 +152,9 @@ export default function FormsDashboard({
     {
       title: 'Event Registration & RSVP',
       description: 'Event signup with attendee details and attendance options',
-      accentColor: '#ffd166',
+      accentColor: '#ff9800',
+      mode: 'light',
+      backgroundColor: '#fff3e0',
       questions: [
         {
           id: `q-${Date.now()}-1`,
@@ -178,7 +186,11 @@ export default function FormsDashboard({
       title: tpl.title,
       description: tpl.description,
       questions: tpl.questions,
-      theme: { accentColor: tpl.accentColor }
+      theme: {
+        accentColor: tpl.accentColor,
+        mode: tpl.mode || 'light',
+        backgroundColor: tpl.backgroundColor || (tpl.mode === 'dark' ? '#0f131c' : '#f0ebf8')
+      }
     });
     setTemplateModalOpen(false);
   };

@@ -38,6 +38,12 @@ export default function FormBuilder({
   const theme = form.theme || {};
   const accentColor = theme.accentColor || '#8083ff';
   const headerBannerUrl = theme.headerBannerUrl || form.headerBannerUrl || form.headerImage || '';
+  const isLightMode = theme.mode === 'light';
+  const canvasBgStyle = theme.backgroundColor
+    ? { backgroundColor: theme.backgroundColor }
+    : isLightMode
+      ? { backgroundColor: '#f0ebf8' }
+      : {};
 
   // Add Question
   const handleAddQuestion = (type = 'paragraph') => {
@@ -150,11 +156,14 @@ export default function FormBuilder({
   };
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface antialiased relative pb-32">
+    <div
+      className={`min-h-screen ${isLightMode ? 'text-slate-900' : 'bg-surface text-on-surface'} antialiased relative pb-32 transition-colors duration-200`}
+      style={canvasBgStyle}
+    >
       {/* Centered Canvas Layout */}
       <div className="max-w-3xl mx-auto px-3 sm:px-6 pt-26 sm:pt-28 md:pt-20 flex flex-col gap-5">
         {/* 1. FORM COVER BANNER */}
-        <div className="relative group rounded-2xl overflow-hidden shadow-xl bg-surface-container-low border border-outline-variant/20">
+        <div className={`relative group rounded-2xl overflow-hidden shadow-xl ${isLightMode ? 'bg-white border-slate-200/80' : 'bg-surface-container-low border-outline-variant/20'} border`}>
           {headerBannerUrl ? (
             <div className="h-48 sm:h-56 md:h-64 w-full relative overflow-hidden bg-surface-container-highest">
               <img
@@ -191,22 +200,29 @@ export default function FormBuilder({
               </div>
             </div>
           ) : (
-            <div className="p-4 sm:p-5 flex items-center justify-between bg-surface-container-low border-b border-outline-variant/10">
+            <div className={`p-4 sm:p-5 flex items-center justify-between ${isLightMode ? 'bg-white border-b border-slate-200' : 'bg-surface-container-low border-b border-outline-variant/10'}`}>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-surface-container-high flex items-center justify-center text-primary">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm"
+                  style={{ backgroundColor: accentColor }}
+                >
                   <ImageIcon className="w-4 h-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-on-surface">Add Cover Banner</p>
-                  <p className="text-[11px] text-on-surface-variant">Personalize your form with a custom header image</p>
+                  <p className={`text-xs font-semibold ${isLightMode ? 'text-slate-800' : 'text-on-surface'}`}>Add Cover Banner</p>
+                  <p className={`text-[11px] ${isLightMode ? 'text-slate-500' : 'text-on-surface-variant'}`}>Personalize your form with a custom header image</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsHeaderModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-medium border border-outline-variant/30 transition-all cursor-pointer"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+                  isLightMode
+                    ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                    : 'bg-surface-container hover:bg-surface-container-high text-on-surface border-outline-variant/30'
+                }`}
               >
-                <Plus className="w-3.5 h-3.5 text-primary" />
+                <Plus className="w-3.5 h-3.5" style={{ color: accentColor }} />
                 <span>Add Banner</span>
               </button>
             </div>
@@ -214,14 +230,19 @@ export default function FormBuilder({
         </div>
 
         {/* 2. FORM TITLE & DESCRIPTION CARD */}
-        <div className="bg-surface-container-low rounded-2xl p-5 sm:p-7 shadow-xl border border-outline-variant/20 flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
+        <div className={`${isLightMode ? 'bg-white text-slate-900 border-slate-200/80 shadow-md' : 'bg-surface-container-low text-on-surface border-outline-variant/20 shadow-xl'} rounded-2xl p-5 sm:p-7 border flex flex-col gap-4 relative overflow-hidden`}>
+          <div className="h-2 w-full absolute top-0 left-0" style={{ backgroundColor: accentColor }} />
+          <div className="flex flex-col gap-1 pt-1">
             <input
               type="text"
               value={form.title || ''}
               onChange={(e) => onUpdateForm({ title: e.target.value })}
               placeholder="Untitled Form"
-              className="w-full bg-transparent font-bold text-xl sm:text-2xl md:text-3xl text-on-surface focus:outline-none focus:bg-surface-container/60 rounded-xl px-2.5 py-1.5 -ml-2.5 transition-colors placeholder:text-outline border border-transparent focus:border-outline-variant/30"
+              className={`w-full bg-transparent font-bold text-xl sm:text-2xl md:text-3xl rounded-xl px-2.5 py-1.5 -ml-2.5 transition-colors border border-transparent ${
+                isLightMode
+                  ? 'text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-slate-50 focus:border-slate-300'
+                  : 'text-on-surface placeholder:text-outline focus:outline-none focus:bg-surface-container/60 focus:border-outline-variant/30'
+              }`}
             />
           </div>
 
@@ -231,15 +252,19 @@ export default function FormBuilder({
               value={form.description || ''}
               onChange={(e) => onUpdateForm({ description: e.target.value })}
               placeholder="Form description (e.g. Please fill out this form or use voice dictation to speak your answers)..."
-              className="w-full bg-surface-container-lowest/60 text-on-surface text-xs sm:text-sm rounded-xl p-3 focus:outline-none focus:bg-surface-container-lowest resize-none transition-all placeholder:text-outline border border-outline-variant/20"
+              className={`w-full text-xs sm:text-sm rounded-xl p-3 focus:outline-none resize-none transition-all border ${
+                isLightMode
+                  ? 'bg-slate-50 text-slate-900 border-slate-200 focus:bg-white focus:border-slate-300 placeholder:text-slate-400'
+                  : 'bg-surface-container-lowest/60 text-on-surface border-outline-variant/20 focus:bg-surface-container-lowest placeholder:text-outline'
+              }`}
             />
           </div>
 
           {/* Collaborative Access Strip */}
-          <div className="pt-2 pb-1 border-t border-outline-variant/15 flex items-center justify-between flex-wrap gap-2">
+          <div className={`pt-2 pb-1 border-t ${isLightMode ? 'border-slate-200' : 'border-outline-variant/15'} flex items-center justify-between flex-wrap gap-2`}>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-on-surface flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-primary" />
+              <span className={`text-xs font-semibold flex items-center gap-1.5 ${isLightMode ? 'text-slate-800' : 'text-on-surface'}`}>
+                <Users className="w-3.5 h-3.5" style={{ color: accentColor }} />
                 <span>Form Collaborators:</span>
               </span>
               {Array.isArray(form.collaborators) && form.collaborators.length > 0 ? (
@@ -248,7 +273,7 @@ export default function FormBuilder({
                   {form.collaborators.length} user{form.collaborators.length > 1 ? 's' : ''} added
                 </span>
               ) : (
-                <span className="text-xs text-on-surface-variant font-mono">Only you have access</span>
+                <span className={`text-xs font-mono ${isLightMode ? 'text-slate-500' : 'text-on-surface-variant'}`}>Only you have access</span>
               )}
             </div>
 
@@ -256,9 +281,13 @@ export default function FormBuilder({
               <button
                 type="button"
                 onClick={onOpenAddUsers}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-primary hover:text-on-surface text-xs font-semibold border border-outline-variant/30 transition-all cursor-pointer"
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                  isLightMode
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200'
+                    : 'bg-surface-container hover:bg-surface-container-high text-primary hover:text-on-surface border-outline-variant/30'
+                }`}
               >
-                <UserPlus className="w-3.5 h-3.5" />
+                <UserPlus className="w-3.5 h-3.5" style={{ color: accentColor }} />
                 <span>+ Add Users</span>
               </button>
             )}
@@ -274,7 +303,7 @@ export default function FormBuilder({
                   href={form.googleFormConfig.publishedUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-on-surface-variant hover:text-on-surface truncate font-mono text-[11px] underline"
+                  className={`${isLightMode ? 'text-slate-600 hover:text-slate-900' : 'text-on-surface-variant hover:text-on-surface'} truncate font-mono text-[11px] underline`}
                 >
                   {form.googleFormConfig.publishedUrl}
                 </a>
@@ -286,26 +315,30 @@ export default function FormBuilder({
           )}
 
           {/* Form Settings Accordion (From commit 52e2aa9) */}
-          <div className="pt-2 border-t border-outline-variant/20">
+          <div className={`pt-2 border-t ${isLightMode ? 'border-slate-200' : 'border-outline-variant/20'}`}>
             <button
               type="button"
               onClick={() => setShowSettings(!showSettings)}
-              className="flex items-center justify-between w-full text-xs font-mono text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer py-1"
+              className={`flex items-center justify-between w-full text-xs font-mono transition-colors cursor-pointer py-1 ${
+                isLightMode ? 'text-slate-600 hover:text-slate-900' : 'text-on-surface-variant hover:text-on-surface'
+              }`}
             >
               <span className="flex items-center gap-1.5">
-                <Settings className="w-3.5 h-3.5 text-primary" />
+                <Settings className="w-3.5 h-3.5" style={{ color: accentColor }} />
                 <span>Form Submission & Responder Settings</span>
               </span>
               {showSettings ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
 
             {showSettings && (
-              <div className="mt-3 p-4 bg-surface-container-lowest/70 rounded-xl border border-outline-variant/20 text-xs flex flex-col gap-3">
+              <div className={`mt-3 p-4 rounded-xl border text-xs flex flex-col gap-3 ${
+                isLightMode ? 'bg-slate-50 border-slate-200' : 'bg-surface-container-lowest/70 border-outline-variant/20'
+              }`}>
                 {/* Accepting Responses Toggle */}
-                <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
+                <div className={`flex items-center justify-between pb-2 border-b ${isLightMode ? 'border-slate-200' : 'border-outline-variant/20'}`}>
                   <div>
-                    <span className="font-semibold text-on-surface block">Accept Responses</span>
-                    <span className="text-[11px] text-on-surface-variant">
+                    <span className={`font-semibold block ${isLightMode ? 'text-slate-800' : 'text-on-surface'}`}>Accept Responses</span>
+                    <span className={`text-[11px] ${isLightMode ? 'text-slate-500' : 'text-on-surface-variant'}`}>
                       {form.settings?.acceptingResponses !== false
                         ? 'Form is active and open to responders'
                         : 'Form is closed to new responses'}
@@ -326,8 +359,8 @@ export default function FormBuilder({
 
                 {/* Message shown when closed */}
                 {form.settings?.acceptingResponses === false && (
-                  <div className="p-3 bg-surface-container rounded-xl flex flex-col gap-1 border border-outline-variant/30">
-                    <label className="block text-on-surface font-semibold text-[11px]">
+                  <div className={`p-3 rounded-xl flex flex-col gap-1 border ${isLightMode ? 'bg-white border-slate-200' : 'bg-surface-container border-outline-variant/30'}`}>
+                    <label className={`block font-semibold text-[11px] ${isLightMode ? 'text-slate-800' : 'text-on-surface'}`}>
                       Message shown when form is closed:
                     </label>
                     <input
@@ -337,14 +370,18 @@ export default function FormBuilder({
                         settings: { ...(form.settings || {}), closedMessage: e.target.value }
                       })}
                       placeholder="This form is no longer accepting responses."
-                      className="w-full px-3 py-1.5 bg-surface-container-lowest text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
+                      className={`w-full px-3 py-1.5 rounded-lg text-xs border focus:outline-none ${
+                        isLightMode
+                          ? 'bg-slate-50 text-slate-900 border-slate-200 focus:bg-white'
+                          : 'bg-surface-container-lowest text-on-surface border-outline-variant/30'
+                      }`}
                     />
                   </div>
                 )}
 
                 {/* Thank-You Confirmation Message */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-on-surface-variant font-medium text-[11px]">
+                  <label className={`font-medium text-[11px] ${isLightMode ? 'text-slate-600' : 'text-on-surface-variant'}`}>
                     Custom Thank-You Confirmation Message:
                   </label>
                   <input
@@ -354,13 +391,17 @@ export default function FormBuilder({
                       settings: { ...(form.settings || {}), confirmationMessage: e.target.value }
                     })}
                     placeholder="Thank you! Your response has been recorded."
-                    className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
+                    className={`w-full px-3 py-1.5 rounded-lg text-xs border focus:outline-none ${
+                      isLightMode
+                        ? 'bg-white text-slate-900 border-slate-200 focus:border-slate-400'
+                        : 'bg-surface-container text-on-surface border-outline-variant/30'
+                    }`}
                   />
                 </div>
 
                 {/* Show Progress Bar */}
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-on-surface">Show Progress Bar on Form</span>
+                  <span className={isLightMode ? 'text-slate-800' : 'text-on-surface'}>Show Progress Bar on Form</span>
                   <input
                     type="checkbox"
                     checked={form.settings?.showProgressBar !== false}
@@ -391,6 +432,7 @@ export default function FormBuilder({
               onMoveUp={() => handleMoveUp(index)}
               onMoveDown={() => handleMoveDown(index)}
               accentColor={accentColor}
+              isLightMode={isLightMode}
             />
           ))}
         </div>
@@ -400,20 +442,30 @@ export default function FormBuilder({
           <button
             type="button"
             onClick={() => handleAddQuestion('paragraph')}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-primary font-semibold text-xs border border-primary/30 shadow-lg hover:shadow-primary/20 transition-all cursor-pointer group"
+            className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-xs border shadow-lg transition-all cursor-pointer group ${
+              isLightMode
+                ? 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-slate-200/50'
+                : 'bg-surface-container-high hover:bg-surface-container-highest text-primary border-primary/30 hover:shadow-primary/20'
+            }`}
+            style={isLightMode ? { borderColor: `${accentColor}50` } : {}}
           >
-            <Plus className="w-4 h-4 group-hover:scale-125 transition-transform" />
-            <span>Add New Question</span>
+            <Plus className="w-4 h-4 group-hover:scale-125 transition-transform" style={{ color: accentColor }} />
+            <span style={{ color: isLightMode ? accentColor : undefined }}>Add New Question</span>
           </button>
         </div>
       </div>
 
       {/* Floating Action Toolbar */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-8 md:bottom-auto md:top-28 z-40 flex md:flex-col items-center bg-surface-container-lowest/90 backdrop-blur-xl p-1.5 rounded-full md:rounded-2xl border border-outline-variant/30 shadow-2xl gap-1 sm:gap-2">
+      <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-8 md:bottom-auto md:top-28 z-40 flex md:flex-col items-center p-1.5 rounded-full md:rounded-2xl border shadow-2xl gap-1 sm:gap-2 backdrop-blur-xl ${
+        isLightMode
+          ? 'bg-white/95 border-slate-200 shadow-slate-300/50'
+          : 'bg-surface-container-lowest/90 border-outline-variant/30 shadow-2xl'
+      }`}>
         <button
           type="button"
           onClick={() => handleAddQuestion('paragraph')}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl bg-primary hover:bg-primary-container text-on-primary shadow-lg transition-all hover:scale-105 cursor-pointer"
+          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-white shadow-lg transition-all hover:scale-105 cursor-pointer"
+          style={{ backgroundColor: accentColor }}
           title="Add Question"
         >
           <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -422,7 +474,11 @@ export default function FormBuilder({
         <button
           type="button"
           onClick={() => setIsHeaderModalOpen(true)}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+          className={`p-2.5 sm:p-3 rounded-full md:rounded-xl transition-all cursor-pointer ${
+            isLightMode
+              ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+          }`}
           title="Form Header Image"
         >
           <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -431,7 +487,11 @@ export default function FormBuilder({
         <button
           type="button"
           onClick={onOpenTheme}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+          className={`p-2.5 sm:p-3 rounded-full md:rounded-xl transition-all cursor-pointer ${
+            isLightMode
+              ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+          }`}
           title="Theme & Styling"
         >
           <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -440,7 +500,11 @@ export default function FormBuilder({
         <button
           type="button"
           onClick={onOpenPreview}
-          className="p-2.5 sm:p-3 rounded-full md:rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all cursor-pointer"
+          className={`p-2.5 sm:p-3 rounded-full md:rounded-xl transition-all cursor-pointer ${
+            isLightMode
+              ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
+          }`}
           title="Preview Form Responder"
         >
           <Eye className="w-4 h-4 sm:w-5 sm:h-5" />

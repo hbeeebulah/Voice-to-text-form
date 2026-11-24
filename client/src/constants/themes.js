@@ -70,14 +70,43 @@ export const CURATED_THEMES = [
 ];
 
 export const ACCENT_PALETTES = [
-  { name: 'Indigo', value: '#6366f1', header: '#4f46e5' },
-  { name: 'Classic Blue', value: '#2563eb', header: '#1d4ed8' },
-  { name: 'Purple', value: '#9333ea', header: '#7e22ce' },
+  { name: 'Google Purple', value: '#673ab7', header: '#512da8' },
+  { name: 'Indigo', value: '#3f51b5', header: '#303f9f' },
+  { name: 'Blue', value: '#2196f3', header: '#1976d2' },
+  { name: 'Sky Blue', value: '#03a9f4', header: '#0288d1' },
+  { name: 'Cyan / Teal', value: '#009688', header: '#00796b' },
+  { name: 'Green', value: '#4caf50', header: '#388e3c' },
+  { name: 'Olive / Lime', value: '#8bc34a', header: '#689f38' },
+  { name: 'Amber / Gold', value: '#ffb300', header: '#f57f17' },
+  { name: 'Orange', value: '#ff9800', header: '#f57c00' },
+  { name: 'Deep Orange', value: '#ff5722', header: '#e64a19' },
+  { name: 'Red', value: '#db4437', header: '#c53929' },
+  { name: 'Pink', value: '#e91e63', header: '#c2185b' },
+  { name: 'Blue Grey', value: '#607d8b', header: '#455a64' },
+  { name: 'Slate Grey', value: '#757575', header: '#616161' },
+  { name: 'Vibrant Indigo', value: '#6366f1', header: '#4f46e5' },
   { name: 'Emerald', value: '#10b981', header: '#059669' },
-  { name: 'Teal', value: '#0d9488', header: '#0f766e' },
-  { name: 'Rose', value: '#f43f5e', header: '#e11d48' },
-  { name: 'Amber', value: '#f59e0b', header: '#d97706' },
-  { name: 'Dark Slate', value: '#334155', header: '#1e293b' },
+];
+
+export const GOOGLE_FORMS_PALETTE = ACCENT_PALETTES;
+
+export const LIGHT_BACKGROUND_PRESETS = [
+  { name: 'Default Lilac', value: '#f0ebf8' },
+  { name: 'Pure White', value: '#ffffff' },
+  { name: 'Cool Slate', value: '#f8fafc' },
+  { name: 'Sky Tint', value: '#f0f7ff' },
+  { name: 'Warm Cream', value: '#fffbeb' },
+  { name: 'Soft Mint', value: '#f0fdf4' },
+  { name: 'Rose Tint', value: '#fff1f2' },
+];
+
+export const DARK_BACKGROUND_PRESETS = [
+  { name: 'Obsidian Midnight', value: '#0f131c' },
+  { name: 'Deep Charcoal', value: '#0a0e17' },
+  { name: 'Dark Violet', value: '#181126' },
+  { name: 'Slate 900', value: '#0f172a' },
+  { name: 'Forest Dark', value: '#121b16' },
+  { name: 'Neutral Dark', value: '#1a1a24' },
 ];
 
 export const BACKGROUND_STYLES = [

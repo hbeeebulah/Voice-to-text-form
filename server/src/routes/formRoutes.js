@@ -170,10 +170,11 @@ router.post('/google-addon/sync', optionalAuth, async (req, res) => {
         lastSyncedAt: new Date().toISOString()
       },
       theme: existingForm?.theme || {
-        themeId: 'modern-minimalist',
-        accentColor: '#6366f1',
-        headerColor: '#4f46e5',
-        backgroundColor: '#f8fafc',
+        themeId: 'google-classic',
+        accentColor: '#673ab7',
+        headerColor: '#512da8',
+        backgroundColor: '#f0ebf8',
+        mode: 'light',
         fontHeader: 'Inter',
         fontBody: 'Inter',
         headerBannerUrl: '',
@@ -251,10 +252,11 @@ router.post('/google-addon/import-url', authenticate, async (req, res) => {
         lastSyncedAt: new Date().toISOString()
       },
       theme: {
-        themeId: 'modern-minimalist',
-        accentColor: '#6366f1',
-        headerColor: '#4f46e5',
-        backgroundColor: '#f8fafc',
+        themeId: 'google-classic',
+        accentColor: '#673ab7',
+        headerColor: '#512da8',
+        backgroundColor: '#f0ebf8',
+        mode: 'light',
         fontHeader: 'Inter',
         fontBody: 'Inter',
         headerBannerUrl: '',
@@ -411,16 +413,18 @@ router.post('/', optionalAuth, async (req, res) => {
       creatorName: req.user ? req.user.name : (req.body.creatorName || null),
       creatorEmail: req.user ? req.user.email : (req.body.creatorEmail || null),
       collaborators: req.body.collaborators || [],
-      theme: req.body.theme || {
-        themeId: 'modern-minimalist',
-        accentColor: '#3b82f6',
-        headerColor: '#2563eb',
-        backgroundColor: '#f8fafc',
+      theme: {
+        themeId: 'google-classic',
+        accentColor: '#673ab7',
+        headerColor: '#512da8',
+        backgroundColor: '#f0ebf8',
+        mode: 'light',
         fontHeader: 'Inter',
         fontBody: 'Inter',
         headerBannerUrl: '',
         cardRoundness: 'rounded-2xl',
-        buttonStyle: 'rounded-xl'
+        buttonStyle: 'rounded-xl',
+        ...(req.body.theme || {})
       },
       questions: req.body.questions || [
         {
