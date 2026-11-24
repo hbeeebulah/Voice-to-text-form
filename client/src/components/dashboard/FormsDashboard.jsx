@@ -20,7 +20,11 @@ import {
   UserPlus,
   Link2,
   Check,
-  Loader2
+  Loader2,
+  Star,
+  LayoutGrid,
+  List,
+  ArrowUpDown
 } from 'lucide-react';
 import UserProfileMenu from '../auth/UserProfileMenu';
 import { getAssetUrl, importGoogleFormUrl } from '../../services/api';
@@ -35,6 +39,7 @@ export default function FormsDashboard({
   onOpenResponder,
   onOpenShare,
   onOpenAddUsers,
+  onToggleStar,
   user = null,
   onOpenAuth,
   onUserLoggedOut,
@@ -44,7 +49,9 @@ export default function FormsDashboard({
   hasApiKey = false
 }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [accessFilter, setAccessFilter] = useState('all'); // 'all' | 'mine' | 'shared'
+  const [accessFilter, setAccessFilter] = useState('all'); // 'all' | 'starred' | 'mine' | 'shared'
+  const [sortBy, setSortBy] = useState('modified'); // 'modified' | 'created' | 'title' | 'responses'
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [googleAddonModalOpen, setGoogleAddonModalOpen] = useState(false);
   const [googleFormUrl, setGoogleFormUrl] = useState('');
@@ -93,10 +100,10 @@ export default function FormsDashboard({
         },
         {
           id: `q-${Date.now()}-2`,
-          title: 'Overall satisfaction with our service',
-          type: 'linear_scale',
+          title: 'How would you rate your overall experience with our company?',
+          type: 'rating',
           required: true,
-          scaleConfig: { min: 1, max: 5, minLabel: 'Needs Improvement', maxLabel: 'Delighted' }
+          ratingConfig: { max: 5, icon: 'star', lowLabel: 'Needs Improvement', highLabel: 'Delighted' }
         },
         {
           id: `q-${Date.now()}-3`,
@@ -203,21 +210,39 @@ export default function FormsDashboard({
     }
   };
 
-  // Filter forms
-  const filteredForms = forms.filter((f) => {
-    const matchesSearch =
-      (f.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (f.description || '').toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
+  const starredCount = forms.filter((f) => Boolean(f.isStarred)).length;
 
-    if (accessFilter === 'mine') {
-      return !user || f.creatorId === user.id || f.isOwner !== false;
-    }
-    if (accessFilter === 'shared') {
-      return (user && f.creatorId && f.creatorId !== user.id) || f.isOwner === false;
-    }
-    return true;
-  });
+  // Filter and sort forms (Google Forms parity)
+  const filteredForms = forms
+    .filter((f) => {
+      const matchesSearch =
+        (f.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (f.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+
+      if (accessFilter === 'starred') {
+        return Boolean(f.isStarred);
+      }
+      if (accessFilter === 'mine') {
+        return !user || f.creatorId === user.id || f.isOwner !== false;
+      }
+      if (accessFilter === 'shared') {
+        return (user && f.creatorId && f.creatorId !== user.id) || f.isOwner === false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'title') {
+        return (a.title || '').localeCompare(b.title || '');
+      }
+      if (sortBy === 'responses') {
+        return (b.responseCount || 0) - (a.responseCount || 0);
+      }
+      if (sortBy === 'created') {
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      }
+      return new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+    });
 
   const sharedWithMeCount = forms.filter(f => (user && f.creatorId && f.creatorId !== user.id) || f.isOwner === false).length;
 
@@ -370,44 +395,103 @@ export default function FormsDashboard({
             )}
           </div>
 
-          {/* Access Filter Tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-surface-container-low border border-outline-variant/20 self-start sm:self-auto text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => setAccessFilter('all')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                accessFilter === 'all'
-                  ? 'bg-surface-container-high text-primary shadow-xs'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              All Forms ({forms.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccessFilter('mine')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                accessFilter === 'mine'
-                  ? 'bg-surface-container-high text-primary shadow-xs'
-                  : 'text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              My Forms ({forms.length - sharedWithMeCount})
-            </button>
-            {sharedWithMeCount > 0 && (
+          {/* Access Filter Tabs & Views */}
+          <div className="flex items-center justify-between sm:justify-end gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-surface-container-low border border-outline-variant/20 self-start sm:self-auto text-xs font-semibold">
               <button
                 type="button"
-                onClick={() => setAccessFilter('shared')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
-                  accessFilter === 'shared'
-                    ? 'bg-surface-container-high text-tertiary shadow-xs'
+                onClick={() => setAccessFilter('all')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  accessFilter === 'all'
+                    ? 'bg-surface-container-high text-primary shadow-xs'
                     : 'text-on-surface-variant hover:text-on-surface'
                 }`}
               >
-                <Users className="w-3.5 h-3.5" />
-                <span>Shared with Me ({sharedWithMeCount})</span>
+                All Forms ({forms.length})
               </button>
-            )}
+
+              <button
+                type="button"
+                onClick={() => setAccessFilter('starred')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                  accessFilter === 'starred'
+                    ? 'bg-surface-container-high text-amber-400 shadow-xs'
+                    : 'text-on-surface-variant hover:text-amber-400'
+                }`}
+                title="View starred forms"
+              >
+                <Star className={`w-3.5 h-3.5 ${starredCount > 0 ? 'fill-amber-400 text-amber-400' : ''}`} />
+                <span>Starred ({starredCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAccessFilter('mine')}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  accessFilter === 'mine'
+                    ? 'bg-surface-container-high text-primary shadow-xs'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                My Forms ({forms.length - sharedWithMeCount})
+              </button>
+
+              {sharedWithMeCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setAccessFilter('shared')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                    accessFilter === 'shared'
+                      ? 'bg-surface-container-high text-tertiary shadow-xs'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Shared with Me ({sharedWithMeCount})</span>
+                </button>
+              )}
+            </div>
+
+            {/* Sort & Grid/List View Toggles (Google Forms parity) */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 text-xs text-on-surface-variant bg-surface-container-low px-2.5 py-1.5 rounded-xl border border-outline-variant/20">
+                <ArrowUpDown className="w-3.5 h-3.5 text-outline" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-transparent text-xs text-on-surface font-semibold focus:outline-none cursor-pointer"
+                  title="Sort forms"
+                >
+                  <option value="modified" className="bg-surface-container text-on-surface">Last modified</option>
+                  <option value="created" className="bg-surface-container text-on-surface">Recently created</option>
+                  <option value="title" className="bg-surface-container text-on-surface">Title (A-Z)</option>
+                  <option value="responses" className="bg-surface-container text-on-surface">Most responses</option>
+                </select>
+              </div>
+
+              <div className="flex items-center bg-surface-container-low rounded-xl border border-outline-variant/20 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    viewMode === 'grid' ? 'bg-surface-container-high text-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    viewMode === 'list' ? 'bg-surface-container-high text-primary shadow-xs' : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                  title="List View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -497,7 +581,164 @@ export default function FormsDashboard({
                 </div>
               )}
             </div>
+          ) : viewMode === 'list' ? (
+            /* LIST VIEW (Google Forms / Drive Style) */
+            <div className="bg-surface-container-low rounded-2xl border border-outline-variant/20 overflow-hidden divide-y divide-outline-variant/15 shadow-sm">
+              <div className="px-4 py-2.5 bg-surface-container/60 text-[11px] font-mono text-on-surface-variant font-semibold flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="w-5 text-center">★</span>
+                  <span>Form Name</span>
+                </div>
+                <div className="hidden md:flex items-center gap-6 shrink-0">
+                  <span className="w-24">Owner</span>
+                  <span className="w-24 text-right">Modified</span>
+                  <span className="w-20 text-center">Responses</span>
+                </div>
+                <div className="w-48 text-right pr-2">Actions</div>
+              </div>
+
+              {filteredForms.map((form) => {
+                const isOwner = !user || form.creatorId === user.id || form.isOwner !== false;
+                const accent = form.theme?.accentColor || '#8083ff';
+
+                return (
+                  <div
+                    key={form.id}
+                    className="px-4 py-3 hover:bg-surface-container/50 transition-colors flex items-center justify-between gap-4 group"
+                  >
+                    {/* Left: Star, Icon & Title */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onToggleStar) onToggleStar(form.id, !form.isStarred);
+                        }}
+                        className="p-1 rounded-md hover:bg-surface-container-high transition-transform active:scale-90 cursor-pointer shrink-0"
+                        title={form.isStarred ? 'Starred (click to unstar)' : 'Star form'}
+                      >
+                        <Star
+                          className={`w-4 h-4 transition-colors ${
+                            form.isStarred
+                              ? 'fill-amber-400 text-amber-400'
+                              : 'text-outline/60 hover:text-amber-400'
+                          }`}
+                        />
+                      </button>
+
+                      <div
+                        onClick={() => onSelectForm(form.id, 'builder')}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-on-primary shrink-0 cursor-pointer shadow-xs"
+                        style={{ backgroundColor: accent }}
+                      >
+                        <FileText className="w-4 h-4" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4
+                            onClick={() => onSelectForm(form.id, 'builder')}
+                            className="font-bold text-xs sm:text-sm text-on-surface hover:text-primary transition-colors cursor-pointer truncate"
+                          >
+                            {form.title || 'Untitled Form'}
+                          </h4>
+                          {!isOwner && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold bg-tertiary/15 text-tertiary">
+                              Shared
+                            </span>
+                          )}
+                          {form.settings?.acceptingResponses === false && (
+                            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono font-semibold bg-rose-500/15 text-rose-400">
+                              Closed
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-on-surface-variant truncate max-w-md hidden sm:block">
+                          {form.description || 'No description provided.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Middle: Owner, Date & Response count */}
+                    <div className="hidden md:flex items-center gap-6 text-xs text-on-surface-variant font-mono shrink-0">
+                      <span className="w-24 truncate text-left">{isOwner ? 'me' : (form.creatorName || 'Collaborator')}</span>
+                      <span className="w-24 text-right">
+                        {new Date(form.updatedAt || form.createdAt || Date.now()).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
+                      <span className="w-20 flex justify-center">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container text-[11px] font-semibold">
+                          <MessageSquare className="w-3 h-3 text-primary" />
+                          <span>{form.responseCount || 0}</span>
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Right: Quick Actions */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => onSelectForm(form.id, 'builder')}
+                        className="px-3 py-1 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-semibold text-xs transition-colors cursor-pointer"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onOpenResponder(form.id)}
+                        className="p-1.5 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                        title="Open Form Responder"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+
+                      {onOpenShare && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenShare(form)}
+                          className="p-1.5 hover:text-primary hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                          title="Share Link & Real QR Code"
+                        >
+                          <Share2 className="w-4 h-4 text-primary" />
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => onSelectForm(form.id, 'analytics')}
+                        className="p-1.5 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                        title="View Responses & Analytics"
+                      >
+                        <BarChart3 className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onDuplicateForm(form.id)}
+                        className="p-1.5 hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                        title="Duplicate Form"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onDeleteForm(form.id)}
+                        className="p-1.5 hover:text-error hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
+                        title="Delete Form"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
+            /* GRID VIEW */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredForms.map((form) => {
                 const headerUrl = form.theme?.headerBannerUrl || form.headerBannerUrl || form.headerImage;
@@ -528,10 +769,29 @@ export default function FormsDashboard({
                     <div className="p-5 flex-1 flex flex-col justify-between gap-4">
                       <div>
                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+                            {/* Star Toggle Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onToggleStar) onToggleStar(form.id, !form.isStarred);
+                              }}
+                              className="p-1 rounded-md hover:bg-surface-container-high transition-transform active:scale-90 cursor-pointer shrink-0"
+                              title={form.isStarred ? 'Starred (click to unstar)' : 'Star form'}
+                            >
+                              <Star
+                                className={`w-4 h-4 transition-colors ${
+                                  form.isStarred
+                                    ? 'fill-amber-400 text-amber-400'
+                                    : 'text-outline/60 hover:text-amber-400'
+                                }`}
+                              />
+                            </button>
+
                             <h3
                               onClick={() => onSelectForm(form.id, 'builder')}
-                              className="font-bold text-on-surface text-base hover:text-primary cursor-pointer transition-colors line-clamp-1"
+                              className="font-bold text-on-surface text-base hover:text-primary cursor-pointer transition-colors line-clamp-1 flex-1"
                             >
                               {form.title || 'Untitled Form'}
                             </h3>
@@ -539,6 +799,11 @@ export default function FormsDashboard({
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-tertiary/15 text-tertiary border border-tertiary/30">
                                 <Users className="w-3 h-3" />
                                 <span>Shared</span>
+                              </span>
+                            )}
+                            {form.settings?.acceptingResponses === false && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                                Closed
                               </span>
                             )}
                           </div>

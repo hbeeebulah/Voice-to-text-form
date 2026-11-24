@@ -1,4 +1,5 @@
 import React from 'react';
+import { Star } from 'lucide-react';
 import UserProfileMenu from '../auth/UserProfileMenu';
 
 export default function Navbar({
@@ -10,6 +11,8 @@ export default function Navbar({
   isSaving = false,
   isPublished = false,
   acceptingResponses = true,
+  isStarred = false,
+  onToggleStar,
   onOpenTheme,
   onOpenPreview,
   onOpenShare,
@@ -45,7 +48,7 @@ export default function Navbar({
           {/* Breadcrumb & Title */}
           <div className="flex items-center gap-1.5 text-on-surface-variant min-w-0">
             {mode === 'builder' ? (
-              <div className="flex items-center gap-1.5 group cursor-pointer max-w-[180px] sm:max-w-[260px] md:max-w-[320px]">
+              <div className="flex items-center gap-1.5 group max-w-[200px] sm:max-w-[280px] md:max-w-[340px]">
                 <input
                   type="text"
                   value={formTitle || ''}
@@ -53,9 +56,21 @@ export default function Navbar({
                   placeholder="Untitled Form"
                   className="bg-transparent text-xs sm:text-sm text-on-surface font-semibold truncate group-hover:text-primary transition-colors focus:bg-surface-container/60 focus:outline-none focus:ring-1 focus:ring-primary/40 rounded px-1.5 py-0.5 -ml-1 w-full"
                 />
-                <span className="material-symbols-outlined text-[15px] text-on-surface-variant group-hover:text-on-surface transition-colors shrink-0">
-                  edit
-                </span>
+                <button
+                  type="button"
+                  onClick={onToggleStar}
+                  className="p-1 rounded-md hover:bg-surface-container-high transition-transform active:scale-90 cursor-pointer shrink-0"
+                  title={isStarred ? 'Starred (click to unstar)' : 'Star form'}
+                  aria-label={isStarred ? 'Starred (click to unstar)' : 'Star form'}
+                >
+                  <Star
+                    className={`w-4 h-4 transition-colors ${
+                      isStarred
+                        ? 'fill-amber-400 text-amber-400'
+                        : 'text-on-surface-variant/50 hover:text-amber-400'
+                    }`}
+                  />
+                </button>
               </div>
             ) : (
               <span className="text-xs sm:text-sm text-on-surface font-semibold truncate max-w-[200px] sm:max-w-[320px]">

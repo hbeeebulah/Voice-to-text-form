@@ -11,7 +11,8 @@ import {
   UploadCloud,
   Paperclip,
   CheckCircle2,
-  ListOrdered
+  ListOrdered,
+  Star
 } from 'lucide-react';
 import { QUESTION_TYPES } from '../../constants/themes';
 
@@ -49,6 +50,15 @@ export default function QuestionCard({
         max: 5,
         minLabel: 'Low',
         maxLabel: 'High'
+      };
+    }
+
+    if (newType === 'rating' && !question.ratingConfig) {
+      updates.ratingConfig = {
+        max: 5,
+        icon: 'star',
+        lowLabel: '',
+        highLabel: ''
       };
     }
 
@@ -296,6 +306,70 @@ export default function QuestionCard({
                     scaleConfig: { ...(question.scaleConfig || {}), maxLabel: e.target.value }
                   })}
                   placeholder="High"
+                  className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3b. STAR RATING (Google Forms Style) */}
+        {question.type === 'rating' && (
+          <div className="p-4 rounded-xl bg-surface-container-lowest/80 border border-outline-variant/20 flex flex-col gap-3">
+            <div className="flex items-center justify-between flex-wrap gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-on-surface-variant font-medium">Rating Scale:</span>
+                <select
+                  value={question.ratingConfig?.max ?? 5}
+                  onChange={(e) => onUpdate({
+                    ratingConfig: { ...(question.ratingConfig || {}), max: Number(e.target.value) }
+                  })}
+                  className="bg-surface-container text-on-surface rounded-lg px-2.5 py-1.5 border border-outline-variant/30 text-xs focus:outline-none cursor-pointer font-semibold"
+                >
+                  <option value={3}>3 Stars</option>
+                  <option value={5}>5 Stars (Standard)</option>
+                  <option value={7}>7 Stars</option>
+                  <option value={10}>10 Stars</option>
+                </select>
+              </div>
+
+              {/* Star Preview in Builder */}
+              <div className="flex items-center gap-1.5 p-1.5 rounded-xl bg-surface-container/60 border border-outline-variant/20">
+                {Array.from({ length: question.ratingConfig?.max ?? 5 }, (_, i) => i + 1).map((starNum) => (
+                  <Star
+                    key={starNum}
+                    className="w-5 h-5 text-amber-400 fill-amber-400/50"
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-[11px] text-on-surface-variant mb-1 font-mono">
+                  Lowest Rating Label (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={question.ratingConfig?.lowLabel || ''}
+                  onChange={(e) => onUpdate({
+                    ratingConfig: { ...(question.ratingConfig || {}), lowLabel: e.target.value }
+                  })}
+                  placeholder="e.g. Poor, Terrible"
+                  className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-on-surface-variant mb-1 font-mono">
+                  Highest Rating Label (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={question.ratingConfig?.highLabel || ''}
+                  onChange={(e) => onUpdate({
+                    ratingConfig: { ...(question.ratingConfig || {}), highLabel: e.target.value }
+                  })}
+                  placeholder="e.g. Excellent, Outstanding"
                   className="w-full px-3 py-1.5 bg-surface-container text-on-surface rounded-lg text-xs border border-outline-variant/30 focus:outline-none"
                 />
               </div>

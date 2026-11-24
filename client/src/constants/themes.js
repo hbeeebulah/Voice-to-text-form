@@ -200,6 +200,13 @@ export const QUESTION_TYPES = [
     description: 'Numerical rating scale with custom minimum and maximum labels'
   },
   {
+    type: 'rating',
+    label: 'Rating (Stars)',
+    icon: 'Star',
+    voiceEnabled: true,
+    description: 'Interactive star rating for customer reviews, feedback, and satisfaction surveys'
+  },
+  {
     type: 'file_upload',
     label: 'Attach File / Document',
     icon: 'Paperclip',

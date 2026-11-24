@@ -47,6 +47,16 @@ export default function FormBuilder({
       initialOptions = ['Option 1', 'Option 2', 'Option 3'];
     }
 
+    let ratingConfig;
+    if (type === 'rating') {
+      ratingConfig = {
+        max: 5,
+        icon: 'star',
+        lowLabel: '',
+        highLabel: ''
+      };
+    }
+
     const newQuestion = {
       id: newId,
       title: '',
@@ -54,7 +64,8 @@ export default function FormBuilder({
       type,
       required: false,
       voiceEnabled: true,
-      options: initialOptions
+      options: initialOptions,
+      ...(ratingConfig ? { ratingConfig } : {})
     };
 
     const updated = [...(form.questions || []), newQuestion];

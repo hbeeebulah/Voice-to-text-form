@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   TrendingUp,
   BarChart3,
-  Sparkles
+  Sparkles,
+  Star
 } from 'lucide-react';
 import {
   fetchAnalytics,
@@ -354,6 +355,61 @@ export default function ResponseAnalytics({
                     </div>
                   )}
 
+                  {/* 3b. Star Rating Analytics Breakdown */}
+                  {q.type === 'rating' && (() => {
+                    const maxStars = q.ratingConfig?.max || 5;
+                    const numericRatings = questionAnswers
+                      .map(a => Number(a.val))
+                      .filter(n => !isNaN(n) && n > 0);
+                    const totalCount = numericRatings.length;
+                    const avgScore = totalCount > 0
+                      ? (numericRatings.reduce((sum, n) => sum + n, 0) / totalCount).toFixed(1)
+                      : '0.0';
+
+                    return (
+                      <div className="flex flex-col gap-3 pt-1">
+                        {/* Average Rating Summary */}
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-container/60 border border-outline-variant/20">
+                          <div className="flex items-center gap-1.5 text-amber-400">
+                            <Star className="w-5 h-5 fill-amber-400" />
+                            <span className="text-xl font-bold font-mono text-on-surface">{avgScore}</span>
+                            <span className="text-xs text-on-surface-variant font-mono">/ {maxStars}</span>
+                          </div>
+                          <div className="h-4 w-px bg-outline-variant/30" />
+                          <span className="text-xs text-on-surface-variant font-mono">
+                            {totalCount} rating{totalCount === 1 ? '' : 's'} recorded
+                          </span>
+                        </div>
+
+                        {/* Star Level Distribution (From max down to 1) */}
+                        <div className="flex flex-col gap-1.5">
+                          {Array.from({ length: maxStars }, (_, i) => maxStars - i).map((starNum) => {
+                            const count = numericRatings.filter(n => n === starNum).length;
+                            const pct = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
+
+                            return (
+                              <div key={starNum} className="flex items-center gap-2 text-xs">
+                                <div className="flex items-center gap-1 w-14 shrink-0 font-mono font-semibold text-on-surface">
+                                  <span>{starNum}</span>
+                                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                </div>
+                                <div className="flex-1 h-2 rounded-full bg-surface-container overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-amber-400 transition-all duration-300"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className="font-mono text-on-surface-variant text-[11px] w-14 text-right shrink-0">
+                                  {count} ({pct}%)
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* 4. File Upload List */}
                   {q.type === 'file_upload' && (
                     <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
@@ -455,7 +511,23 @@ export default function ResponseAnalytics({
                     </div>
 
                     <div className="p-3 bg-surface-container/60 rounded-xl border border-outline-variant/20 text-xs text-on-surface">
-                      {Array.isArray(answer) ? (
+                      {q.type === 'rating' && answer ? (
+                        <div className="flex items-center gap-1.5">
+                          {Array.from({ length: q.ratingConfig?.max || 5 }, (_, i) => i + 1).map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-4 h-4 ${
+                                Number(answer) >= s
+                                  ? 'fill-amber-400 text-amber-400'
+                                  : 'text-outline/30'
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 font-mono font-bold text-amber-400 text-xs">
+                            {answer} / {q.ratingConfig?.max || 5} Stars
+                          </span>
+                        </div>
+                      ) : Array.isArray(answer) ? (
                         <ul className="list-disc list-inside space-y-0.5">
                           {answer.map((item, i) => (
                             <li key={i}>{item}</li>

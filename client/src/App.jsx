@@ -349,6 +349,21 @@ export default function App() {
     }
   };
 
+  const handleToggleStar = async (formId, targetStarred) => {
+    setForms(prev =>
+      prev.map(f => (f.id === formId ? { ...f, isStarred: targetStarred } : f))
+    );
+    if (currentForm && currentForm.id === formId) {
+      setCurrentForm(prev => ({ ...prev, isStarred: targetStarred }));
+    }
+
+    try {
+      await updateForm(formId, { isStarred: targetStarred });
+    } catch (err) {
+      console.warn('Could not persist starred state:', err);
+    }
+  };
+
   if (loading && !currentForm && (view === 'responder' || view === 'builder')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface">
@@ -373,6 +388,8 @@ export default function App() {
           formTitle={currentForm.title}
           isPublished={Boolean(currentForm.isPublished || currentForm.status === 'published')}
           acceptingResponses={currentForm.settings?.acceptingResponses !== false}
+          isStarred={Boolean(currentForm.isStarred)}
+          onToggleStar={() => handleToggleStar(currentForm.id, !currentForm.isStarred)}
           onTitleChange={(title) => handleUpdateForm({ title })}
           activeTab={activeTab}
           setActiveTab={(tab) => {
@@ -445,6 +462,7 @@ export default function App() {
           <div className="flex-1">
             <FormsDashboard
               forms={forms}
+              onToggleStar={handleToggleStar}
               onSelectForm={(id, mode) => {
                 if (mode === 'analytics') {
                   openFormById(id, 'builder').then(() => setActiveTab('responses'));

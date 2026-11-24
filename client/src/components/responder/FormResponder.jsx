@@ -11,7 +11,8 @@ import {
   ArrowRight,
   RotateCcw,
   Sparkles,
-  Edit3
+  Edit3,
+  Star
 } from 'lucide-react';
 import AudioRecorder from '../common/AudioRecorder';
 import { submitResponse, uploadFile, getAssetUrl } from '../../services/api';
@@ -37,6 +38,7 @@ export default function FormResponder({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState({});
   const [dragOverQuestionId, setDragOverQuestionId] = useState(null);
+  const [hoveredRating, setHoveredRating] = useState({});
 
   const theme = form.theme || {};
   const questions = form.questions || [];
@@ -575,6 +577,54 @@ export default function FormResponder({
                         <span>{q.scaleConfig?.minLabel || 'Low'}</span>
                         <span>{q.scaleConfig?.maxLabel || 'High'}</span>
                       </div>
+                    </div>
+                  )}
+
+                  {/* 5b. STAR RATING (Google Forms Parity) */}
+                  {q.type === 'rating' && (
+                    <div className="pt-2 flex flex-col gap-3">
+                      <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+                        {Array.from({ length: q.ratingConfig?.max || 5 }, (_, i) => i + 1).map((starNum) => {
+                          const currentHover = hoveredRating[q.id];
+                          const isFilled = (currentHover !== undefined ? currentHover : (Number(val) || 0)) >= starNum;
+                          return (
+                            <button
+                              key={starNum}
+                              type="button"
+                              onClick={() => {
+                                const newVal = Number(val) === starNum ? 0 : starNum;
+                                handleAnswerChange(q.id, newVal);
+                              }}
+                              onMouseEnter={() => setHoveredRating(prev => ({ ...prev, [q.id]: starNum }))}
+                              onMouseLeave={() => setHoveredRating(prev => ({ ...prev, [q.id]: undefined }))}
+                              className="p-1 sm:p-2 rounded-xl hover:bg-surface-container-high transition-transform active:scale-95 cursor-pointer focus:outline-none"
+                              title={`Rate ${starNum} out of ${q.ratingConfig?.max || 5} stars`}
+                              aria-label={`Rate ${starNum} of ${q.ratingConfig?.max || 5} stars`}
+                            >
+                              <Star
+                                className={`w-8 h-8 sm:w-9 sm:h-9 transition-all duration-150 ${
+                                  isFilled
+                                    ? 'fill-amber-400 text-amber-400 scale-105 drop-shadow-sm'
+                                    : 'text-outline/40 hover:text-amber-300'
+                                }`}
+                              />
+                            </button>
+                          );
+                        })}
+
+                        {Number(val) > 0 && (
+                          <span className="ml-2 px-3 py-1 rounded-full text-xs font-bold font-mono bg-amber-400/15 text-amber-400 border border-amber-400/30">
+                            {val} / {q.ratingConfig?.max || 5} Stars
+                          </span>
+                        )}
+                      </div>
+
+                      {(q.ratingConfig?.lowLabel || q.ratingConfig?.highLabel) && (
+                        <div className="flex items-center justify-between text-xs text-on-surface-variant px-1 font-mono">
+                          <span>{q.ratingConfig?.lowLabel || '1 Star'}</span>
+                          <span>{q.ratingConfig?.highLabel || `${q.ratingConfig?.max || 5} Stars`}</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
